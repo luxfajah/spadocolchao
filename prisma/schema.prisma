@@ -1,0 +1,2429 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db?connection_limit=1"
+}
+
+model User {
+  id           String    @id @default(cuid())
+  name         String
+  email        String?   @unique
+  socialName   String?
+  phone        String?
+  username     String    @unique
+  passwordHash String
+  status       String    @default("ACTIVE")
+  isSuperAdmin Boolean   @default(false)
+  jobTitle     String?
+  department   String?
+  notes        String?
+  employeeId   String?   @unique
+  primaryRoleId String?
+  mustChangePassword Boolean @default(false)
+  passwordChangedAt  DateTime?
+  passwordExpiresAt  DateTime?
+  failedLoginAttempts Int    @default(0)
+  blockedAt          DateTime?
+  blockedReason      String?
+  lastLoginAt  DateTime?
+  lastLoginIp  String?
+  lastLoginUserAgent String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  employee            Employee?                 @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  primaryRole         Role?                     @relation("PrimaryRoleUsers", fields: [primaryRoleId], references: [id], onDelete: SetNull)
+  roles               UserRole[]
+  sessions            UserSession[]
+  permissionOverrides UserPermissionOverride[]
+  auditLogs           AuditLog[]
+  changedSettings     SystemSettingHistory[]    @relation("SystemSettingChangedBy")
+  attachments         FileAttachment[]
+  orderStatusHistory  OrderStatusHistory[]
+  openedCashRegisters CashRegisterSession[]  @relation("SessionOpenedBy")
+  closedCashRegisters CashRegisterSession[]  @relation("SessionClosedBy")
+  cashMovements       CashRegisterMovement[]
+
+  financialTransactions FinancialTransaction[]
+  reconciliations       FinancialReconciliation[]
+  transfersPerformed    TransferRecord[]          @relation("TransferPerformedBy")
+
+  createdPurchaseOrders  PurchaseOrder[]     @relation("PurchaseOrderCreatedBy")
+  approvedPurchaseOrders PurchaseOrder[]     @relation("PurchaseOrderApprovedBy")
+  purchaseReceivings     PurchaseReceiving[]
+
+  customerNotes         CustomerNote[]          @relation("NoteCreatedBy")
+  customerCreditChanges CustomerCreditHistory[] @relation("CreditLimitChangedBy")
+
+  cancelledSales       Sale[]                @relation("SaleCancelledBy")
+  cancelledOrders      Order[]               @relation("OrderCancelledBy")
+  orderNotes           OrderNote[]
+  orderProductionSlips OrderProductionSlip[]
+
+  // HR Module
+  createdEmployeeNotes           EmployeeNote[]       @relation("EmployeeNoteCreatedBy")
+  disciplinaryActionsResponsible DisciplinaryAction[] @relation("DisciplinaryActionResponsible")
+  terminationsResponsible        TerminationProcess[] @relation("TerminationResponsible")
+
+  createdBackups  BackupRecord[] @relation("BackupCreatedBy")
+  restoredBackups BackupRecord[] @relation("BackupRestoredBy")
+
+  @@index([employeeId])
+  @@index([primaryRoleId])
+  @@index([status])
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  status      String   @default("ACTIVE")
+  notes       String?
+  archivedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  permissions RolePermission[]
+  users       UserRole[]
+  primaryUsers User[] @relation("PrimaryRoleUsers")
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  module      String
+  action      String?
+  description String?
+  status      String   @default("ACTIVE")
+  isCustom    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  roles             RolePermission[]
+  userOverrides     UserPermissionOverride[]
+}
+
+model RolePermission {
+  id           String   @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([permissionId])
+}
+
+model UserRole {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([roleId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  module    String   @default("GENERAL")
+  action    String
+  entity    String // NEW: Consistent with actions.ts
+  entityId  String?
+  description String?
+  details   String? // NEW: Consistent with actions.ts
+  origin    String   @default("WEB")
+  oldData   String?
+  newData   String?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  user    User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  session UserSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([entity, entityId])
+  @@index([userId])
+  @@index([sessionId])
+  @@index([module])
+  @@index([ipAddress])
+  @@index([createdAt])
+}
+
+model SaleItemMaterialRequirement {
+  id                 String  @id @default(cuid())
+  saleItemId         String
+  sourceRecipeId     String?
+  sourceRecipeItemId String?
+  supplyItemId       String
+
+  part               String
+  quantityCalculated Float
+  unit               String
+  unitCostSnapshot   Float
+  totalCostSnapshot  Float
+  notes              String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  saleItem   SaleItem   @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+  supplyItem SupplyItem @relation(fields: [supplyItemId], references: [id], onDelete: Restrict)
+
+  @@index([saleItemId])
+  @@index([supplyItemId])
+}
+
+model AppSetting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  isSecret    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CompanyProfile {
+  id                    String   @id @default(cuid())
+  legalName             String
+  tradeName             String?
+  cnpj                  String?  @unique
+  stateRegistration     String?
+  municipalRegistration String?
+  zipCode               String?
+  street                String?
+  number                String?
+  complement            String?
+  neighborhood          String?
+  city                  String?
+  state                 String?
+  phone                 String?
+  whatsapp              String?
+  email                 String?
+  website               String?
+  logoUrl               String?
+  legalRepresentative   String?
+  printName             String?
+  printDocument         String?
+  printAddress          String?
+  printPhone            String?
+  printFooter           String?
+  operationalEmail      String?
+  operationalHours      String?
+  operationalNotes      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model UserPermissionOverride {
+  id           String   @id @default(cuid())
+  userId       String
+  permissionId String
+  effect       String
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, permissionId])
+  @@index([permissionId])
+  @@index([effect])
+}
+
+model UserSession {
+  id             String   @id @default(cuid())
+  userId         String
+  sessionToken   String   @unique
+  ipAddress      String?
+  userAgent      String?
+  startedAt      DateTime @default(now())
+  lastActivityAt DateTime @default(now())
+  expiresAt      DateTime?
+  endedAt        DateTime?
+  endReason      String?
+  isActive       Boolean  @default(true)
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  auditLogs AuditLog[]
+
+  @@index([userId, isActive])
+  @@index([lastActivityAt])
+}
+
+model SystemSetting {
+  id          String   @id @default(cuid())
+  group       String
+  key         String   @unique
+  label       String
+  value       String
+  valueType   String   @default("string")
+  description String?
+  category    String?
+  isSecret    Boolean  @default(false)
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  history SystemSettingHistory[]
+
+  @@index([group])
+  @@index([category])
+}
+
+model SystemSettingHistory {
+  id            String   @id @default(cuid())
+  settingId     String
+  previousValue String?
+  newValue      String?
+  changedById   String?
+  note          String?
+  changedAt     DateTime @default(now())
+
+  setting   SystemSetting @relation(fields: [settingId], references: [id], onDelete: Cascade)
+  changedBy User?         @relation("SystemSettingChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([settingId])
+  @@index([changedById])
+  @@index([changedAt])
+}
+
+model DocumentSequence {
+  id         String   @id @default(cuid())
+  type       String   @unique
+  name       String
+  prefix     String?
+  nextNumber Int      @default(1)
+  digits     Int      @default(6)
+  resetMode  String   @default("NEVER")
+  status     String   @default("ACTIVE")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model PrinterProfile {
+  id               String   @id @default(cuid())
+  name             String   @unique
+  type             String
+  driverName       String?
+  paperWidth       String?
+  isDefault        Boolean  @default(false)
+  autoPrint        Boolean  @default(false)
+  headerTemplate   String?
+  footerTemplate   String?
+  documentTemplate String?
+  notes            String?
+  status           String   @default("ACTIVE")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([type])
+  @@index([status])
+}
+
+model SystemAutomation {
+  id                   String   @id @default(cuid())
+  code                 String   @unique
+  name                 String
+  category             String
+  description          String?
+  isEnabled            Boolean  @default(true)
+  frequency            String?
+  notificationChannels String?
+  config               String?
+  lastRunAt            DateTime?
+  nextRunAt            DateTime?
+  lastResult           String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([category])
+  @@index([isEnabled])
+}
+
+model BackupRecord {
+  id           String   @id @default(cuid())
+  label        String?
+  filePath     String
+  fileName     String
+  backupType   String   @default("MANUAL")
+  status       String   @default("COMPLETED")
+  sizeBytes    Int?
+  notes        String?
+  createdById  String?
+  restoredById String?
+  createdAt    DateTime @default(now())
+  restoredAt   DateTime?
+
+  createdBy  User? @relation("BackupCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  restoredBy User? @relation("BackupRestoredBy", fields: [restoredById], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@index([backupType])
+  @@index([status])
+}
+
+model FileAttachment {
+  id           String   @id @default(cuid())
+  originalName String
+  storedName   String
+  mimeType     String
+  extension    String?
+  filePath     String
+  fileSize     Int
+  entityName   String?
+  entityId     String?
+  uploadedById String?
+  createdAt    DateTime @default(now())
+
+  uploadedBy User? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  @@index([entityName, entityId])
+  @@index([uploadedById])
+}
+
+model CostCenter {
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  name               String
+  description        String?
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  Employee           Employee[]
+  jobTitles          JobTitle[]
+  financialCategories FinancialCategory[]
+  accountsReceivable AccountReceivable[]
+  accountsPayable    AccountPayable[]
+}
+
+model PaymentMethod {
+  id                 String   @id @default(cuid())
+  code               String   @unique
+  name               String
+  type               String
+  allowsInstallments Boolean  @default(false)
+  maxInstallments    Int?
+  feePercentage      Float    @default(0)
+  fixedFee           Float    @default(0)
+  settlementDays     Int      @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  saleInstallments   SaleInstallment[]
+  cashMovements      CashRegisterMovement[]
+  accountsReceivable AccountReceivable[]
+  installmentFees    PaymentMethodInstallmentFee[]
+}
+
+model PaymentMethodInstallmentFee {
+  id              String        @id @default(cuid())
+  paymentMethodId String
+  installments    Int
+  feePercentage   Float
+  
+  paymentMethod   PaymentMethod @relation(fields: [paymentMethodId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentMethodId, installments])
+  @@index([paymentMethodId])
+}
+
+model FinancialCategory {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  name        String
+  type        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  costCenters        CostCenter[]
+  accountsReceivable AccountReceivable[]
+  accountsPayable    AccountPayable[]
+  transactions       FinancialTransaction[]
+  recurrenceRules    RecurrenceRule[]
+}
+
+model LeadSource {
+  id          String  @id @default(cuid())
+  code        String  @unique
+  name        String  @unique
+  category    String  @default("OUTRO") // Digital paga, Digital orgânica, Loja física, Indicação, Campanha, Externa, Parceria, Reativação, Outro
+  description String?
+  isActive    Boolean @default(true)
+
+  // Regras Comerciais
+  isDefaultPdv          Boolean @default(false)
+  requiresDetail        Boolean @default(false)
+  commissionEligible    Boolean @default(true)
+  hasCommissionOverride Boolean @default(false)
+  priority              Int     @default(0)
+
+  // Rastreamento / Análise
+  estimatedCost Float   @default(0)
+  notes         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sales     Sale[]
+  customers Customer[]
+  storeGoalSegments StoreGoalSegment[]
+}
+
+model JobTitle {
+  id                String        @id @default(cuid())
+  name              String        @unique
+  department        String?
+  description       String?
+  shiftName         String?
+  defaultSalary     Float?
+  workScheduleId    String?
+  costCenterId      String?
+  isPdvSellerRole   Boolean       @default(false)
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  workSchedule      WorkSchedule? @relation("JobTitleDefaultSchedule", fields: [workScheduleId], references: [id], onDelete: SetNull)
+  costCenter        CostCenter?   @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  employees         Employee[]
+  jobOpenings       JobOpening[]
+
+  @@index([workScheduleId])
+  @@index([costCenterId])
+}
+
+model WorkSchedule {
+  id                   String   @id @default(cuid())
+  name                 String   @unique
+  weeklyHours          Float
+  mondayMinutes        Int      @default(0)
+  tuesdayMinutes       Int      @default(0)
+  wednesdayMinutes     Int      @default(0)
+  thursdayMinutes      Int      @default(0)
+  fridayMinutes        Int      @default(0)
+  saturdayMinutes      Int      @default(0)
+  sundayMinutes        Int      @default(0)
+  expectedLunchMinutes Int      @default(0)
+  toleranceMinutes     Int      @default(5)
+  mondayIn1            String?
+  mondayOut1           String?
+  mondayIn2            String?
+  mondayOut2           String?
+  tuesdayIn1           String?
+  tuesdayOut1          String?
+  tuesdayIn2           String?
+  tuesdayOut2          String?
+  wednesdayIn1         String?
+  wednesdayOut1        String?
+  wednesdayIn2         String?
+  wednesdayOut2        String?
+  thursdayIn1          String?
+  thursdayOut1         String?
+  thursdayIn2          String?
+  thursdayOut2         String?
+  fridayIn1            String?
+  fridayOut1           String?
+  fridayIn2            String?
+  fridayOut2           String?
+  saturdayIn1          String?
+  saturdayOut1         String?
+  saturdayIn2          String?
+  saturdayOut2         String?
+  sundayIn1            String?
+  sundayOut1           String?
+  sundayIn2            String?
+  sundayOut2           String?
+  isActive             Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  employees Employee[]
+  jobTitles JobTitle[] @relation("JobTitleDefaultSchedule")
+}
+
+model Customer {
+  id                String    @id @default(cuid())
+  code              String?   @unique
+  personType        String    @default("INDIVIDUAL") // INDIVIDUAL, COMPANY
+  fullName          String
+  tradeName         String?
+  document          String?
+  stateRegistration String?
+  rg                String?
+  birthDate         DateTime?
+  gender            String?
+  profession        String?
+  income            Float?
+  email             String?
+  phone             String?
+  whatsapp          String?
+  instagram         String?
+  contactPerson     String?
+  notes             String?
+  customerSince     DateTime  @default(now())
+  isActive          Boolean   @default(true)
+
+  // Dados de Vendas / CRM
+  sellerId         String?
+  leadSourceId     String?
+  creditLimit      Float?  @default(0)
+  priority         String? @default("NORMAL") // LOW, NORMAL, HIGH, CRITICAL
+  commercialStatus String? @default("ACTIVE") // ACTIVE, INACTIVE, PROSPECT, BLOCKED
+  invoiceEmail     String?
+  motherName       String?
+  fatherName       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relacionamentos
+  seller     Seller?     @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  leadSource LeadSource? @relation(fields: [leadSourceId], references: [id], onDelete: SetNull)
+
+  addresses     CustomerAddress[]
+  contacts      CustomerContact[]
+  noteHistory   CustomerNote[]
+  creditHistory CustomerCreditHistory[]
+
+  sales              Sale[]
+  orders             Order[]
+  accountsReceivable AccountReceivable[]
+
+  @@index([fullName])
+  @@index([document])
+  @@index([sellerId])
+  @@index([leadSourceId])
+}
+
+model CustomerAddress {
+  id             String  @id @default(cuid())
+  customerId     String
+  type           String  @default("MAIN") // MAIN, DELIVERY, BILLING
+  zipCode        String?
+  street         String?
+  number         String?
+  complement     String?
+  neighborhood   String?
+  city           String?
+  state          String?
+  recipientName  String?
+  recipientPhone String?
+  isMain         Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model CustomerContact {
+  id         String  @id @default(cuid())
+  customerId String
+  name       String
+  relation   String?
+  phone      String?
+  whatsapp   String?
+  notes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+}
+
+model CustomerNote {
+  id          String   @id @default(cuid())
+  customerId  String
+  noteType    String   @default("OBSERVATION") // COMMERCIAL, FINANCIAL, DELIVERY, SUPPORT, OBSERVATION
+  content     String
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("NoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([createdById])
+}
+
+model CustomerCreditHistory {
+  id            String   @id @default(cuid())
+  customerId    String
+  previousLimit Float?
+  newLimit      Float?
+  reason        String?
+  changedById   String?
+  createdAt     DateTime @default(now())
+
+  customer  Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  changedBy User?    @relation("CreditLimitChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([changedById])
+}
+
+model Supplier {
+  id                String   @id @default(cuid())
+  code              String?  @unique
+  personType        String   @default("COMPANY")
+  legalName         String
+  tradeName         String?
+  document          String?  @unique
+  stateRegistration String?
+  email             String?
+  phone             String?
+  whatsapp          String?
+  contactPerson     String?
+  zipCode           String?
+  street            String?
+  number            String?
+  complement        String?
+  neighborhood      String?
+  city              String?
+  state             String?
+  notes             String?
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  supplyItems         SupplyItem[]
+  products            ProductService[]     @relation("ProductSupplier")
+  supplierSupplyItems SupplierSupplyItem[]
+  purchaseOrders      PurchaseOrder[]
+  accountsPayable     AccountPayable[]
+
+  @@index([legalName])
+  @@index([tradeName])
+  @@index([city, state])
+}
+
+model Seller {
+  id                    String   @id @default(cuid())
+  code                  String?  @unique
+  name                  String
+  type                  String   @default("INTERNAL")
+  document              String?  @unique
+  email                 String?
+  phone                 String?
+  whatsapp              String?
+  defaultCommissionRate Float?
+  employeeId            String?  @unique
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  employee          Employee?          @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  sales             Sale[]
+  orders            Order[]
+  commissionEntries CommissionEntry[]
+  commissionBatches CommissionBatch[]
+  goals             SellerGoal[]
+  customers         Customer[]
+
+  @@index([name])
+  @@index([employeeId])
+}
+
+model Employee {
+  id                      String    @id @default(cuid())
+  serialId                Int?      @unique
+  code                    String?   @unique
+  fullName                String
+  socialName              String?
+  cpf                     String?   @unique
+  rg                      String?
+  rgExpeditor             String?
+  pis                     String?
+  birthDate               DateTime?
+  birthCity               String?
+  birthState              String?
+  gender                  String?
+  maritalStatus           String?
+  educationLevel          String?
+  nationality             String?
+  email                   String?
+  phone                   String?
+  whatsapp                String?
+  zipCode                 String?
+  address                 String?
+  street                  String?
+  number                  String?
+  complement              String?
+  neighborhood            String?
+  city                    String?
+  state                   String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+  motherName              String?
+  fatherName              String?
+  photoUrl                String?
+  isPCD                   Boolean   @default(false)
+  pcdDetails              String?
+  hasHealthCondition      Boolean   @default(false)
+  healthConditionDetails  String?
+  schoolName              String?
+  schoolShift             String?
+  technicalCourse         String?
+  apprenticeshipEnd       DateTime?
+  admissionDate           DateTime?
+  terminationDate         DateTime?
+  status                  String    @default("ACTIVE")
+  contractType            String
+  department              String?
+  workScheduleText        String?
+  salaryBase              Float?
+  vtDailyValue            Float?
+  vtWorkDaysPerMonth      Int?
+  transportationAllowance Float?
+  transportationPayrollDeductionEnabled Boolean @default(false)
+  transportationPayrollDeductionPercent Float?
+  foodAllowance           Float?
+  foodPayrollDeductionEnabled Boolean @default(false)
+  foodPayrollDeductionPercent Float?
+  fuelAllowance           Float?
+  healthPlan              Boolean   @default(false)
+  healthPlanDetails       String?
+  dentalPlan              Boolean   @default(false)
+  lifeInsurance           Boolean   @default(false)
+  attendanceBonusEnabled  Boolean   @default(false)
+  attendanceBonusAmount   Float?
+  attendanceBonus         Float?
+  pharmacyAllowance       Float?
+  childcareAllowance      Float?
+  otherBenefits           String?
+  benefits                String?
+  bankName                String?
+  bankBranch              String?
+  bankAccount             String?
+  bankAccountType         String?
+  pixKey                  String?
+  pixKeyType              String?
+  notes                   String?
+  isActive                Boolean   @default(true)
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  jobTitleId     String?
+  workScheduleId String?
+  costCenterId   String?
+
+  jobTitle     JobTitle?     @relation(fields: [jobTitleId], references: [id], onDelete: SetNull)
+  workSchedule WorkSchedule? @relation(fields: [workScheduleId], references: [id], onDelete: SetNull)
+  costCenter   CostCenter?   @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  systemUser   User?
+  sellerProfile Seller?
+  payrolls     Payroll[]
+
+  pointMachineId String? @unique
+
+  documents           EmployeeDocument[]
+  notesHistory        EmployeeNote[]
+  vacations           EmployeeVacation[]
+  interviews          InterviewSchedule[]  @relation("InterviewInterviewer")
+  disciplinaryActions DisciplinaryAction[]
+  terminations        TerminationProcess[]
+  punchRecords        PunchRecord[]
+  timePunches         TimePunch[]
+  attendanceDays      AttendanceDay[]
+  attendanceMirrors   AttendanceMirror[]
+
+  @@index([fullName])
+  @@index([status])
+  @@index([jobTitleId])
+  @@index([workScheduleId])
+  @@index([costCenterId])
+}
+
+model ProductService {
+  id                    String   @id @default(cuid())
+  code                  String?  @unique
+  name                  String
+  type                  String   @default("SERVICE") // Serviço, Produto final, Insumo, Tecido, Espuma, Estrutura / ferragem, Item de limpeza
+  description           String?
+  unit                  String?
+  defaultPrice          Float?
+  defaultCost           Float?
+  productionTimeMinutes Int?
+  isActive              Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  // Aba 1. Identificação
+  operationalCategory String? // Reforma de colchão, Reforma de box, Colchão novo, Box novo, Limpeza de estofados...
+  internalNotes       String?
+
+  // Aba 2. Comercial
+  minimumPrice                    Float?
+  allowPriceChangeInPDV           Boolean @default(false)
+  requirePriceChangeJustification Boolean @default(false)
+  defaultCommission               Float?
+  averageLeadTime                 Int?
+  highlightInPDV                  Boolean @default(false)
+  catalogOrder                    Int     @default(0)
+
+  // Aba 3. Configuração operacional
+  operationalConfig String? // JSON string contendo as opções específicas da categoria
+
+  // Aba 4. Ficha técnica / consumo
+  useTechnicalSheet        Boolean @default(false)
+  consumesStock            Boolean @default(false)
+  generatesProductionOrder Boolean @default(false)
+  estimatedLaborCost       Float?
+  wastePercentage          Float   @default(0)
+
+  // Aba 5. Estoque e compras
+  managesStock      Boolean @default(false)
+  minimumStock      Float   @default(0)
+  currentStock      Float   @default(0)
+  primarySupplierId String?
+  lastCost          Float?
+  stockLocation     String?
+  purchaseLeadTime  Int?
+
+  // Aba 6. Fiscal
+  ncm       String?
+  cest      String?
+  cfop      String?
+  taxOrigin String?
+  taxNotes  String?
+  imageUrl  String?
+
+  primarySupplier Supplier? @relation("ProductSupplier", fields: [primarySupplierId], references: [id], onDelete: SetNull)
+
+  saleItems SaleItem[]
+  recipes   ProductRecipe[]
+
+  @@index([name])
+  @@index([type])
+  @@index([operationalCategory])
+  @@index([primarySupplierId])
+}
+
+model SupplyCategory {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  supplyItems SupplyItem[]
+}
+
+model SupplyItem {
+  id               String   @id @default(cuid())
+  code             String?  @unique
+  name             String
+  description      String?
+  unit             String
+  currentStock     Float    @default(0)
+  minimumStock     Float    @default(0)
+  averageCost      Float    @default(0)
+  lastPurchaseCost Float?
+  location         String?
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  categoryId        String?
+  primarySupplierId String?
+  imageUrl          String?
+
+  category               SupplyCategory?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  primarySupplier        Supplier?               @relation(fields: [primarySupplierId], references: [id], onDelete: SetNull)
+  stockMovements         StockMovement[]
+  recipeItems            ProductRecipeItem[]
+  supplierSupplyItems    SupplierSupplyItem[]
+  purchaseOrderItems     PurchaseOrderItem[]
+  purchaseReceivingItems PurchaseReceivingItem[]
+
+  mattressTopFabrics       SaleItemDetailMattressReform[] @relation("MattressTopFabric")
+  mattressBottomFabrics    SaleItemDetailMattressReform[] @relation("MattressBottomFabric")
+  mattressSideFabrics      SaleItemDetailMattressReform[] @relation("MattressSideFabric")
+  boxTopFabrics            SaleItemDetailBoxReform[]      @relation("BoxTopFabric")
+  boxSideFabrics           SaleItemDetailBoxReform[]      @relation("BoxSideFabric")
+  newMattressTopFabrics    SaleItemDetailNewMattress[]    @relation("NewMattressTopFabric")
+  newMattressBottomFabrics SaleItemDetailNewMattress[]    @relation("NewMattressBottomFabric")
+  newMattressSideFabrics   SaleItemDetailNewMattress[]    @relation("NewMattressSideFabric")
+  newBoxTopFabrics         SaleItemDetailNewBox[]         @relation("NewBoxTopFabric")
+  newBoxSideFabrics        SaleItemDetailNewBox[]         @relation("NewBoxSideFabric")
+
+  saleItemMaterialRequirements SaleItemMaterialRequirement[]
+
+  mattressFoamSupply SaleItemDetailMattressReform[] @relation("MattressFoam")
+  mattressTapeSupply SaleItemDetailMattressReform[] @relation("MattressTape")
+  mattressFeetSupply SaleItemDetailMattressReform[] @relation("MattressFeet")
+
+  boxFeetSupply SaleItemDetailBoxReform[] @relation("BoxFeet")
+  boxTapeSupply SaleItemDetailBoxReform[] @relation("BoxTape")
+
+  newMattressFoamSupply SaleItemDetailNewMattress[] @relation("NewMattressFoam")
+  newMattressTapeSupply SaleItemDetailNewMattress[] @relation("NewMattressTape")
+  newMattressFeetSupply SaleItemDetailNewMattress[] @relation("NewMattressFeet")
+  newBoxFeetSupply      SaleItemDetailNewBox[]      @relation("NewBoxFeet")
+  newBoxTapeSupply      SaleItemDetailNewBox[]      @relation("NewBoxTape")
+
+  @@index([name])
+  @@index([categoryId])
+  @@index([primarySupplierId])
+  @@index([currentStock])
+}
+
+model StockMovement {
+  id            String   @id @default(cuid())
+  supplyItemId  String
+  movementType  String
+  quantity      Float
+  unitCost      Float?
+  totalCost     Float?
+  referenceType String?
+  referenceId   String?
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  supplyItem SupplyItem @relation(fields: [supplyItemId], references: [id], onDelete: Cascade)
+
+  @@index([supplyItemId])
+  @@index([movementType])
+  @@index([referenceType, referenceId])
+  @@index([createdAt])
+}
+
+model Sale {
+  id                    String   @id @default(cuid())
+  number                String?  @unique
+  customerId            String
+  sellerId              String?
+  leadSourceId          String
+  cashRegisterSessionId String?
+  saleDate              DateTime @default(now())
+  subtotalAmount        Float    @default(0)
+  discountAmount        Float    @default(0)
+  surchargeAmount       Float    @default(0)
+  totalAmount           Float    @default(0)
+  paidAmount            Float    @default(0) // NEW: To track financial progress
+  notes                 String?
+  status                String   @default("CONFIRMED")
+  financialStatus       String   @default("PENDING")
+
+  // Lead Source Tracking
+  leadSourceDetail   String?
+  campaignName       String?
+  referralName       String?
+  externalSellerName String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer            Customer             @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  seller              Seller?              @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  leadSource          LeadSource           @relation(fields: [leadSourceId], references: [id], onDelete: Restrict)
+  items               SaleItem[]
+  installments        SaleInstallment[]
+  commissions         CommissionEntry[]
+  order               Order?
+  cashRegisterSession CashRegisterSession? @relation(fields: [cashRegisterSessionId], references: [id], onDelete: SetNull)
+  accountsReceivable  AccountReceivable[]
+
+  cancelledAt   DateTime?
+  cancelledById String?
+  cancelledBy   User?     @relation("SaleCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  @@index([customerId])
+  @@index([sellerId])
+  @@index([leadSourceId])
+  @@index([cashRegisterSessionId])
+  @@index([saleDate])
+  @@index([status])
+  @@index([financialStatus])
+}
+
+model SaleItem {
+  id               String   @id @default(cuid())
+  saleId           String
+  productServiceId String?
+  description      String
+  quantity         Float    @default(1)
+  unit             String?
+  originalPrice    Float    @default(0)
+  unitPrice        Float
+  discountAmount   Float    @default(0)
+  totalAmount      Float
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  sale           Sale            @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productService ProductService? @relation(fields: [productServiceId], references: [id], onDelete: SetNull)
+
+  detailMattressReform     SaleItemDetailMattressReform?
+  detailBoxReform          SaleItemDetailBoxReform?
+  detailNewMattress        SaleItemDetailNewMattress?
+  detailNewBox             SaleItemDetailNewBox?
+  detailUpholsteryCleaning SaleItemDetailUpholsteryCleaning?
+
+  materialRequirements SaleItemMaterialRequirement[]
+  productionSlipLines  OrderProductionSlipLine[]
+
+  @@index([saleId])
+  @@index([productServiceId])
+}
+
+model SaleInstallment {
+  id                String    @id @default(cuid())
+  saleId            String
+  paymentMethodId   String
+  installmentNumber Int
+  dueDate           DateTime
+  amount            Float
+  paidAmount        Float     @default(0)
+  paidAt            DateTime?
+  status            String    @default("PENDING")
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  sale              Sale               @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  paymentMethod     PaymentMethod      @relation(fields: [paymentMethodId], references: [id], onDelete: Restrict)
+  accountReceivable AccountReceivable?
+
+  @@unique([saleId, installmentNumber])
+  @@index([paymentMethodId])
+  @@index([dueDate])
+  @@index([status])
+}
+
+model CommissionRule {
+  id              String    @id @default(cuid())
+  name            String
+  description     String?
+  isActive        Boolean   @default(true)
+  priority        Int       @default(0)
+  calculationType String    @default("PERCENTAGE") // PERCENTAGE, FIXED, HYBRID
+  baseType        String    @default("GROSS_SALE") // GROSS_SALE, NET_SALE, ITEM_BRUTO, ITEM_LIQUIDO, RECEIVED, PAID
+  percentage      Float?
+  fixedAmount     Float?
+  validFrom       DateTime?
+  validTo         DateTime?
+  appliesOn       String    @default("CONFIRMED") // CONFIRMED, DELIVERED, PAID, FINALIZED
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  conditions CommissionRuleCondition[]
+  entries    CommissionEntry[]
+
+  @@index([isActive, priority])
+}
+
+model CommissionRuleCondition {
+  id               String   @id @default(cuid())
+  commissionRuleId String
+  conditionType    String // LEAD_SOURCE, PRODUCT_SERVICE, PRODUCT_CATEGORY, SERVICE_SUBTYPE, SELLER, GOAL_PERCENTAGE, MIN_SALE_AMOUNT, MAX_SALE_AMOUNT
+  operator         String // EQUALS, IN, NOT_IN, GTE, LTE, BETWEEN
+  value            String // JSON format for values or stringID
+  createdAt        DateTime @default(now())
+
+  rule CommissionRule @relation(fields: [commissionRuleId], references: [id], onDelete: Cascade)
+
+  @@index([commissionRuleId])
+}
+
+model CommissionGoalPolicy {
+  id               String   @id @default(cuid())
+  name             String
+  minGoalPercent   Float
+  maxGoalPercent   Float
+  multiplier       Float    @default(1.0)
+  bonusPercentage  Float    @default(0)
+  bonusFixedAmount Float    @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model StoreGoal {
+  id              String   @id @default(cuid())
+  periodType      String   @default("MONTHLY") // DAILY, WEEKLY, MONTHLY, SEMESTRAL
+  startDate       DateTime
+  endDate         DateTime
+  targetAmount    Float
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  segments        StoreGoalSegment[]
+
+  @@unique([periodType, startDate, endDate])
+}
+
+model StoreGoalSegment {
+  id              String   @id @default(cuid())
+  storeGoalId     String
+  leadSourceId    String?
+  targetAmount    Float
+  notes           String?
+  
+  storeGoal       StoreGoal   @relation(fields: [storeGoalId], references: [id], onDelete: Cascade)
+  leadSource      LeadSource? @relation(fields: [leadSourceId], references: [id], onDelete: SetNull)
+
+  @@index([storeGoalId])
+  @@index([leadSourceId])
+}
+
+model SellerGoal {
+  id              String    @id @default(cuid())
+  sellerId        String
+  periodType      String    @default("MONTHLY") // DAILY, WEEKLY, MONTHLY, SEMESTRAL
+  startDate       DateTime
+  endDate         DateTime
+  targetAmount    Float
+  achievedAmount  Float     @default(0)
+  achievedPercent Float     @default(0)
+  status          String    @default("OPEN") // OPEN, ACHIEVED, FAILED, CLOSED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime? @updatedAt
+
+  seller          Seller @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@unique([sellerId, periodType, startDate, endDate])
+  @@index([sellerId])
+}
+
+model CommissionEntry {
+  id                 String  @id @default(cuid())
+  saleId             String
+  sellerId           String
+  commissionRuleId   String?
+  commissionBatchId  String?
+  baseAmount         Float
+  percentageApplied  Float?
+  fixedAmountApplied Float?
+  multiplierApplied  Float   @default(1.0)
+  commissionAmount   Float
+
+  goalPercentAtCalculation Float?
+  leadSourceAtCalculation  String?
+  productAtCalculation     String? // Snapshot of products/categories for audit
+
+  status       String    @default("PENDING") // PENDING, APPROVED, BATCHED, PAID, CANCELLED
+  calculatedAt DateTime  @default(now())
+  approvedAt   DateTime?
+  paidAt       DateTime?
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  sale            Sale             @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  seller          Seller           @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  commissionRule  CommissionRule?  @relation(fields: [commissionRuleId], references: [id], onDelete: SetNull)
+  commissionBatch CommissionBatch? @relation(fields: [commissionBatchId], references: [id], onDelete: SetNull)
+
+  @@index([saleId])
+  @@index([sellerId])
+  @@index([commissionRuleId])
+  @@index([commissionBatchId])
+  @@index([status])
+}
+
+model CommissionBatch {
+  id              String   @id @default(cuid())
+  sellerId        String
+  referencePeriod String // e.g. "2026-03" or "2026-Q1"
+  totalAmount     Float
+  status          String   @default("OPEN") // OPEN, CLOSED, PAID
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
+
+  seller          Seller            @relation(fields: [sellerId], references: [id], onDelete: Restrict)
+  entries         CommissionEntry[]
+  accountsPayable AccountPayable[]
+
+  @@index([sellerId])
+  @@index([status])
+}
+
+model Payroll {
+  id              String   @id @default(cuid())
+  employeeId      String
+  attendanceMirrorId String?
+  referencePeriod String // e.g. "2026-03"
+  netSalary       Float
+  inss            Float    @default(0)
+  fgts            Float    @default(0)
+  irrf            Float    @default(0)
+  otherDeductions Float    @default(0)
+  otherAdditions  Float    @default(0)
+  grossSalary     Float
+  status          String   @default("DRAFT") // DRAFT, GENERATED, PAID
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime?
+
+  employee         Employee          @relation(fields: [employeeId], references: [id], onDelete: Restrict)
+  attendanceMirror AttendanceMirror? @relation(fields: [attendanceMirrorId], references: [id], onDelete: SetNull)
+  accountsPayable  AccountPayable[]
+
+  @@index([employeeId])
+  @@index([attendanceMirrorId])
+  @@index([referencePeriod])
+}
+
+model Order {
+  id                  String    @id @default(cuid())
+  code                String?   @unique
+  saleId              String    @unique
+  customerId          String
+  sellerId            String?
+  currentStatus       String    @default("SOLD")
+  promisedDate        DateTime?
+  productionStartedAt DateTime?
+  readyForDeliveryAt  DateTime?
+  deliveryDate        DateTime?
+  deliveredAt         DateTime?
+  paidAt              DateTime?
+  recipientName       String?
+  recipientPhone      String?
+  zipCode             String?
+  street              String?
+  number              String?
+  complement          String?
+  neighborhood        String?
+  city                String?
+  state               String?
+  notes               String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  cancelledAt   DateTime?
+  cancelledById String?
+  cancelledBy   User?     @relation("OrderCancelledBy", fields: [cancelledById], references: [id], onDelete: SetNull)
+
+  sale            Sale                  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  customer        Customer              @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  seller          Seller?               @relation(fields: [sellerId], references: [id], onDelete: SetNull)
+  statusHistory   OrderStatusHistory[]
+  orderNotes      OrderNote[]
+  deliveries      OrderDelivery[]
+  productionSlips OrderProductionSlip[]
+
+  @@index([customerId])
+  @@index([sellerId])
+  @@index([currentStatus])
+  @@index([promisedDate])
+  @@index([deliveryDate])
+}
+
+model OrderStatusHistory {
+  id               String   @id @default(cuid())
+  orderId          String
+  fromStatus       String?
+  toStatus         String?
+  notes            String?
+  transitionSource String   @default("SYSTEM") // KANBAN, MANUAL, API, AUTOMATIC
+  changedById      String?
+  changedAt        DateTime @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy User? @relation(fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([changedById])
+  @@index([changedAt])
+}
+
+model ProductRecipe {
+  id                  String  @id @default(cuid())
+  productServiceId    String
+  name                String
+  variant             String?
+  description         String?
+  operationalCategory String?
+
+  isDefault                Boolean @default(false)
+  isActive                 Boolean @default(true)
+  consumesStock            Boolean @default(false)
+  generatesProductionOrder Boolean @default(false)
+
+  usesCommercialSize   Boolean @default(false)
+  usesActualDimensions Boolean @default(false)
+  usesMattressType     Boolean @default(false)
+  usesDensity          Boolean @default(false)
+  usesBoxType          Boolean @default(false)
+  usesFabricSelection  Boolean @default(false)
+  usesServiceOptions   Boolean @default(false)
+
+  lossPercentage             Float   @default(0)
+  estimatedProductionMinutes Int?
+  estimatedLaborCost         Float?
+  notes                      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productService ProductService      @relation(fields: [productServiceId], references: [id], onDelete: Cascade)
+  items          ProductRecipeItem[]
+
+  @@index([productServiceId])
+  @@index([isDefault])
+  @@index([isActive])
+}
+
+model ProductRecipeItem {
+  id              String @id @default(cuid())
+  productRecipeId String
+  supplyItemId    String
+
+  componentPart String?
+
+  baseQuantity    Float
+  unit            String?
+  multiplier      Float   @default(1)
+  wastePercentage Float   @default(0)
+
+  displayOrder Int     @default(0)
+  notes        String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productRecipe ProductRecipe           @relation(fields: [productRecipeId], references: [id], onDelete: Cascade)
+  supplyItem    SupplyItem              @relation(fields: [supplyItemId], references: [id], onDelete: Restrict)
+  rules         ProductRecipeItemRule[]
+
+  @@index([productRecipeId])
+  @@index([supplyItemId])
+}
+
+model ProductRecipeItemRule {
+  id                  String @id @default(cuid())
+  productRecipeItemId String
+
+  ruleType       String
+  conditionValue String
+
+  computedQuantity Float?
+  multiplier       Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recipeItem ProductRecipeItem @relation(fields: [productRecipeItemId], references: [id], onDelete: Cascade)
+
+  @@index([productRecipeItemId])
+}
+
+model CashRegisterSession {
+  id              String    @id @default(cuid())
+  openedAt        DateTime  @default(now())
+  closedAt        DateTime?
+  openedById      String
+  closedById      String?
+  openingBalance  Float     @default(0)
+  closingBalance  Float?
+  expectedBalance Float?
+  difference      Float?
+  status          String    @default("OPEN")
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  openedBy              User                   @relation("SessionOpenedBy", fields: [openedById], references: [id], onDelete: Restrict)
+  closedBy              User?                  @relation("SessionClosedBy", fields: [closedById], references: [id], onDelete: SetNull)
+  movements             CashRegisterMovement[]
+  sales                 Sale[]
+  financialTransactions FinancialTransaction[]
+
+  @@index([openedById])
+  @@index([status])
+}
+
+model CashRegisterMovement {
+  id              String   @id @default(cuid())
+  sessionId       String
+  type            String // OPENING, CLOSING, SALE, SUPPLY (suprimento), BLEED (sangria)
+  amount          Float
+  paymentMethodId String?
+  description     String?
+  performedById   String
+  feeAmount       Float?   @default(0)
+  netAmount       Float?   @default(0)
+  createdAt       DateTime @default(now())
+
+  session                CashRegisterSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  paymentMethod          PaymentMethod?        @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  performedBy            User                  @relation(fields: [performedById], references: [id], onDelete: Restrict)
+  financialTransactionId String?
+  financialTransaction   FinancialTransaction? @relation(fields: [financialTransactionId], references: [id])
+
+  @@index([sessionId])
+  @@index([type])
+  @@index([financialTransactionId])
+}
+
+model SaleItemDetailMattressReform {
+  id             String  @id @default(cuid())
+  saleItemId     String  @unique
+  serviceType    String
+  commercialSize String
+  actualWidth    Float
+  actualLength   Float
+  actualHeight   Float
+  mattressType   String
+  density        String?
+
+  optTotalReplacement    Boolean @default(false)
+  optFoamStructReinforce Boolean @default(false)
+  optRegluing            Boolean @default(false)
+  optSpringSystemRepl    Boolean @default(false)
+  optSpringSystemRepair  Boolean @default(false)
+  optFullFabricRepl      Boolean @default(false)
+  optPartialFabricRepl   Boolean @default(false)
+  optLeveling            Boolean @default(false)
+  optWaterproofing       Boolean @default(false)
+
+  topFabricSupplyItemId    String?
+  topFabricColor           String?
+  bottomFabricSupplyItemId String?
+  bottomFabricColor        String?
+  sideFabricSupplyItemId   String?
+  sideFabricColor          String?
+
+  foamServiceType  String?
+  foamSupplyItemId String?
+  addedFoamHeight  Float?
+  tapeSupplyItemId String?
+  feetSupplyItemId String?
+
+  technicalNotes String?
+
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+
+  topFabric    SupplyItem? @relation("MattressTopFabric", fields: [topFabricSupplyItemId], references: [id], onDelete: SetNull)
+  bottomFabric SupplyItem? @relation("MattressBottomFabric", fields: [bottomFabricSupplyItemId], references: [id], onDelete: SetNull)
+  sideFabric   SupplyItem? @relation("MattressSideFabric", fields: [sideFabricSupplyItemId], references: [id], onDelete: SetNull)
+  foamSupply   SupplyItem? @relation("MattressFoam", fields: [foamSupplyItemId], references: [id], onDelete: SetNull)
+  tapeSupply   SupplyItem? @relation("MattressTape", fields: [tapeSupplyItemId], references: [id], onDelete: SetNull)
+  feetSupply   SupplyItem? @relation("MattressFeet", fields: [feetSupplyItemId], references: [id], onDelete: SetNull)
+}
+
+model SaleItemDetailBoxReform {
+  id             String @id @default(cuid())
+  saleItemId     String @unique
+  serviceType    String
+  boxType        String
+  commercialSize String
+  actualWidth    Float
+  actualLength   Float
+  actualHeight   Float
+
+  optTotalReplacement    Boolean @default(false)
+  optFullFabricRepl      Boolean @default(false)
+  optPartialFabricRepl   Boolean @default(false)
+  optStructureReinforce  Boolean @default(false)
+  optStructureRepair     Boolean @default(false)
+  optHardwareReplacement Boolean @default(false)
+  optWaterproofing       Boolean @default(false)
+
+  topFabricSupplyItemId  String?
+  topFabricColor         String?
+  sideFabricSupplyItemId String?
+  sideFabricColor        String?
+
+  feetSupplyItemId String?
+  tapeSupplyItemId String?
+
+  technicalNotes String?
+
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+
+  topFabric  SupplyItem? @relation("BoxTopFabric", fields: [topFabricSupplyItemId], references: [id], onDelete: SetNull)
+  sideFabric SupplyItem? @relation("BoxSideFabric", fields: [sideFabricSupplyItemId], references: [id], onDelete: SetNull)
+  feetSupply SupplyItem? @relation("BoxFeet", fields: [feetSupplyItemId], references: [id], onDelete: SetNull)
+  tapeSupply SupplyItem? @relation("BoxTape", fields: [tapeSupplyItemId], references: [id], onDelete: SetNull)
+}
+
+model SaleItemDetailNewMattress {
+  id             String  @id @default(cuid())
+  saleItemId     String  @unique
+  commercialSize String
+  actualWidth    Float
+  actualLength   Float
+  actualHeight   Float
+  mattressType   String
+  density        String?
+
+  topFabricSupplyItemId    String?
+  topFabricColor           String?
+  bottomFabricSupplyItemId String?
+  bottomFabricColor        String?
+  sideFabricSupplyItemId   String?
+  sideFabricColor          String?
+
+  foamSupplyItemId String?
+  tapeSupplyItemId String?
+  feetSupplyItemId String?
+
+  technicalNotes String?
+
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+
+  topFabric    SupplyItem? @relation("NewMattressTopFabric", fields: [topFabricSupplyItemId], references: [id], onDelete: SetNull)
+  bottomFabric SupplyItem? @relation("NewMattressBottomFabric", fields: [bottomFabricSupplyItemId], references: [id], onDelete: SetNull)
+  sideFabric   SupplyItem? @relation("NewMattressSideFabric", fields: [sideFabricSupplyItemId], references: [id], onDelete: SetNull)
+  foamSupply   SupplyItem? @relation("NewMattressFoam", fields: [foamSupplyItemId], references: [id], onDelete: SetNull)
+  tapeSupply   SupplyItem? @relation("NewMattressTape", fields: [tapeSupplyItemId], references: [id], onDelete: SetNull)
+  feetSupply   SupplyItem? @relation("NewMattressFeet", fields: [feetSupplyItemId], references: [id], onDelete: SetNull)
+}
+
+model SaleItemDetailNewBox {
+  id             String @id @default(cuid())
+  saleItemId     String @unique
+  boxType        String
+  commercialSize String
+  actualWidth    Float
+  actualLength   Float
+  actualHeight   Float
+
+  optStructureReinforce  Boolean @default(false)
+  optHardwareReplacement Boolean @default(false)
+
+  topFabricSupplyItemId  String?
+  topFabricColor         String?
+  sideFabricSupplyItemId String?
+  sideFabricColor        String?
+
+  feetSupplyItemId String?
+  tapeSupplyItemId String?
+
+  technicalNotes String?
+
+  saleItem SaleItem @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+
+  topFabric  SupplyItem? @relation("NewBoxTopFabric", fields: [topFabricSupplyItemId], references: [id], onDelete: SetNull)
+  sideFabric SupplyItem? @relation("NewBoxSideFabric", fields: [sideFabricSupplyItemId], references: [id], onDelete: SetNull)
+  feetSupply SupplyItem? @relation("NewBoxFeet", fields: [feetSupplyItemId], references: [id], onDelete: SetNull)
+  tapeSupply SupplyItem? @relation("NewBoxTape", fields: [tapeSupplyItemId], references: [id], onDelete: SetNull)
+}
+
+model SaleItemDetailUpholsteryCleaning {
+  id             String  @id @default(cuid())
+  saleItemId     String  @unique
+  technicalNotes String?
+
+  saleItem SaleItem                              @relation(fields: [saleItemId], references: [id], onDelete: Cascade)
+  rows     SaleItemDetailUpholsteryCleaningRow[]
+}
+
+model SaleItemDetailUpholsteryCleaningRow {
+  id                                 String  @id @default(cuid())
+  saleItemDetailUpholsteryCleaningId String
+  objectType                         String
+  quantity                           Float
+  unitPrice                          Float
+  subtotal                           Float
+  observation                        String?
+
+  cleaningDetail SaleItemDetailUpholsteryCleaning @relation(fields: [saleItemDetailUpholsteryCleaningId], references: [id], onDelete: Cascade)
+}
+
+model SupplierSupplyItem {
+  id               String   @id @default(cuid())
+  supplierId       String
+  supplyItemId     String
+  supplierItemCode String?
+  purchaseUnit     String
+  defaultUnitCost  Float
+  leadTimeDays     Int
+  isPrimary        Boolean  @default(false)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  supplier           Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  supplyItem         SupplyItem          @relation(fields: [supplyItemId], references: [id], onDelete: Cascade)
+  purchaseOrderItems PurchaseOrderItem[]
+
+  @@unique([supplierId, supplyItemId])
+  @@index([supplierId])
+  @@index([supplyItemId])
+}
+
+model PurchaseOrder {
+  id                   String    @id @default(cuid())
+  number               String?   @unique
+  supplierId           String
+  orderDate            DateTime  @default(now())
+  expectedDeliveryDate DateTime?
+  status               String    @default("DRAFT") // DRAFT, PENDING, PARTIALLY_RECEIVED, RECEIVED, CANCELLED
+  subtotalAmount       Float     @default(0)
+  discountAmount       Float     @default(0)
+  surchargeAmount      Float     @default(0)
+  totalAmount          Float     @default(0)
+  notes                String?
+  createdById          String?
+  approvedById         String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  supplier        Supplier            @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  items           PurchaseOrderItem[]
+  receivings      PurchaseReceiving[]
+  accountsPayable AccountPayable[]
+  createdBy       User?               @relation("PurchaseOrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  approvedBy      User?               @relation("PurchaseOrderApprovedBy", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@index([supplierId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+model PurchaseOrderItem {
+  id                   String   @id @default(cuid())
+  purchaseOrderId      String
+  supplyItemId         String
+  supplierSupplyItemId String?
+  quantityOrdered      Float
+  quantityReceived     Float    @default(0)
+  unit                 String
+  unitCost             Float
+  totalCost            Float
+  notes                String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  purchaseOrder      PurchaseOrder           @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  supplyItem         SupplyItem              @relation(fields: [supplyItemId], references: [id], onDelete: Restrict)
+  supplierSupplyItem SupplierSupplyItem?     @relation(fields: [supplierSupplyItemId], references: [id], onDelete: SetNull)
+  receivingItems     PurchaseReceivingItem[]
+
+  @@index([purchaseOrderId])
+  @@index([supplyItemId])
+  @@index([supplierSupplyItemId])
+}
+
+model PurchaseReceiving {
+  id              String   @id @default(cuid())
+  purchaseOrderId String
+  receiptDate     DateTime @default(now())
+  receivedById    String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  purchaseOrder PurchaseOrder           @relation(fields: [purchaseOrderId], references: [id], onDelete: Restrict)
+  receivedBy    User?                   @relation(fields: [receivedById], references: [id], onDelete: SetNull)
+  items         PurchaseReceivingItem[]
+
+  @@index([purchaseOrderId])
+}
+
+model PurchaseReceivingItem {
+  id                  String   @id @default(cuid())
+  purchaseReceivingId String
+  purchaseOrderItemId String
+  supplyItemId        String
+  quantityReceived    Float
+  unitCost            Float
+  totalCost           Float
+  notes               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  purchaseReceiving PurchaseReceiving @relation(fields: [purchaseReceivingId], references: [id], onDelete: Cascade)
+  purchaseOrderItem PurchaseOrderItem @relation(fields: [purchaseOrderItemId], references: [id], onDelete: Restrict)
+  supplyItem        SupplyItem        @relation(fields: [supplyItemId], references: [id], onDelete: Restrict)
+
+  @@index([purchaseReceivingId])
+  @@index([purchaseOrderItemId])
+  @@index([supplyItemId])
+}
+
+model AccountPayable {
+  id              String    @id @default(cuid())
+  purchaseOrderId String?
+  supplierId      String?
+  description     String
+  dueDate         DateTime
+  amount          Float
+  paidAmount      Float     @default(0)
+  status          String    @default("PENDING") // PENDING, PARTIALLY_PAID, PAID, OVERDUE, RENEGOTIATED, CANCELLED
+  issueDate       DateTime  @default(now())
+  paymentDate     DateTime?
+
+  financialCategoryId String?
+  costCenterId        String?
+  financialAccountId  String?
+  recurrenceRuleId    String?
+  commissionBatchId   String?
+  payrollId           String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrder      PurchaseOrder?      @relation(fields: [purchaseOrderId], references: [id], onDelete: SetNull)
+  supplier           Supplier?           @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  financialCategory  FinancialCategory?  @relation(fields: [financialCategoryId], references: [id], onDelete: SetNull)
+  costCenter         CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  financialAccount   FinancialAccount?   @relation(fields: [financialAccountId], references: [id], onDelete: SetNull)
+  recurrenceRule     RecurrenceRule?     @relation(fields: [recurrenceRuleId], references: [id], onDelete: SetNull)
+  commissionBatch    CommissionBatch?    @relation(fields: [commissionBatchId], references: [id], onDelete: SetNull)
+  payroll            Payroll?            @relation(fields: [payrollId], references: [id], onDelete: SetNull)
+  paymentAllocations PaymentAllocation[]
+
+  @@index([purchaseOrderId])
+  @@index([supplierId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([financialCategoryId])
+  @@index([costCenterId])
+  @@index([financialAccountId])
+}
+
+model FinancialAccount {
+  id             String   @id @default(cuid())
+  name           String
+  type           String // CASH, BANK, PIX, SAVINGS, CREDIT_CARD
+  bankName       String?
+  agency         String?
+  accountNumber  String?
+  pixKey         String?
+  initialBalance Float    @default(0)
+  currentBalance Float    @default(0)
+  status         String   @default("ACTIVE") // ACTIVE, INACTIVE, CLOSED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  transactions       FinancialTransaction[]
+  transfersFrom      TransferRecord[]       @relation("TransferFrom")
+  transfersTo        TransferRecord[]       @relation("TransferTo")
+  accountsPayable    AccountPayable[]
+  accountsReceivable AccountReceivable[]
+}
+
+model AccountReceivable {
+  id                String    @id @default(cuid())
+  saleId            String?
+  saleInstallmentId String?   @unique
+  customerId        String?
+  description       String
+  dueDate           DateTime
+  amount            Float
+  paidAmount        Float     @default(0)
+  status            String    @default("PENDING") // PENDING, PARTIALLY_RECEIVED, RECEIVED, OVERDUE, RENEGOTIATED, CANCELLED
+  issueDate         DateTime  @default(now())
+  receivedDate      DateTime?
+
+  financialCategoryId String?
+  costCenterId        String?
+  financialAccountId  String?
+  recurrenceRuleId    String?
+  paymentMethodId     String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sale               Sale?               @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  saleInstallment    SaleInstallment?    @relation(fields: [saleInstallmentId], references: [id], onDelete: SetNull)
+  customer           Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  financialCategory  FinancialCategory?  @relation(fields: [financialCategoryId], references: [id], onDelete: SetNull)
+  costCenter         CostCenter?         @relation(fields: [costCenterId], references: [id], onDelete: SetNull)
+  financialAccount   FinancialAccount?   @relation(fields: [financialAccountId], references: [id], onDelete: SetNull)
+  recurrenceRule     RecurrenceRule?     @relation(fields: [recurrenceRuleId], references: [id], onDelete: SetNull)
+  paymentMethod      PaymentMethod?      @relation(fields: [paymentMethodId], references: [id], onDelete: SetNull)
+  paymentAllocations PaymentAllocation[]
+
+  @@index([saleId])
+  @@index([customerId])
+  @@index([dueDate])
+  @@index([status])
+  @@index([financialCategoryId])
+  @@index([costCenterId])
+  @@index([financialAccountId])
+}
+
+model FinancialTransaction {
+  id              String   @id @default(cuid())
+  type            String // ENTRY (Credit), EXIT (Debit)
+  amount          Float
+  transactionDate DateTime @default(now())
+  description     String
+  status          String   @default("CONFIRMED") // PENDING, CONFIRMED, CANCELLED
+
+  financialAccountId  String
+  financialCategoryId String?
+  performedById       String?
+
+  // Links to titles/operations
+  isTransfer Boolean @default(false)
+  transferId String?
+
+  cashRegisterSessionId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  financialAccount  FinancialAccount   @relation(fields: [financialAccountId], references: [id], onDelete: Restrict)
+  financialCategory FinancialCategory? @relation(fields: [financialCategoryId], references: [id], onDelete: SetNull)
+  performedBy       User?              @relation(fields: [performedById], references: [id], onDelete: SetNull)
+
+  transfer            TransferRecord?      @relation(fields: [transferId], references: [id], onDelete: SetNull)
+  cashRegisterSession CashRegisterSession? @relation(fields: [cashRegisterSessionId], references: [id], onDelete: SetNull)
+
+  cashRegisterMovements CashRegisterMovement[]
+  paymentAllocations    PaymentAllocation[]
+  reconciliation        FinancialReconciliation?
+
+  @@index([financialAccountId])
+  @@index([financialCategoryId])
+  @@index([transactionDate])
+  @@index([type])
+  @@index([status])
+}
+
+model PaymentAllocation {
+  id                  String   @id @default(cuid())
+  transactionId       String
+  accountReceivableId String?
+  accountPayableId    String?
+  amountAllocated     Float
+  createdAt           DateTime @default(now())
+
+  transaction       FinancialTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  accountReceivable AccountReceivable?   @relation(fields: [accountReceivableId], references: [id], onDelete: SetNull)
+  accountPayable    AccountPayable?      @relation(fields: [accountPayableId], references: [id], onDelete: SetNull)
+
+  @@index([transactionId])
+  @@index([accountReceivableId])
+  @@index([accountPayableId])
+}
+
+model TransferRecord {
+  id            String   @id @default(cuid())
+  fromAccountId String
+  toAccountId   String
+  amount        Float
+  transferDate  DateTime @default(now())
+  description   String?
+  performedById String?
+  createdAt     DateTime @default(now())
+
+  fromAccount FinancialAccount @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Restrict)
+  toAccount   FinancialAccount @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Restrict)
+  performedBy User?            @relation("TransferPerformedBy", fields: [performedById], references: [id], onDelete: SetNull)
+
+  transactions FinancialTransaction[]
+
+  @@index([fromAccountId])
+  @@index([toAccountId])
+  @@index([transferDate])
+}
+
+model RecurrenceRule {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  type        String // RECEIVABLE, PAYABLE
+  frequency   String // DAILY, WEEKLY, MONTHLY, YEARLY
+  interval    Int       @default(1)
+  dayOfMonth  Int?
+  startDate   DateTime  @default(now())
+  endDate     DateTime?
+  isActive    Boolean   @default(true)
+
+  baseAmount          Float
+  financialCategoryId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  financialCategory  FinancialCategory?  @relation(fields: [financialCategoryId], references: [id], onDelete: SetNull)
+  accountsReceivable AccountReceivable[]
+  accountsPayable    AccountPayable[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+model FinancialReconciliation {
+  id              String   @id @default(cuid())
+  transactionId   String   @unique
+  bankStatementId String?
+  status          String   @default("CONCILIATED") // CONCILIATED, DIVERGENT
+  notes           String?
+  conciliatedById String?
+  conciliatedAt   DateTime @default(now())
+
+  transaction   FinancialTransaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  conciliatedBy User?                @relation(fields: [conciliatedById], references: [id], onDelete: SetNull)
+
+  @@index([transactionId])
+}
+
+model OrderNote {
+  id          String   @id @default(cuid())
+  orderId     String
+  type        String   @default("OBSERVATION") // INTERNAL, CUSTOMER, DELIVERY, PRODUCTION
+  content     String
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([createdById])
+}
+
+model OrderDelivery {
+  id             String    @id @default(cuid())
+  orderId        String
+  status         String    @default("PENDING") // PENDING, ON_THE_WAY, DELIVERED, FAILED, CANCELLED
+  scheduledDate  DateTime?
+  deliveredAt    DateTime?
+  recipientName  String?
+  recipientPhone String?
+
+  // Endereço específico para esta entrega (pode ser diferente do pedido original)
+  zipCode      String?
+  street       String?
+  number       String?
+  complement   String?
+  neighborhood String?
+  city         String?
+  state        String?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
+model OrderProductionSlip {
+  id          String   @id @default(cuid())
+  orderId     String
+  number      String?  @unique
+  status      String   @default("DRAFT") // DRAFT, ISSUED, COMPLETED, CANCELLED
+  notes       String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  order     Order                     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  createdBy User?                     @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  lines     OrderProductionSlipLine[]
+
+  @@index([orderId])
+  @@index([createdById])
+}
+
+model OrderProductionSlipLine {
+  id               String  @id @default(cuid())
+  productionSlipId String
+  saleItemId       String
+  quantity         Float
+  notes            String?
+
+  productionSlip OrderProductionSlip @relation(fields: [productionSlipId], references: [id], onDelete: Cascade)
+  saleItem       SaleItem            @relation(fields: [saleItemId], references: [id], onDelete: Restrict)
+
+  @@index([productionSlipId])
+  @@index([saleItemId])
+}
+
+// -----------------------------------------------------------------------------
+// HR MODULE MODELS
+// -----------------------------------------------------------------------------
+
+model EmployeeDocument {
+  id          String    @id @default(cuid())
+  employeeId  String
+  type        String // CONTRACT, ADDENDUM, WARNING, SUSPENSION, LETTER, TERM, DECLARATION, REGISTRATION_FORM, RESUME, OTHER
+  name        String
+  description String?
+  fileUrl     String
+  validUntil  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model EmployeeNote {
+  id          String   @id @default(cuid())
+  employeeId  String
+  content     String
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  employee  Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  createdBy User?    @relation("EmployeeNoteCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@index([createdById])
+}
+
+model EmployeeVacation {
+  id          String    @id @default(cuid())
+  employeeId  String
+  periodStart DateTime
+  periodEnd   DateTime
+  days        Int
+  status      String    @default("SCHEDULED") // SCHEDULED, TAKEN, CANCELLED
+  returnDate  DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@index([employeeId])
+}
+
+model JobOpening {
+  id            String    @id @default(cuid())
+  title         String
+  department    String?
+  role          String?
+  jobTitleId    String?
+  contractType  String // CLT, PJ, INTERNSHIP, TEMPORARY
+  salaryRange   String?
+  location      String?
+  workModel     String // ONSITE, HYBRID, REMOTE
+  description   String
+  requirements  String?
+  benefits      String? // JSON or long text
+  responsibleId String?
+  status        String    @default("DRAFT") // DRAFT, OPEN, SCREENING, INTERVIEWS, OFFER, CLOSED, CANCELLED
+  openingDate   DateTime?
+  closingDate   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  jobTitle     JobTitle? @relation(fields: [jobTitleId], references: [id], onDelete: SetNull)
+  applications CandidateApplication[]
+  interviews   InterviewSchedule[]
+
+  @@index([status])
+  @@index([jobTitleId])
+}
+
+model Candidate {
+  id                 String   @id @default(cuid())
+  fullName           String
+  socialName         String?
+  phone              String?
+  whatsapp           String?
+  email              String?
+  city               String?
+  state              String?
+  resumeUrl          String?
+  portfolioUrl       String?
+  linkedinUrl        String?
+  positionOfInterest String?
+  salaryExpectation  Float?
+  availability       String?
+  source             String? // INDICATION, LINKEDIN, SITE, OTHER
+  notes              String?
+  status             String   @default("NEW") // NEW, SCREENING, SHORTLISTED, INTERVIEW_SCHEDULED, INTERVIEWED, APPROVED, REJECTED, TALENT_POOL, HIRED, ARCHIVED
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  applications CandidateApplication[]
+  interviews   InterviewSchedule[]
+  talentPool   TalentPoolEntry?
+  tags         CandidateTag[]         @relation("CandidateToTag")
+}
+
+model CandidateTag {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  color String?
+
+  candidates Candidate[] @relation("CandidateToTag")
+}
+
+model CandidateApplication {
+  id              String   @id @default(cuid())
+  candidateId     String
+  jobOpeningId    String
+  applicationDate DateTime @default(now())
+  status          String   @default("SCREENING") // SCREENING, SHORTLISTED, INTERVIEWING, REJECTED, OFFERED, HIRED
+  notes           String?
+
+  candidate  Candidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpening JobOpening @relation(fields: [jobOpeningId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, jobOpeningId])
+  @@index([jobOpeningId])
+}
+
+model InterviewSchedule {
+  id             String   @id @default(cuid())
+  candidateId    String
+  jobOpeningId   String?
+  interviewerId  String?
+  stage          String // SCREENING, INITIAL, TECHNICAL, FINAL, ALIGNMENT, FEEDBACK
+  scheduledDate  DateTime
+  startTime      DateTime
+  endTime        DateTime
+  locationOrLink String?
+  notes          String?
+  status         String   @default("SCHEDULED") // SCHEDULED, CONFIRMED, COMPLETED, RESCHEDULED, CANCELLED, NO_SHOW, CLOSED
+  result         String? // JSON or text with evaluation
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  candidate   Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  jobOpening  JobOpening? @relation(fields: [jobOpeningId], references: [id], onDelete: SetNull)
+  interviewer Employee?   @relation("InterviewInterviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
+
+  @@index([candidateId])
+  @@index([jobOpeningId])
+  @@index([interviewerId])
+  @@index([scheduledDate])
+}
+
+model TalentPoolEntry {
+  id              String   @id @default(cuid())
+  candidateId     String   @unique
+  area            String?
+  jobTitle        String?
+  experienceLevel String?
+  notes           String?
+  priority        Boolean  @default(false)
+  lastInteraction DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  candidate Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+}
+
+model DisciplinaryAction {
+  id                String   @id @default(cuid())
+  employeeId        String
+  type              String // VERBAL_WARNING, WRITTEN_WARNING, SUSPENSION
+  incidentDate      DateTime
+  applicationDate   DateTime
+  reason            String
+  description       String?
+  witnesses         String? // Name or JSON
+  responsibleId     String?
+  attachmentUrl     String? // URL or local path to signed document / scan
+  employeeAwareness Boolean  @default(false)
+  status            String   @default("DRAFT") // DRAFT, APPLIED, SIGNED, REFUSED, CANCELLED
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  responsible User?    @relation("DisciplinaryActionResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  @@index([employeeId])
+  @@index([responsibleId])
+}
+
+model TerminationProcess {
+  id              String    @id @default(cuid())
+  employeeId      String    @unique
+  type            String // RESIGNATION, DISMISSAL_WITHOUT_CAUSE, DISMISSAL_WITH_CAUSE, END_OF_CONTRACT, PROBATION_PERIOD, MUTUAL_AGREEMENT
+  noticeDate      DateTime?
+  terminationDate DateTime
+  reason          String?
+  notes           String?
+  attachmentUrl   String? // URL or local path to resignation letter / termination docs
+  responsibleId   String?
+  status          String    @default("STARTED") // STARTED, CALCULATING, WAITING_DOCUMENTS, WAITING_PAYMENT, COMPLETED, CANCELLED
+
+  // Checklist (boolean JSON or flags)
+  itemsReturned   Boolean @default(false)
+  accessRevoked   Boolean @default(false)
+  docsCompleted   Boolean @default(false)
+  resignationCalc Boolean @default(false)
+  financialSent   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  responsible User?    @relation("TerminationResponsible", fields: [responsibleId], references: [id], onDelete: SetNull)
+
+  @@index([responsibleId])
+}
+
+// ─── Relógio de Ponto — Importação AFD ────────────────────────────────────────
+
+model PunchImportBatch {
+  id           String   @id @default(cuid())
+  fileName     String
+  period       String   // "YYYY-MM"
+  totalRecords Int      @default(0)
+  importedBy   String?  // userId
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  records PunchRecord[]
+}
+
+model PunchRecord {
+  id          String   @id @default(cuid())
+  batchId     String
+  employeeId  String?  // null if PIS/matrícula não encontrada no sistema
+  pis         String?  // PIS/PASEP ou matrícula do relógio
+  employeeName String? // nome extraído do arquivo se disponível
+  punchDate   DateTime // data e hora exata da batida
+  punchType   String   // IN | OUT | UNKNOWN
+  source      String   @default("AFD") // AFD | AFDT | MANUAL | CSV
+  createdAt   DateTime @default(now())
+
+  batch    PunchImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  employee Employee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([batchId])
+  @@index([employeeId])
+  @@index([punchDate])
+}
+
+// ─── Novas Batidas (Sistema de Ponto Avançado) ──────────────────────────────
+
+model TimePunchImport {
+  id           String      @id @default(cuid())
+  fileName     String
+  importedAt   DateTime    @default(now())
+  status       String      @default("COMPLETED")
+  recordsCount Int         @default(0)
+  punches      TimePunch[]
+}
+
+model TimePunch {
+  id              String           @id @default(cuid())
+  importId        String
+  employeeId      String?
+  enNo            String
+  punchDateTime   DateTime
+  type            String          // CLOCK_IN, CLOCK_OUT, etc.
+  rawType         String          // S, E, A, F, I, O
+  isNormalized    Boolean          @default(false)
+  normalizedFromId String?
+  createdAt       DateTime         @default(now())
+
+  import          TimePunchImport  @relation(fields: [importId], references: [id], onDelete: Cascade)
+  employee        Employee?        @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([importId])
+  @@index([employeeId])
+  @@index([punchDateTime])
+}
+
+model AttendanceDay {
+  id              String   @id @default(cuid())
+  employeeId      String
+  date            DateTime // Somente data (00:00:00)
+  expectedMinutes Int
+  workedMinutes   Int
+  overtimeMinutes Int
+  deficitMinutes  Int
+  firstIn         DateTime?
+  lunchOut        DateTime?
+  lunchIn         DateTime?
+  lastOut         DateTime?
+  originalFirstIn DateTime?
+  originalLunchOut DateTime?
+  originalLunchIn DateTime?
+  originalLastOut DateTime?
+  isManualAdjustment Boolean   @default(false)
+  status          String
+  anomalies       String? // Texto formatado ou JSON
+  adjustmentType  String? // ABONO, ATESTADO_MEDICO, ATESTADO_HORARIO, FERIADO, FOLGA_PREMIO
+  adjustmentReason String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  mirrorId        String?
+
+  employee        Employee          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  mirror          AttendanceMirror? @relation(fields: [mirrorId], references: [id], onDelete: SetNull)
+
+  @@unique([employeeId, date])
+  @@index([employeeId])
+  @@index([date])
+  @@index([mirrorId])
+}
+
+model AttendanceMirror {
+  id              String   @id @default(cuid())
+  employeeId      String
+  period          String // "2026-03" ou custom label
+  startDate       DateTime
+  endDate         DateTime
+  expectedMinutes Int      @default(0)
+  workedMinutes   Int      @default(0)
+  overtimeMinutes Int      @default(0)
+  deficitMinutes  Int      @default(0)
+  status          String   @default("GENERATED") // GENERATED, EDITING, ADJUSTED, APPROVED
+  summary         String?  // JSON com contagens (faltas, etc)
+  finalizedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime?
+
+  employee Employee        @relation(fields: [employeeId], references: [id])
+  days     AttendanceDay[]
+  payrolls Payroll[]
+
+  @@index([employeeId, period])
+}
+
+// ─── Feriados Configuráveis ─────────────────────────────────────────────────
+
+model CompanyHoliday {
+  id              String   @id @default(cuid())
+  date            DateTime // Data exata do feriado (YYYY-MM-DD 00:00:00 UTC)
+  name            String
+  type            String   @default("NATIONAL") // NATIONAL, STATE, MUNICIPAL, MOVEABLE, CUSTOM
+  closesCommerce  Boolean  @default(true)       // Se true, abona automaticamente
+  isRecurring     Boolean  @default(false)       // Se true, repete todo ano (fixo)
+  recurringDay    Int?                           // Dia do mês para recorrência
+  recurringMonth  Int?                           // Mês para recorrência (1-12)
+  notes           String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([date, name])
+  @@index([date])
+  @@index([type])
+}

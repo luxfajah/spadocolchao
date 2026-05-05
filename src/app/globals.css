@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 3.2% 95.6%; /* Um azulado ultra-suave e limpo (#F0F4F8) */
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 213.5 100% 12.9%; /* #002242 - azul core oficial */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 25% 27%; /* Mais escuro (#334155 - Slate 700) para contraste */
+
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%; /* Mantido, pois o snippet não forneceu um valor mais escuro */
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 1.25rem; /* Bordas generosas como na referência */
+    
+    /* Typography Weights for SaaS */
+    --font-weight-title: 900;
+    --font-weight-subtitle: 700;
+    --font-weight-data: 500;
+    --font-weight-body: 400;
+  }
+
+  .dark {
+    --background: 209.1 100% 12.9%; /* #002242 - primária escura */
+    --foreground: 210 40% 98%;
+
+    --card: 208.1 70.6% 26.7%; /* primary-900 */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 208.1 70.6% 26.7%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 202.4 52.4% 62.9%; /* primary-500 */
+    --primary-foreground: 209.1 100% 12.9%;
+
+    --secondary: 208.4 52.8% 42.4%; /* primary-800 */
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 208.4 52.8% 42.4%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 208.4 52.8% 42.4%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 208.4 52.8% 42.4%; /* primary-800 */
+    --input: 208.4 52.8% 42.4%;
+    --ring: 202.4 52.4% 62.9%;
+  }
+}
+
+@layer base {
+  html {
+    font-size: 14px;
+    @media (min-width: 768px) { font-size: 15px; }
+    @media (min-width: 1024px) { font-size: 16px; }
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary selection:text-white;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Scrollbar Customizada Estilo Shoplytixs */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  
+  .shadow-lahomes {
+    box-shadow: 0 20px 50px -12px rgba(0, 34, 66, 0.08);
+  }
+
+  .text-contrast {
+    color: #002242; /* Azul Core Sólido */
+  }
+
+  .text-muted-contrast {
+    color: #334155; /* Slate 700 - Melhor legibilidade que o 400 ou 600 */
+  }
+
+  .font-heading {
+    font-family: var(--font-outfit), sans-serif;
+    font-weight: var(--font-weight-title);
+  }
+
+  .font-data {
+    font-family: var(--font-inter), sans-serif;
+    font-weight: var(--font-weight-data);
+  }
+
+  .font-body {
+    font-family: var(--font-inter), sans-serif;
+    font-weight: var(--font-weight-body);
+  }
+
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+    border: 2px solid transparent; /* Adiciona respiro ao redor */
+    background-clip: content-box;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #002242; /* Primary blue on hover */
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  .responsive-container {
+    @apply mx-auto w-full px-4 md:px-6 lg:px-8 max-w-[1500px];
+  }
+  
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl;
+  }
+}
