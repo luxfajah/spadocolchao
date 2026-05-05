@@ -62,6 +62,28 @@ export async function deleteLeadSource(id: string) {
   }
 }
 
-// Aliases para compatibilidade com as páginas de cadastro
-export const createOrigem = upsertLeadSource
-export const updateOrigem = upsertLeadSource
+// Alteração para evitar erro de "Cannot redefine property: $$id" no build do Next.js
+// e garantir suporte a FormData vindo de ações de formulário vinculadas (.bind)
+export async function createOrigem(data: any) {
+  return upsertLeadSource(data)
+}
+
+export async function updateOrigem(id: string, data: any) {
+  // Se 'data' for FormData (vindo de um formulário via action), processamos os campos
+  if (data instanceof FormData) {
+    const obj: any = { id }
+    data.forEach((value, key) => {
+      if (['isActive', 'commissionEligible', 'hasCommissionOverride', 'requiresDetail', 'isDefaultPdv'].includes(key)) {
+        obj[key] = value === 'on' || value === 'true'
+      } else if (['priority', 'estimatedCost'].includes(key)) {
+        obj[key] = Number(value)
+      } else {
+        obj[key] = value
+      }
+    })
+    return upsertLeadSource(obj)
+  }
+
+  // Caso contrário, assume-se que é um objeto plano
+  return upsertLeadSource({ ...data, id })
+}
