@@ -35,7 +35,7 @@ export default async function EmployeeDetailsPage({
             </div>
           ) : (
             <div className="h-20 w-20 rounded-[2rem] bg-gradient-to-tr from-blue-500 to-indigo-500 shadow-xl shadow-blue-500/20 flex items-center justify-center text-white text-3xl font-black font-outfit uppercase flex-shrink-0">
-              {primaryName.slice(0, 2)}
+              {(primaryName || "??").slice(0, 2)}
             </div>
           )}
           <div>
@@ -54,7 +54,7 @@ export default async function EmployeeDetailsPage({
               )}
             </h1>
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">
-              {legalName ? `Nome Legal: ${legalName} • ` : ""}ID #{employee.serialId?.toString().padStart(4, '0')} • {employee.jobTitle?.name || "Cargo não definido"} • {employee.costCenter?.name || "Sem CC"}
+              {legalName ? `Nome Legal: ${legalName} • ` : ""}ID #{employee.serialId?.toString().padStart(4, '0') ?? "----"} • {employee.jobTitle?.name || "Cargo não definido"} • {employee.costCenter?.name || "Sem CC"}
             </p>
           </div>
         </div>

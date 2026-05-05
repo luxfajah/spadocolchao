@@ -137,7 +137,7 @@ export default async function FuncionariosList({
       experienceStatus,
       hasExpiredVacations,
       timeAtCompany: f.admissionDate ? format(f.admissionDate, "PPP", { locale: ptBR }) : "---",
-      initials: (f.socialName || f.fullName).split(" ").map(n => n[0]).join("").substring(0, 2).toUpperCase()
+      initials: (f.socialName || f.fullName || "??").split(" ").map(n => n[0] || "").join("").substring(0, 2).toUpperCase()
     }
   })
 
@@ -268,7 +268,7 @@ export default async function FuncionariosList({
                         {f.socialName || f.fullName}
                       </h3>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em]">
-                        #{f.serialId?.toString().padStart(4, '0')} • {formatDocument(f.cpf) || "SEM CPF"}
+                        #{f.serialId?.toString().padStart(4, '0') ?? "----"} • {formatDocument(f.cpf) || "SEM CPF"}
                       </p>
                     </div>
                   </div>
