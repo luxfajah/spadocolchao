@@ -41,105 +41,106 @@ import {
 } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
+export const dynamic = "force-dynamic"
 
 export default async function FuncionariosList({
   searchParams,
 }: {
-  searchParams?: { q?: string; jobTitleId?: string; department?: string }
+  searchParams?: { [key: string]: string | string[] | undefined }
 }) {
-  const q = searchParams?.q || ""
-  const jobTitleId = searchParams?.jobTitleId || ""
-  const department = searchParams?.department || ""
+  const q = typeof searchParams?.q === 'string' ? searchParams.q : ""
+  const jobTitleId = typeof searchParams?.jobTitleId === 'string' ? searchParams.jobTitleId : ""
+  const department = typeof searchParams?.department === 'string' ? searchParams.department : ""
 
   const now = new Date()
   const currentMonth = getMonth(now)
 
-  const [jobTitles, departmentRows] = await Promise.all([
-    prisma.jobTitle.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.employee.findMany({
-      where: { department: { not: null } },
-      select: { department: true },
-      distinct: ["department"],
-      orderBy: { department: "asc" },
-    }),
-  ])
-  
-  const funcionariosRaw = await prisma.employee.findMany({
-    where: {
-      AND: [
-        ...(q
-          ? [{
-              OR: [
-                { fullName: { contains: q } },
-                { socialName: { contains: q } },
-                { cpf: { contains: q } },
-                { email: { contains: q } },
-              ],
-            }]
-          : []),
-        ...(jobTitleId ? [{ jobTitleId }] : []),
-        ...(department ? [{ department }] : []),
-      ],
-    },
-    include: {
-      jobTitle: true,
-      costCenter: true,
-      workSchedule: true,
-      vacations: {
-        orderBy: { periodEnd: "desc" },
-        take: 1
-      },
-      notesHistory: {
+  try {
+    const [jobTitles, departmentRows, funcionariosRaw] = await Promise.all([
+      prisma.jobTitle.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.employee.findMany({
+        where: { department: { not: null } },
+        select: { department: true },
+        distinct: ["department"],
+        orderBy: { department: "asc" },
+      }),
+      prisma.employee.findMany({
         where: {
-          content: { contains: `[BIRTHDAY_NOTED_${now.getFullYear()}]` }
+          AND: [
+            ...(q
+              ? [{
+                  OR: [
+                    { fullName: { contains: q, mode: "insensitive" } },
+                    { socialName: { contains: q, mode: "insensitive" } },
+                    { cpf: { contains: q, mode: "insensitive" } },
+                    { email: { contains: q, mode: "insensitive" } },
+                  ],
+                }]
+              : []),
+            ...(jobTitleId ? [{ jobTitleId }] : []),
+            ...(department ? [{ department }] : []),
+          ],
         },
-        take: 1
+        include: {
+          jobTitle: true,
+          costCenter: true,
+          workSchedule: true,
+          vacations: {
+            orderBy: { periodEnd: "desc" },
+            take: 1
+          },
+          notesHistory: {
+            where: {
+              content: { contains: `[BIRTHDAY_NOTED_${now.getFullYear()}]` }
+            },
+            take: 1
+          }
+        },
+        orderBy: { fullName: "asc" },
+      }),
+    ])
+
+    // Processamento de dados enriquecidos para o RH
+    const funcionariosItems = funcionariosRaw.map(f => {
+      // Só é considerado aniversariante pendente se não houver nota de processamento este ano
+      const isBirthdayMonth = f.birthDate ? getMonth(f.birthDate) === currentMonth : false
+      const isBirthdayPending = isBirthdayMonth && f.notesHistory.length === 0
+      
+      // Lógica de Experiência (45 e 90 dias)
+      let experienceStatus = null
+      if (f.admissionDate && f.status === 'ACTIVE') {
+        const daysSinceAdmission = differenceInDays(now, f.admissionDate)
+        if (daysSinceAdmission >= 38 && daysSinceAdmission <= 45) experienceStatus = "45 DIAS"
+        else if (daysSinceAdmission >= 83 && daysSinceAdmission <= 90) experienceStatus = "90 DIAS"
+        else if (daysSinceAdmission > 90) experienceStatus = "EFETIVADO"
       }
-    },
-    orderBy: { fullName: "asc" }
-  })
 
-  // Processamento de dados enriquecidos para o RH
-  const funcionariosItems = funcionariosRaw.map(f => {
-    // Só é considerado aniversariante pendente se não houver nota de processamento este ano
-    const isBirthdayMonth = f.birthDate ? getMonth(f.birthDate) === currentMonth : false
-    const isBirthdayPending = isBirthdayMonth && f.notesHistory.length === 0
-    
-    // Lógica de Experiência (45 e 90 dias)
-    let experienceStatus = null
-    if (f.admissionDate && f.status === 'ACTIVE') {
-      const daysSinceAdmission = differenceInDays(now, f.admissionDate)
-      if (daysSinceAdmission >= 38 && daysSinceAdmission <= 45) experienceStatus = "45 DIAS"
-      else if (daysSinceAdmission >= 83 && daysSinceAdmission <= 90) experienceStatus = "90 DIAS"
-      else if (daysSinceAdmission > 90) experienceStatus = "EFETIVADO"
-    }
-
-    // Lógica de Férias Vencidas (Simplificada)
-    let hasExpiredVacations = false
-    if (f.admissionDate && f.status === 'ACTIVE') {
-      const monthsSinceAdmission = differenceInMonths(now, f.admissionDate)
-      if (monthsSinceAdmission >= 22) { 
-        const lastVacation = f.vacations[0]
-        if (!lastVacation || (lastVacation.status !== 'TAKEN' && isBefore(lastVacation.periodEnd, now))) {
-          hasExpiredVacations = true
+      // Lógica de Férias Vencidas (Simplificada)
+      let hasExpiredVacations = false
+      if (f.admissionDate && f.status === 'ACTIVE') {
+        const monthsSinceAdmission = differenceInMonths(now, f.admissionDate)
+        if (monthsSinceAdmission >= 22) { 
+          const lastVacation = f.vacations[0]
+          if (!lastVacation || (lastVacation.status !== 'TAKEN' && isBefore(lastVacation.periodEnd, now))) {
+            hasExpiredVacations = true
+          }
         }
       }
-    }
 
-    return {
-      ...f,
-      isBirthdayMonth,
-      isBirthdayPending,
-      experienceStatus,
-      hasExpiredVacations,
-      timeAtCompany: f.admissionDate ? format(f.admissionDate, "PPP", { locale: ptBR }) : "---",
-      initials: (f.socialName || f.fullName || "??").split(" ").map(n => n[0] || "").join("").substring(0, 2).toUpperCase()
-    }
-  })
+      return {
+        ...f,
+        isBirthdayMonth,
+        isBirthdayPending,
+        experienceStatus,
+        hasExpiredVacations,
+        timeAtCompany: f.admissionDate ? format(f.admissionDate, "PPP", { locale: ptBR }) : "---",
+        initials: (f.socialName || f.fullName || "??").split(" ").map(n => n[0] || "").join("").substring(0, 2).toUpperCase()
+      }
+    })
 
   const departments = departmentRows
     .map(item => item.department)
@@ -384,5 +385,21 @@ export default async function FuncionariosList({
         </div>
       )}
     </main>
-  )
+    )
+  } catch (error) {
+    console.error("Erro ao carregar lista de funcionários:", error)
+    return (
+      <main className="flex-1 py-10 px-6 max-w-[1700px] mx-auto">
+        <div className="bg-rose-50 border border-rose-200 rounded-[2.5rem] p-10 text-center">
+          <h2 className="text-2xl font-black text-rose-700 uppercase font-outfit mb-4">Erro ao carregar dados</h2>
+          <p className="text-rose-600 font-medium mb-6">
+            Não foi possível carregar a lista de funcionários. Verifique a conexão com o banco de dados.
+          </p>
+          <pre className="bg-white/50 p-4 rounded-xl text-[10px] text-rose-500 overflow-x-auto text-left">
+            {error instanceof Error ? error.message : String(error)}
+          </pre>
+        </div>
+      </main>
+    )
+  }
 }
