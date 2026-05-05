@@ -74,10 +74,10 @@ export default async function FuncionariosList({
             ...(q
               ? [{
                   OR: [
-                    { fullName: { contains: q, mode: "insensitive" } },
-                    { socialName: { contains: q, mode: "insensitive" } },
-                    { cpf: { contains: q, mode: "insensitive" } },
-                    { email: { contains: q, mode: "insensitive" } },
+                    { fullName: { contains: q, mode: "insensitive" as any } },
+                    { socialName: { contains: q, mode: "insensitive" as any } },
+                    { cpf: { contains: q, mode: "insensitive" as any } },
+                    { email: { contains: q, mode: "insensitive" as any } },
                   ],
                 }]
               : []),
