@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client"
 import { revalidatePath } from "next/cache"
 import { getUser } from "@/app/login/actions"
 import { getUserAccessProfile } from "@/lib/access-control"
-import { approveSaleCommissions, calculateCommissions } from "@/lib/commission-engine"
+import { approveSaleCommissions } from "@/lib/commission-engine"
 import { canUserPerformTransition, OrderStatus } from "@/lib/order-flow"
 import { prisma } from "@/lib/prisma"
 
@@ -250,7 +250,7 @@ async function consumeOrderProductionStock(orderId: string, tx: Prisma.Transacti
     totalsBySupplyItem.set(requirement.supplyItemId, current)
   }
 
-  for (const [supplyItemId, total] of totalsBySupplyItem) {
+  for (const [supplyItemId, total] of Array.from(totalsBySupplyItem.entries())) {
     await tx.supplyItem.update({
       where: { id: supplyItemId },
       data: {
@@ -302,7 +302,7 @@ export async function updateOrderStatus(orderId: string, toStatus: OrderStatus, 
       return { error: actorState.error }
     }
 
-    const { user, accessProfile, orderFlowRole } = actorState
+    const { user, orderFlowRole } = actorState
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -353,11 +353,10 @@ export async function updateOrderStatus(orderId: string, toStatus: OrderStatus, 
         },
       })
 
-      if (toStatus === "FINALIZED") {
-        await calculateCommissions({ saleId: order.saleId, trigger: "FINALIZED" })
-        // Automação: Garantir registro no fluxo de caixa
-        await ensureOrderFinancialSync(orderId, tx, new Date(), user.id)
+      if (toStatus === "IN_PRODUCTION") {
+        await consumeOrderProductionStock(orderId, tx)
       }
+
     })
 
     revalidatePath("/vendas-clientes/kanban")
@@ -390,7 +389,7 @@ export async function recordOrderDelivery(
 
     const currentOrder = await prisma.order.findUnique({
       where: { id: orderId },
-      select: { currentStatus: true },
+      select: { currentStatus: true, saleId: true },
     })
 
     if (!currentOrder) {
@@ -458,9 +457,10 @@ export async function recordOrderDelivery(
           },
         })
 
-        await calculateCommissions({ saleId: order.saleId, trigger: "DELIVERED" })
       }
     })
+
+    await approveSaleCommissions(currentOrder.saleId)
 
     revalidatePath("/vendas-clientes/kanban")
     return { success: true }
@@ -478,109 +478,12 @@ export async function processOrderPayment(
     notes?: string
   },
 ) {
-  try {
-    const actorState = await requireOrderActor()
-    if ("error" in actorState) {
-      return { error: actorState.error }
-    }
+  void orderId
+  void paymentData
 
-    const { user, accessProfile, orderFlowRole } = actorState
-
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { sale: true },
-    })
-
-    if (!order) {
-      return { error: "Pedido não encontrado." }
-    }
-
-    const finalizeTransition = canUserPerformTransition(
-      orderFlowRole,
-      order.currentStatus as OrderStatus,
-      "FINALIZED",
-    )
-
-    if (!finalizeTransition.allowed) {
-      return { error: finalizeTransition.reason || "Seu perfil não pode concluir esta etapa." }
-    }
-
-    await prisma.$transaction(async (tx) => {
-      const activeSession = await tx.cashRegisterSession.findFirst({
-        where: { status: "OPEN" },
-        orderBy: { openedAt: "desc" },
-      })
-
-      if (activeSession) {
-        await tx.cashRegisterMovement.create({
-          data: {
-            sessionId: activeSession.id,
-            type: "SALE",
-            amount: paymentData.amount,
-            description: `Recebimento Pedido #${order.code}`,
-            paymentMethodId: paymentData.method,
-            performedById: user.id,
-          },
-        })
-      }
-
-      const currentSale = await tx.sale.findUnique({ where: { id: order.saleId } })
-      const newTotalPaid = (currentSale?.paidAmount || 0) + paymentData.amount
-      const isFullyPaid = newTotalPaid >= (currentSale?.totalAmount || 0)
-      const paidAt = isFullyPaid ? new Date() : null
-
-      // Registrar no Fluxo de Caixa Geral
-      await ensureOrderFinancialSync(orderId, tx, new Date(), user.id, paymentData.amount)
-
-      await tx.sale.update({
-        where: { id: order.saleId },
-        data: {
-          paidAmount: newTotalPaid,
-          financialStatus: isFullyPaid ? "PAID" : "PARTIALLY_PAID",
-        },
-      })
-
-      if (isFullyPaid && order.currentStatus === "DELIVERED") {
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            currentStatus: "FINALIZED",
-            paidAt: paidAt || new Date(),
-          },
-        })
-
-        await tx.orderStatusHistory.create({
-          data: {
-            orderId,
-            fromStatus: "DELIVERED",
-            toStatus: "FINALIZED",
-            notes: "Finalizado automaticamente após quitação integral.",
-            transitionSource: "AUTOMATIC",
-            changedById: user.id,
-          },
-        })
-
-        await calculateCommissions({ saleId: order.saleId, trigger: "FINALIZED" })
-        // Automação: Garantir registro no fluxo de caixa Geral
-        await ensureOrderFinancialSync(orderId, tx, new Date(), user.id)
-      }
-
-      if (isFullyPaid) {
-        await tx.order.update({
-          where: { id: orderId },
-          data: {
-            paidAt: paidAt || new Date(),
-          },
-        })
-
-        await calculateCommissions({ saleId: order.saleId, trigger: "PAID" })
-      }
-    })
-
-    revalidatePath("/vendas-clientes/kanban")
-    return { success: true }
-  } catch (error) {
-    console.error("Erro ao processar pagamento:", error)
-    return { error: "Falha ao processar pagamento." }
+  return {
+    success: false,
+    error:
+      "Recebimentos de pedidos devem ser lancados manualmente em Financeiro > Contas a receber.",
   }
 }

@@ -33,17 +33,14 @@ export async function calculateCommissions(context: CalculationContext) {
 
   // 3. Get Seller Goal for the month
   const saleDate = sale.createdAt || new Date()
-  const month = saleDate.getMonth() + 1
-  const year = saleDate.getFullYear()
 
-  const sellerGoal = await prisma.sellerGoal.findUnique({
+  const sellerGoal = await prisma.sellerGoal.findFirst({
     where: {
-      sellerId_referenceMonth_referenceYear: {
-        sellerId: sale.sellerId,
-        referenceMonth: month,
-        referenceYear: year
-      }
-    }
+      sellerId: sale.sellerId,
+      periodType: "MONTHLY",
+      startDate: { lte: saleDate },
+      endDate: { gte: saleDate },
+    },
   })
 
   // Calculate current performance (achievedPercent)

@@ -91,9 +91,22 @@ export async function deleteCommissionRule(id: string) {
 }
 
 // Meta actions
+function getMonthlyGoalPeriod(month: number, year: number) {
+  const startDate = new Date(year, month - 1, 1)
+  const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+
+  return { startDate, endDate }
+}
+
 export async function getSellerGoals(month: number, year: number) {
+  const { startDate, endDate } = getMonthlyGoalPeriod(month, year)
+
   return prisma.sellerGoal.findMany({
-    where: { referenceMonth: month, referenceYear: year },
+    where: {
+      periodType: "MONTHLY",
+      startDate,
+      endDate,
+    },
     include: {
       seller: { select: { name: true } }
     }
@@ -102,12 +115,15 @@ export async function getSellerGoals(month: number, year: number) {
 
 export async function upsertSellerGoal(data: any) {
     try {
+        const { startDate, endDate } = getMonthlyGoalPeriod(data.referenceMonth, data.referenceYear)
+
         const result = await prisma.sellerGoal.upsert({
             where: {
-                sellerId_referenceMonth_referenceYear: {
+                sellerId_periodType_startDate_endDate: {
                     sellerId: data.sellerId,
-                    referenceMonth: data.referenceMonth,
-                    referenceYear: data.referenceYear
+                    periodType: "MONTHLY",
+                    startDate,
+                    endDate
                 }
             },
             update: {
@@ -116,8 +132,9 @@ export async function upsertSellerGoal(data: any) {
             },
             create: {
                 sellerId: data.sellerId,
-                referenceMonth: data.referenceMonth,
-                referenceYear: data.referenceYear,
+                periodType: "MONTHLY",
+                startDate,
+                endDate,
                 targetAmount: data.targetAmount,
                 status: "OPEN"
             }

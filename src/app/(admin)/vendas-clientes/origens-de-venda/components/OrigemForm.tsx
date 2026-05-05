@@ -31,7 +31,7 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface OrigemFormProps {
   initialData?: any
-  action: (formData: FormData) => Promise<void>
+  action: (formData: FormData) => Promise<any>
   isEditing?: boolean
 }
 

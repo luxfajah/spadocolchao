@@ -27,7 +27,6 @@ import {
 import { updateOrderStatus } from "@/app/(admin)/vendas-clientes/pedidos/actions"
 import { useToast } from "@/hooks/use-toast"
 import { DeliveryModal } from "./DeliveryModal"
-import { PaymentModal } from "./PaymentModal"
 
 interface OrderKanbanProps {
   initialOrders: any[]
@@ -40,7 +39,6 @@ export function OrderKanban({ initialOrders, currentUserRole, kanbanMode }: Orde
   const [isReady, setIsReady] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [deliveryModalOpen, setDeliveryModalOpen] = useState(false)
-  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   
   const { toast } = useToast()
 
@@ -91,15 +89,6 @@ export function OrderKanban({ initialOrders, currentUserRole, kanbanMode }: Orde
       setSelectedOrder(movedOrder)
       setDeliveryModalOpen(true)
       return
-    }
-
-    if (transition.requiresData === "PAYMENT") {
-      // Only require payment if not already fully paid
-      if (movedOrder.sale.financialStatus !== "PAID") {
-        setSelectedOrder(movedOrder)
-        setPaymentModalOpen(true)
-        return
-      }
     }
 
     const sourceCol: any[] = Array.from(columns[source.droppableId] || [])
@@ -289,13 +278,6 @@ export function OrderKanban({ initialOrders, currentUserRole, kanbanMode }: Orde
       <DeliveryModal 
         open={deliveryModalOpen} 
         onOpenChange={setDeliveryModalOpen}
-        order={selectedOrder}
-        onSuccess={() => window.location.reload()}
-      />
-
-      <PaymentModal
-        open={paymentModalOpen}
-        onOpenChange={setPaymentModalOpen}
         order={selectedOrder}
         onSuccess={() => window.location.reload()}
       />

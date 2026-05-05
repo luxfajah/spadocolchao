@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { getSessionDetails, closeCashSession } from "./actions"
 import { Loader2, TerminalSquare, AlertTriangle, ShieldCheck, ArrowUpCircle, ArrowDownCircle, Banknote, CalendarRange, UserCheck, Search, FileBarChart2 } from "lucide-react"
