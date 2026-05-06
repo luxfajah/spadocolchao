@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     
     if (raw.length === 0) {
       return NextResponse.json(
-        { error: "Nenhum registro encontrado no arquivo." },
+        { error: "Nenhum registro encontrado no arquivo.", detail: `Arquivo processado resultou em 0 linhas lidas. Tamanho original: ${buffer.length} bytes.` },
         { status: 400 }
       )
     }
