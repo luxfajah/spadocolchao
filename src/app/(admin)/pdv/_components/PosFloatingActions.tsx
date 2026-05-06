@@ -13,6 +13,8 @@ const formatBRL = (value: number) =>
 
 export function PosFloatingActions() {
   const {
+    currentStep,
+    setCurrentStep,
     customer,
     sellerId,
     leadSourceId,
@@ -39,6 +41,27 @@ export function PosFloatingActions() {
 
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
   const remaining = Math.max(total - totalPaid, 0);
+
+  const canGoNext = () => {
+    if (currentStep === 1) return !!customer?.id && !!sellerId;
+    if (currentStep === 2) return items.length > 0;
+    return true;
+  };
+
+  const handleNext = () => {
+    if (currentStep === 1) {
+      if (!customer?.id) return alert("Por favor, selecione um cliente.");
+      if (!sellerId) return alert("Por favor, selecione um vendedor.");
+      setCurrentStep(2);
+    } else if (currentStep === 2) {
+      if (items.length === 0) return alert("O carrinho está vazio.");
+      setCurrentStep(3);
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
 
   const handleFinalize = async () => {
     if (!customer?.id) return alert("Selecione um cliente");
@@ -96,11 +119,24 @@ export function PosFloatingActions() {
     }
   };
 
-  if (items.length === 0) return null;
+  // Não mostrar barra se não houver contexto iniciado (opcional)
+  // if (currentStep === 1 && !customer) return null;
 
   return (
     <>
       <div className="fixed bottom-6 left-1/2 z-50 flex w-[95%] -translate-x-1/2 items-center gap-4 lg:bottom-10 lg:w-[calc(82%-4rem)] lg:left-[56.5%]">
+        
+        {/* Botão Voltar (aparece a partir do passo 2) */}
+        {currentStep > 1 && (
+          <Button
+            onClick={handleBack}
+            variant="ghost"
+            className="h-16 shrink-0 rounded-[1.8rem] bg-white/80 px-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 shadow-xl backdrop-blur-md border border-white/50 hover:bg-white"
+          >
+            Voltar
+          </Button>
+        )}
+
         {/* Barra de Subtotal */}
         <div className="flex flex-1 items-center justify-between rounded-[1.8rem] bg-[#02213f] px-6 py-4 text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] backdrop-blur-md border border-white/10">
           <div className="flex items-center gap-4">
@@ -108,36 +144,49 @@ export function PosFloatingActions() {
               <Wallet className="h-5 w-5 text-sky-300" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Subtotal do carrinho</p>
-              <p className="text-xs font-bold text-sky-100/80">Pronto para seguir ao fechamento</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50">Venda em andamento</p>
+              <p className="text-xs font-bold text-sky-100/80">
+                {currentStep === 1 ? "Identificação" : currentStep === 2 ? "Montagem do Carrinho" : "Fechamento"}
+              </p>
             </div>
           </div>
           <div className="text-right">
-             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 sm:hidden">Subtotal</p>
-             <p className="font-outfit text-2xl font-black tracking-tight lg:text-3xl">{formatBRL(subtotal)}</p>
+             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 sm:hidden">Total</p>
+             <p className="font-outfit text-2xl font-black tracking-tight lg:text-3xl">{formatBRL(total)}</p>
           </div>
         </div>
 
-        {/* Botão Finalizar */}
-        <div className="flex shrink-0 flex-col gap-2">
-            {remaining <= 0.05 ? (
-                 <div className="hidden items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-emerald-500 backdrop-blur-md lg:flex">
-                    <CheckCircle2 className="h-3 w-3" />
-                    Pagamento pronto
-                 </div>
+        {/* Botões de Ação */}
+        <div className="flex shrink-0 items-center gap-3">
+            {currentStep < 3 ? (
+              <Button
+                onClick={handleNext}
+                disabled={!canGoNext()}
+                className="h-16 rounded-[1.8rem] bg-sky-500 px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(14,165,233,0.5)] hover:bg-sky-600 border border-white/20 disabled:opacity-50"
+              >
+                {currentStep === 1 ? "Próximo: Produtos" : "Próximo: Pagamento"}
+              </Button>
             ) : (
-                <div className="hidden items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-500 backdrop-blur-md lg:flex">
-                    Faltam {formatBRL(remaining)}
-                </div>
+              <div className="flex flex-col gap-2">
+                {remaining <= 0.05 ? (
+                    <div className="hidden items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-emerald-500 backdrop-blur-md lg:flex">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Pronto para Gerar Pedido
+                    </div>
+                ) : (
+                    <div className="hidden items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-500 backdrop-blur-md lg:flex">
+                        Faltam {formatBRL(remaining)}
+                    </div>
+                )}
+                <Button
+                    onClick={handleFinalize}
+                    disabled={isSubmitting || (remaining > 0.05 && items.length > 0)}
+                    className="h-16 rounded-[1.8rem] bg-[#02213f] px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] hover:bg-slate-900 border border-white/10"
+                >
+                    {isSubmitting ? "Processando..." : "Finalizar pedido"}
+                </Button>
+              </div>
             )}
-            
-            <Button
-                onClick={handleFinalize}
-                disabled={isSubmitting || (remaining > 0.05 && items.length > 0)}
-                className="h-16 rounded-[1.8rem] bg-[#02213f] px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] hover:bg-slate-900 border border-white/10"
-            >
-                {isSubmitting ? "Processando..." : "Finalizar pedido"}
-            </Button>
         </div>
       </div>
 

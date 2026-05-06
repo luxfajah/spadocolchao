@@ -1,17 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import {
-  Clock3,
-  Layers3,
-  LogOut,
-  MapPinned,
-  ReceiptText,
-  Store,
-  UserRound,
-  WalletCards,
-} from "lucide-react";
+import { CheckCircle2, CreditCard, LogOut, ShoppingBag, Store, UserRound } from "lucide-react";
 import { usePos } from "./PosContext";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,169 +8,102 @@ import { Button } from "@/components/ui/button";
 const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
-function SnapshotCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div className="rounded-[1.4rem] border border-white/12 bg-white/10 p-4 backdrop-blur-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-[1rem] bg-white/10 text-white/90">
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">{label}</p>
-      <p className="mt-2 text-base font-black leading-snug text-white">{value}</p>
-      <p className="mt-2 text-xs text-white/60">{hint}</p>
-    </div>
-  );
-}
+  const { currentStep, setCurrentStep, items, subtotal, total, payments } = usePos();
+  
+  const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+  const remaining = Math.max(total - totalPaid, 0);
 
-function MetricCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div className="rounded-[1.5rem] border border-white/12 bg-slate-950/15 p-4 backdrop-blur-sm">
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-[1rem] bg-white/10 text-white/90">
-        <Icon className="h-4 w-4" />
-      </div>
-      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-white/60">{label}</p>
-      <p className="mt-2 font-outfit text-2xl font-black tracking-tight text-white">{value}</p>
-      <p className="mt-2 text-xs text-white/60">{hint}</p>
-    </div>
-  );
-}
-
-export function PosHeader() {
-  const { customer, sellerId, leadSourceId, initialData, items, subtotal, total } = usePos();
-  const [now, setNow] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setNow(new Date()), 60000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  const sellerName = useMemo(
-    () => initialData?.sellers?.find((seller: any) => seller.id === sellerId)?.name ?? "Defina o vendedor",
-    [initialData, sellerId]
-  );
-
-  const leadSourceName = useMemo(
-    () =>
-      initialData?.leadSources?.find((source: any) => source.id === leadSourceId)?.name ??
-      initialData?.leadSources?.find((source: any) => source.isDefaultPdv)?.name ??
-      "Defina a origem",
-    [initialData, leadSourceId]
-  );
-
-  const openingBalance = Number(initialData?.session?.openingBalance ?? 0);
+  const steps = [
+    { id: 1, label: "Cliente e Contexto", icon: UserRound },
+    { id: 2, label: "Produtos e Carrinho", icon: ShoppingBag },
+    { id: 3, label: "Pagamento e Checkout", icon: CreditCard },
+  ];
 
   return (
-    <div className="relative overflow-hidden rounded-[2.35rem] bg-[linear-gradient(135deg,#02213f_0%,#0b3156_42%,#14507e_100%)] px-5 py-6 text-white shadow-[0_32px_70px_-28px_rgba(0,34,66,0.8)] sm:px-6 lg:px-8">
-      <div className="absolute -left-10 top-0 h-32 w-32 rounded-full bg-white/10 blur-3xl" />
-      <div className="absolute bottom-0 right-0 h-40 w-40 rounded-full bg-sky-200/10 blur-3xl" />
+    <div className="relative overflow-hidden rounded-[2.35rem] bg-[linear-gradient(135deg,#02213f_0%,#0b3156_42%,#14507e_100%)] px-6 py-4 text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.6)]">
+      {/* Background decoration */}
+      <div className="absolute -left-10 top-0 h-32 w-32 rounded-full bg-white/5 blur-3xl" />
+      <div className="absolute -right-10 bottom-0 h-32 w-32 rounded-full bg-sky-400/5 blur-3xl" />
 
-      <div className="relative flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
-        <div className="max-w-3xl space-y-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-[1.4rem] border border-white/20 bg-white/10 backdrop-blur">
-              <Store className="h-7 w-7" />
-            </div>
-            <div className="flex flex-wrap gap-2 items-center flex-1 justify-between">
-              <div className="flex gap-2">
-                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-white">
-                  Terminal PDV
-                </div>
-                <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-50">
-                  Caixa aberto
-                </div>
-              </div>
-
-              <Link href="/vendas-clientes/vendas">
-                <Button variant="ghost" className="h-9 gap-2 rounded-xl bg-white/10 text-[10px] font-black uppercase tracking-[0.18em] text-white hover:bg-white/20 hover:text-white border border-white/10">
-                  <LogOut className="h-3.5 w-3.5" />
-                  Sair do PDV
-                </Button>
-              </Link>
-            </div>
+      <div className="relative flex items-center justify-between gap-8">
+        {/* Logo and Status */}
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/10 backdrop-blur-sm">
+            <Store className="h-6 w-6 text-sky-300" />
           </div>
-
-          <div className="space-y-3">
-            <div className="space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-sky-100/70">Frente de caixa</p>
-              <h2 className="font-outfit text-4xl font-black uppercase tracking-tight sm:text-5xl">
-                Ponto de venda com mais leitura
-              </h2>
+          <div>
+            <h2 className="font-outfit text-xl font-black uppercase tracking-tight">PDV Spa do Colchão</h2>
+            <div className="mt-1 flex items-center gap-2">
+               <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+               <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400/80">Caixa Aberto</span>
             </div>
-            <p className="max-w-2xl text-sm text-slate-200 sm:text-[15px]">
-              Cliente, catalogo, carrinho e fechamento agora respiram melhor na tela para acelerar o
-              atendimento no balcao.
-            </p>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            <SnapshotCard
-              icon={UserRound}
-              label="Cliente"
-              value={customer?.fullName ?? "Selecione um cliente"}
-              hint={customer?.document ?? "Sem cadastro selecionado"}
-            />
-            <SnapshotCard
-              icon={WalletCards}
-              label="Vendedor"
-              value={sellerName}
-              hint={sellerId ? "Responsavel pela venda" : "Defina antes de fechar"}
-            />
-            <SnapshotCard
-              icon={MapPinned}
-              label="Origem"
-              value={leadSourceName}
-              hint={leadSourceId ? "Rastreio da oportunidade" : "Use a origem padrão do PDV"}
-            />
           </div>
         </div>
 
-        <div className="grid w-full gap-3 sm:grid-cols-2 xl:max-w-[460px]">
-          <MetricCard
-            icon={Layers3}
-            label="Itens no pedido"
-            value={items.length.toString().padStart(2, "0")}
-            hint="Contagem ativa do carrinho"
-          />
-          <MetricCard
-            icon={WalletCards}
-            label="Subtotal"
-            value={formatBRL(subtotal)}
-            hint="Antes do desconto global"
-          />
-          <MetricCard
-            icon={ReceiptText}
-            label="Total atual"
-            value={formatBRL(total)}
-            hint="Valor usado no fechamento"
-          />
-          <MetricCard
-            icon={Clock3}
-            label="Sessao de caixa"
-            value={formatBRL(openingBalance)}
-            hint={new Intl.DateTimeFormat("pt-BR", {
-              dateStyle: "full",
-              timeStyle: "short",
-            }).format(now)}
-          />
+        {/* Stepper */}
+        <div className="hidden lg:flex flex-1 max-w-2xl justify-center items-center gap-2 px-8">
+          {steps.map((step, idx) => (
+            <div key={step.id} className="flex items-center flex-1">
+              <button
+                onClick={() => setCurrentStep(step.id)}
+                disabled={step.id > currentStep && items.length === 0}
+                className={`group relative flex items-center gap-3 transition-all ${
+                  currentStep === step.id 
+                    ? "text-white" 
+                    : step.id < currentStep 
+                      ? "text-sky-300/60" 
+                      : "text-white/20"
+                }`}
+              >
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg border-2 transition-all ${
+                  currentStep === step.id 
+                    ? "border-sky-400 bg-sky-400/20 text-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.4)]" 
+                    : step.id < currentStep
+                      ? "border-sky-300/30 bg-sky-300/10 text-sky-300"
+                      : "border-white/10 bg-white/5"
+                }`}>
+                  {step.id < currentStep ? (
+                    <CheckCircle2 className="h-4 w-4" />
+                  ) : (
+                    <step.icon className="h-4 w-4" />
+                  )}
+                </div>
+                <div className="hidden xl:block text-left">
+                   <p className="text-[9px] font-black uppercase tracking-widest leading-none">Passo 0{step.id}</p>
+                   <p className="mt-1 text-xs font-bold whitespace-nowrap">{step.label}</p>
+                </div>
+              </button>
+              {idx < steps.length - 1 && (
+                <div className="mx-4 h-px flex-1 bg-white/10" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Quick Stats & Exit */}
+        <div className="flex items-center gap-6">
+          <div className="hidden sm:flex items-center gap-4 border-l border-white/10 pl-6">
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Venda Atual</p>
+              <p className="font-outfit text-xl font-black text-sky-300">{formatBRL(total)}</p>
+            </div>
+            {remaining > 0 && currentStep === 3 && (
+              <div className="text-right">
+                <p className="text-[10px] font-black uppercase tracking-widest text-amber-400/60">Faltante</p>
+                <p className="font-outfit text-xl font-black text-amber-400">{formatBRL(remaining)}</p>
+              </div>
+            )}
+          </div>
+
+          <Link href="/vendas-clientes/vendas">
+            <Button 
+              variant="destructive" 
+              className="h-11 gap-2 rounded-2xl bg-rose-600 px-6 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-rose-900/20 hover:bg-rose-700 hover:scale-105 transition-all border border-rose-500/30"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair do PDV
+            </Button>
+          </Link>
         </div>
       </div>
     </div>

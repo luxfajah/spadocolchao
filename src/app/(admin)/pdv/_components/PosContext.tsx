@@ -42,6 +42,8 @@ export type PosContextType = {
   externalSellerName: string;
   setExternalSellerName: (s: string) => void;
   resetSale: () => void;
+  currentStep: number;
+  setCurrentStep: (s: number) => void;
 };
 
 const PosContext = createContext<PosContextType | undefined>(undefined);
@@ -57,6 +59,7 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
   const [items, setItems] = useState<SaleItemType[]>([]);
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [payments, setPayments] = useState<any[]>([]);
+  const [currentStep, setCurrentStep] = useState(1);
 
   // RECUPERAR RASCUNHO (DRAFT) AO VOLTAR DO CADASTRO
   useEffect(() => {
@@ -94,6 +97,7 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
     setItems([]);
     setGlobalDiscount(0);
     setPayments([]);
+    setCurrentStep(1);
     localStorage.removeItem('pdv_draft');
   };
 
@@ -113,7 +117,8 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
       campaignName, setCampaignName,
       referralName, setReferralName,
       externalSellerName, setExternalSellerName,
-      resetSale
+      resetSale,
+      currentStep, setCurrentStep
     }}>
       {children}
     </PosContext.Provider>
