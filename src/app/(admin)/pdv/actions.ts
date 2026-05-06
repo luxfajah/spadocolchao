@@ -353,6 +353,36 @@ export async function finalizeSale(payload: any) {
         }
       })
 
+      // 4.5 Generate Production Slip (Ficha de Produção)
+      const productionSlip = await tx.orderProductionSlip.create({
+        data: {
+          orderId: order.id,
+          number: 'FP-' + Math.floor(100000 + Math.random() * 900000).toString(),
+          status: "ISSUED",
+          createdById: actor.id,
+          notes: "Gerado automaticamente na finalização do PDV"
+        }
+      })
+
+      // Link all items to the slip
+      // Note: We need the actual sale item IDs created earlier.
+      // I should have collected them.
+      // Wait, I created them in a loop. I should query them back or collect them.
+      const saleItemsCreated = await tx.saleItem.findMany({
+        where: { saleId: sale.id }
+      })
+
+      for (const item of saleItemsCreated) {
+        await tx.orderProductionSlipLine.create({
+          data: {
+            productionSlipId: productionSlip.id,
+            saleItemId: item.id,
+            quantity: item.quantity,
+            notes: item.description
+          }
+        })
+      }
+
 
       // 5. Trigger Commission Engine (Stage: CONFIRMED)
       if (sellerId) {
