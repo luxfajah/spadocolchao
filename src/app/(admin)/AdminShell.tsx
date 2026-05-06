@@ -42,16 +42,16 @@ export function AdminShell({ children, user, access, hideNavigation = false }: A
     <div className="flex min-h-screen bg-background relative">
       {isMobileSidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"></div>}
 
-      <div className="hidden lg:flex flex-1 justify-center items-start gap-8 pt-0 px-8">
-        <div className="w-72 shrink-0 relative">
+      <div className="hidden lg:flex flex-1 justify-center items-start gap-4 pt-0 px-6">
+        <div className="w-[20%] shrink-0 relative">
           <Sidebar
-            className="fixed left-auto"
+            className="fixed left-[2.5%] w-[18%]"
             allowedAreas={access.allowedAreas}
             homeHref={access.homeHref}
           />
         </div>
 
-        <div className="flex-1 flex flex-col max-w-[1500px] min-w-0 pb-20 lg:pb-0">
+        <div className="w-[75%] flex flex-col min-w-0 pb-20 lg:pb-0">
           <Topbar user={user} access={access} onMenuButtonClick={toggleMobileSidebar} />
           <main className="flex-1 p-4 md:p-8 text-foreground bg-background">{children}</main>
         </div>
