@@ -9,11 +9,12 @@ import { useRef, useState } from "react";
 
 interface ReceiptClientProps {
   order: any;
-  formatBRL: (v: number) => string;
-  formatDate: (date: any) => string;
 }
 
-export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientProps) {
+export function ReceiptClient({ order }: ReceiptClientProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const receiptRef = useRef<HTMLDivElement>(null);
+
   if (!order || !order.sale) return <div className="p-8 text-center font-bold text-rose-500">Erro: Dados da venda não encontrados.</div>;
 
   const { sale } = order;
@@ -23,15 +24,26 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
 
   const addresses = customer.addresses || [];
   const mainAddress = addresses.find((a: any) => a.isMain) || addresses[0];
-  const receiptRef = useRef<HTMLDivElement>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+
+  const formatBRL = (v: number) => {
+    if (typeof v !== 'number') return 'R$ 0,00';
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+  };
+
+  const formatDate = (date: any) => {
+    try {
+      if (!date) return '---';
+      return new Date(date).toLocaleString('pt-BR');
+    } catch (e) {
+      return '---';
+    }
+  };
 
   const generatePDF = async () => {
     if (!receiptRef.current) return;
     
     setIsGenerating(true);
     try {
-      // Configuramos o canvas para uma escala alta para melhor legibilidade em impressoras térmicas
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         useCORS: true,
@@ -41,8 +53,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
 
       const imgData = canvas.toDataURL("image/png");
       
-      // Criamos o PDF no formato de 80mm (comum em impressoras térmicas)
-      // O jspdf usa mm como unidade padrão
       const pdfWidth = 80;
       const imgWidth = canvas.width;
       const imgHeight = canvas.height;
@@ -67,7 +77,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8 flex flex-col items-center gap-6 print:bg-white print:p-0">
       
-      {/* Barra de Ações - Não aparece na impressão */}
       <div className="w-full max-w-[210mm] flex flex-wrap items-center justify-between gap-4 print:hidden bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl shadow-blue-900/5">
         <div className="flex items-center gap-4">
           <Link href="/vendas-clientes/pedidos">
@@ -101,12 +110,10 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
         </div>
       </div>
 
-      {/* Recibo Estruturado para 80mm */}
       <div 
         ref={receiptRef}
         className="w-full max-w-[80mm] bg-white p-6 shadow-2xl print:shadow-none print:w-full print:p-0"
       >
-        {/* Cabecalho */}
         <div className="text-center border-b-2 border-slate-100 pb-6 mb-6">
           <h2 className="text-2xl font-black text-[#02213f] tracking-tighter uppercase italic">SPA DO COLCHÃO</h2>
           <div className="mt-1 space-y-0.5">
@@ -121,7 +128,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
           </div>
         </div>
 
-        {/* Cliente */}
         <div className="mb-6 space-y-3 text-[10px]">
           <div>
             <p className="text-[8px] font-black uppercase tracking-[0.15em] text-slate-400 mb-0.5">Cliente</p>
@@ -141,7 +147,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
           </div>
         </div>
 
-        {/* Itens */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="h-3 w-0.5 bg-[#02213f] rounded-full" />
@@ -168,7 +173,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
           </table>
         </div>
 
-        {/* Totais */}
         <div className="mb-6 space-y-1.5 border-t-2 border-slate-100 pt-4">
           <div className="flex justify-between text-[9px] text-slate-500 font-bold uppercase">
             <span>Subtotal:</span>
@@ -186,7 +190,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
           </div>
         </div>
 
-        {/* Pagamentos */}
         <div className="mb-6">
           <p className="text-[8px] font-black uppercase tracking-[0.2em] text-slate-400 text-center mb-2 italic border-b border-slate-50 pb-1">
             Pagamento na Entrega
@@ -204,7 +207,6 @@ export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientPro
           </div>
         </div>
 
-        {/* Rodapé */}
         <div className="text-center pt-6 border-t-2 border-slate-100">
           <p className="text-[10px] font-black text-[#02213f] uppercase italic">Spa do Colchão</p>
           <p className="text-[7px] font-black text-slate-300 uppercase tracking-[0.2em] mt-1">Recibo sem valor fiscal</p>

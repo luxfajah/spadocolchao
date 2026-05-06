@@ -25,19 +25,5 @@ export default async function ReceiptPage({ params }: { params: { id: string } }
 
   if (!order || !order.sale) return notFound();
 
-  const formatBRL = (v: number) => {
-    if (typeof v !== 'number') return 'R$ 0,00';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-  };
-
-  const formatDate = (date: any) => {
-    try {
-      if (!date) return '---';
-      return new Date(date).toLocaleString('pt-BR');
-    } catch (e) {
-      return '---';
-    }
-  };
-
-  return <ReceiptClient order={order} formatBRL={formatBRL} formatDate={formatDate} />;
+  return <ReceiptClient order={order} />;
 }
