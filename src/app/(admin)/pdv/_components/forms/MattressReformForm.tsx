@@ -138,7 +138,7 @@ export function MattressReformForm({ product, onAdd, onCancel }: { product: any,
     if (data.pillowType !== 'NENHUM') extras += 120;
     if (data.optRegluing) extras += 50;
     
-    const levelObj = levels.find(l => l.id === data.reformLevel);
+    const levelObj = levels.find((l: any) => l.id === data.reformLevel);
     if (levelObj) extras += levelObj.price;
 
     return {
@@ -493,9 +493,9 @@ export function MattressReformForm({ product, onAdd, onCancel }: { product: any,
                   <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border space-y-2">
                     <span className="text-[10px] font-black text-brand-900 uppercase tracking-widest">Materiais Selecionados</span>
                     <div className="text-xs space-y-2">
-                      {data.topFabricId && <p><strong>Tampo:</strong> {topFabrics.find(f => f.id === data.topFabricId)?.name}</p>}
-                      {data.sideFabricId && <p><strong>Lateral:</strong> {sideFabrics.find(f => f.id === data.sideFabricId)?.name}</p>}
-                      {data.foamSupplyItemId && <p><strong>Espuma:</strong> {foams.find(f => f.id === data.foamSupplyItemId)?.name}</p>}
+                      {data.topFabricId && <p><strong>Tampo:</strong> {topFabrics.find((f: any) => f.id === data.topFabricId)?.name}</p>}
+                      {data.sideFabricId && <p><strong>Lateral:</strong> {sideFabrics.find((f: any) => f.id === data.sideFabricId)?.name}</p>}
+                      {data.foamSupplyItemId && <p><strong>Espuma:</strong> {foams.find((f: any) => f.id === data.foamSupplyItemId)?.name}</p>}
                       {data.pillowType !== 'NENHUM' && <p><strong>Pillow:</strong> {data.pillowType}</p>}
                     </div>
                   </div>
