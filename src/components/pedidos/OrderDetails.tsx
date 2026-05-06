@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,35 @@ interface OrderDetailsProps {
 
 export function OrderDetails({ order }: OrderDetailsProps) {
   const [activeTab, setActiveTab] = useState("resumo")
+  const [selectedSlip, setSelectedSlip] = useState<any | null>(null)
+  const printRef = useRef<HTMLDivElement>(null)
+
+  const handlePrintSlip = () => {
+    const content = printRef.current
+    if (!content) return
+    const win = window.open('', '_blank', 'width=800,height=600')
+    if (!win) return
+    win.document.write(`
+      <html><head><title>Ficha de Produção</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
+        h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; }
+        .sub { font-size: 12px; color: #666; margin-bottom: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th { background: #f1f5f9; text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; color: #64748b; }
+        td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
+        .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .label { font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 2px; }
+        .value { font-size: 14px; font-weight: 700; }
+        @media print { body { padding: 16px; } }
+      </style>
+      </head><body>${content.innerHTML}</body></html>
+    `)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print() }, 400)
+  }
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -133,13 +162,16 @@ export function OrderDetails({ order }: OrderDetailsProps) {
               <div className="flex items-center justify-between">
                 <span className="text-xs opacity-70 font-bold uppercase">Status Financeiro</span>
                 <Badge variant="outline" className="bg-white/10 text-white border-white/20">
-                  {order.sale.financialStatus === 'PAID' ? 'Pago' : 'Pendente'}
+                  {order.sale.paidAmount >= order.sale.totalAmount ? 'Pago' : (order.sale.paidAmount > 0 ? 'Parcial' : 'Pendente')}
                 </Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs opacity-70 font-bold uppercase">Total do Pedido</span>
-                <span className="text-xl font-black">{formatCurrency(order.sale.totalAmount)}</span>
+                <span className="text-xs opacity-70 font-bold uppercase">Saldo devedor</span>
+                <span className="text-xl font-black">{formatCurrency(order.sale.totalAmount - (order.sale.paidAmount || 0))}</span>
               </div>
+              {order.sale.paidAmount < order.sale.totalAmount && (
+                <p className="text-[10px] text-white/60 font-medium italic">* Pagamento previsto para a entrega</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -169,31 +201,88 @@ export function OrderDetails({ order }: OrderDetailsProps) {
             </TabsList>
 
             <TabsContent value="resumo" className="mt-0 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-none shadow-lahomes">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-black text-contrast uppercase italic">Snapshot do Pedido</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Total</p>
+                        <p className="text-lg font-black text-contrast">{formatCurrency(order.sale.totalAmount)}</p>
+                      </div>
+                      <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Status</p>
+                        <div className="mt-1">{getStatusBadge(order.currentStatus)}</div>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Local de Entrega</p>
+                      <p className="text-sm font-medium text-contrast">
+                        {order.street}, {order.number} <br/>
+                        {order.neighborhood} — {order.city}/{order.state}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-none shadow-lahomes">
+                  <CardHeader>
+                    <CardTitle className="text-lg font-black text-contrast uppercase italic">Notas Operacionais</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-4">
+                      <AlertCircle className="h-6 w-6 text-amber-600 shrink-0" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-bold text-amber-900">Observações</p>
+                        <p className="text-sm text-amber-800 italic">{order.notes || 'Nenhuma nota especial.'}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
               <Card className="border-none shadow-lahomes">
                 <CardHeader>
-                  <CardTitle className="text-xl font-black text-contrast uppercase italic">Notas Operacionais</CardTitle>
+                  <CardTitle className="text-lg font-black text-contrast uppercase italic">Itens e Especificações</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="bg-amber-50 p-4 rounded-xl border border-amber-100 flex gap-4">
-                    <AlertCircle className="h-6 w-6 text-amber-600 shrink-0" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-bold text-amber-900">Observações do Pedido</p>
-                      <p className="text-sm text-amber-800 italic">{order.notes || 'Nenhuma nota especial registrada.'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Criação do Pedido</p>
-                      <p className="text-sm font-bold text-contrast">{new Date(order.createdAt).toLocaleString('pt-BR')}</p>
-                    </div>
-                    <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
-                      <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Última Atualização</p>
-                      <p className="text-sm font-bold text-contrast">{new Date(order.updatedAt).toLocaleString('pt-BR')}</p>
-                    </div>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-slate-100">
+                    {order.sale.items.map((item: any) => (
+                      <div key={item.id} className="p-6 flex justify-between items-start gap-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-primary" />
+                            <h4 className="font-bold text-contrast">{item.description}</h4>
+                          </div>
+                          <div className="flex flex-wrap gap-4 text-[10px] font-bold uppercase text-slate-400 pl-4">
+                            <span>Medidas: {item.detailMattressReform?.actualWidth || item.detailNewMattress?.actualWidth || '?'}x{item.detailMattressReform?.actualLength || item.detailNewMattress?.actualLength || '?'}x{item.detailMattressReform?.actualHeight || item.detailNewMattress?.actualHeight || '?'}</span>
+                            <span>Densidade: {item.detailMattressReform?.density || item.detailNewMattress?.density || '---'}</span>
+                            <span>Tecido: {item.detailMattressReform?.topFabricColor || 'Padrão'}</span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-slate-400 font-bold uppercase">Qtd</p>
+                          <p className="text-lg font-black text-primary">{item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </CardContent>
               </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Criação do Pedido</p>
+                  <p className="text-sm font-bold text-contrast">{new Date(order.createdAt).toLocaleString('pt-BR')}</p>
+                </div>
+                <div className="p-4 rounded-2xl border border-slate-100 bg-slate-50">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Última Atualização</p>
+                  <p className="text-sm font-bold text-contrast">{new Date(order.updatedAt).toLocaleString('pt-BR')}</p>
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="itens" className="mt-0 space-y-4">
@@ -252,14 +341,14 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                       <CardDescription>Documentos de corte e montagem gerados</CardDescription>
                     </div>
                     <Button className="rounded-xl gap-2 h-10 bg-primary shadow-lg border-brand-900/10 hover:shadow-primary/20 transition-all">
-                      <Printer className="h-4 w-4" /> Emitir Ficha de Preparo
+                      <Printer className="h-4 w-4" /> Imprimir Ficha de Preparo
                     </Button>
                  </CardHeader>
                  <CardContent>
                     {order.productionSlips?.length > 0 ? (
                       <div className="space-y-3">
                         {order.productionSlips.map((slip: any) => (
-                          <div key={slip.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+                          <div key={slip.id} className="flex items-center justify-between p-4 rounded-xl border border-slate-100 bg-slate-50 hover:bg-white hover:shadow-md transition-all group cursor-pointer" onClick={() => setSelectedSlip(slip)}>
                              <div className="flex items-center gap-4">
                                 <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600">
                                   <ClipboardList className="h-5 w-5" />
@@ -271,7 +360,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                              </div>
                              <div className="flex items-center gap-4">
                                 <Badge className="bg-emerald-100 text-emerald-700">{slip.status}</Badge>
-                                <Button variant="ghost" size="icon" className="group-hover:text-primary"><Printer className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="group-hover:text-primary" onClick={(e) => { e.stopPropagation(); setSelectedSlip(slip) }}><Printer className="h-4 w-4" /></Button>
                              </div>
                           </div>
                         ))}
@@ -358,14 +447,18 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                        </div>
                        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100">
                           <p className="text-[10px] text-emerald-600 font-bold uppercase">Pago</p>
-                          <p className="text-xl font-black text-emerald-700">{formatCurrency(order.sale.totalAmount)}</p>
+                          <p className="text-xl font-black text-emerald-700">{formatCurrency(order.sale.paidAmount || 0)}</p>
                        </div>
                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
                           <p className="text-[10px] text-amber-600 font-bold uppercase">Pendente</p>
-                          <p className="text-xl font-black text-amber-700">{formatCurrency(0)}</p>
+                          <p className="text-xl font-black text-amber-700">{formatCurrency(order.sale.totalAmount - (order.sale.paidAmount || 0))}</p>
                        </div>
                        <div className="flex items-center justify-center">
-                          <Badge className="bg-emerald-600 text-white text-md px-6 py-2 rounded-xl">TOTALMENTE PAGO</Badge>
+                          {order.sale.paidAmount >= order.sale.totalAmount ? (
+                            <Badge className="bg-emerald-600 text-white text-md px-6 py-2 rounded-xl">TOTALMENTE PAGO</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-amber-600 border-amber-200 text-md px-6 py-2 rounded-xl uppercase font-black italic">Aguardando Pagamento</Badge>
+                          )}
                        </div>
                     </div>
                     <Button variant="outline" className="rounded-xl gap-2 w-full h-12 border-brand-900/10 text-primary font-bold shadow-sm" asChild>
@@ -414,5 +507,86 @@ export function OrderDetails({ order }: OrderDetailsProps) {
         </div>
       </div>
     </div>
+
+    {/* Modal de Ficha de Produção */}
+    {selectedSlip && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSelectedSlip(null)}>
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-6 border-b border-slate-100">
+            <div>
+              <h2 className="text-xl font-black text-contrast uppercase italic">Ficha de Produção</h2>
+              <p className="text-sm text-slate-400">#{selectedSlip.number} · Pedido #{order.code}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={handlePrintSlip} className="rounded-xl gap-2 h-10 bg-primary">
+                <Printer className="h-4 w-4" /> Imprimir
+              </Button>
+              <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => setSelectedSlip(null)}>
+                <span className="text-xl font-bold">✕</span>
+              </Button>
+            </div>
+          </div>
+          <div ref={printRef} className="p-6 space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Pedido</p>
+                <p className="font-black text-contrast">#{order.code}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Ficha Nº</p>
+                <p className="font-black text-contrast">#{selectedSlip.number}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Cliente</p>
+                <p className="font-bold text-contrast">{order.customer.fullName}</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Data de Emissão</p>
+                <p className="font-bold text-contrast">{new Date(selectedSlip.createdAt).toLocaleDateString('pt-BR')}</p>
+              </div>
+            </div>
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-100">
+              <p className="text-[10px] text-amber-700 font-bold uppercase mb-1">Previsão de Entrega</p>
+              <p className="text-lg font-black text-amber-900">{order.promisedDate ? new Date(order.promisedDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
+            </div>
+            <div className="space-y-3">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Itens da Ficha</p>
+              {selectedSlip.lines?.length > 0 ? selectedSlip.lines.map((line: any) => (
+                <div key={line.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-black text-contrast uppercase italic">{line.saleItem?.description || 'Item'}</p>
+                    <span className="text-sm font-bold text-primary">Qtd: {line.quantity}</span>
+                  </div>
+                  {(line.saleItem?.detailMattressReform || line.saleItem?.detailNewMattress) && (
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Medidas</p>
+                        <p className="font-bold text-sm">
+                          {line.saleItem.detailMattressReform?.actualWidth || line.saleItem.detailNewMattress?.actualWidth || '?'} x {line.saleItem.detailMattressReform?.actualLength || line.saleItem.detailNewMattress?.actualLength || '?'} x {line.saleItem.detailMattressReform?.actualHeight || line.saleItem.detailNewMattress?.actualHeight || '?'} cm
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Tecidos</p>
+                        <p className="font-bold text-sm">T: {line.saleItem.detailMattressReform?.topFabricColor || 'Padrão'} / L: {line.saleItem.detailMattressReform?.sideFabricColor || 'Padrão'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Densidade</p>
+                        <p className="font-bold text-sm">{line.saleItem.detailMattressReform?.density || line.saleItem.detailNewMattress?.density || '---'}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )) : (
+                <p className="text-sm text-slate-400 italic">Nenhum item registrado nesta ficha.</p>
+              )}
+            </div>
+            <div className="pt-4 border-t border-dashed space-y-1">
+              <p className="text-[10px] text-slate-400 font-bold uppercase">Endereço de Entrega</p>
+              <p className="text-sm text-slate-600">{order.street}, {order.number} — {order.neighborhood}, {order.city}/{order.state}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   )
 }
