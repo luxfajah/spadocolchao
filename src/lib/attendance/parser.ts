@@ -65,11 +65,18 @@ export function parsePunchTxt(buffer: Buffer): RawPunch[] {
     if (results.length > 0) return results
   }
 
+  // Filtrar metadados (linhas que começam com '#')
+  const dataLines = lines.filter(line => !line.trim().startsWith("#"))
+  if (dataLines.length === 0) {
+    const firstFewLines = lines.slice(0, 3).join(" | ")
+    throw new Error(`O arquivo parece conter apenas metadados. Linhas iniciais: ${firstFewLines.substring(0, 150)}`)
+  }
+
   // Detect delimiter for CSV/TSV formats
   let delimiter = "\t"
-  const firstLineTabs = lines[0].split("\t").length
-  const firstLineSemis = lines[0].split(";").length
-  const firstLineCommas = lines[0].split(",").length
+  const firstLineTabs = dataLines[0].split("\t").length
+  const firstLineSemis = dataLines[0].split(";").length
+  const firstLineCommas = dataLines[0].split(",").length
 
   if (firstLineSemis > firstLineTabs && firstLineSemis > firstLineCommas) {
     delimiter = ";"
@@ -78,13 +85,18 @@ export function parsePunchTxt(buffer: Buffer): RawPunch[] {
   }
 
   // Analyze header
-  const firstLine = lines[0].split(delimiter)
+  const firstLine = dataLines[0].split(delimiter)
   
   // Find columns based on common names
-  const enNoIdx = firstLine.findIndex((h) => {
+  let enNoIdx = firstLine.findIndex((h) => {
     const text = h.trim().toLowerCase().replace(/["']/g, "")
     return text === "enno" || text === "pis" || text === "matrícula" || text === "matricula" || text === "pin" || text === "id"
   })
+
+  // Fallback to "No" only if specific IDs are not found
+  if (enNoIdx === -1) {
+    enNoIdx = firstLine.findIndex((h) => h.trim().toLowerCase().replace(/["']/g, "") === "no")
+  }
   
   const dateTimeIdx = firstLine.findIndex((h) => {
     const text = h.trim().toLowerCase().replace(/["']/g, "")
@@ -131,8 +143,8 @@ export function parsePunchTxt(buffer: Buffer): RawPunch[] {
     }
   }
 
-  for (let i = startIndex; i < lines.length; i++) {
-    const cols = lines[i].split(delimiter)
+  for (let i = startIndex; i < dataLines.length; i++) {
+    const cols = dataLines[i].split(delimiter)
     
     // Attempt to extract values using detected indices or fallback
     let enNo = ""
