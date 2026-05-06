@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
+export function PosHeader() {
   const { currentStep, setCurrentStep, items, subtotal, total, payments } = usePos();
   
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
