@@ -29,15 +29,36 @@ export async function POST(req: NextRequest) {
     // 1. Importação bruta de todos os registros (Audit Trail)
     const batch = await importRawPunches(file.name, raw)
 
-    // 2. Mapeamento de selecionados para IDs do banco
-    const employees = await (prisma as any).employee.findMany({
-      where: { pointMachineId: { in: selectedPointIds } },
-      select: { id: true, pointMachineId: true },
+    // 2. Mapeamento de selecionados para IDs do banco de forma flexível
+    const allEmployees = await (prisma as any).employee.findMany({
+      where: { 
+        OR: [
+          { pointMachineId: { not: null } },
+          { serialId: { not: null } }
+        ]
+      },
+      select: { id: true, pointMachineId: true, serialId: true },
     })
+
+    const empLookup = new Map()
+    allEmployees.forEach((e: any) => {
+      if (e.pointMachineId) {
+        empLookup.set(e.pointMachineId, e)
+        const norm = e.pointMachineId.replace(/^0+/, '')
+        if (norm) empLookup.set(norm, e)
+      }
+      if (e.serialId) {
+        empLookup.set(e.serialId.toString(), e)
+      }
+    })
+
+    const targetEmployees = (selectedPointIds as string[])
+      .map(id => empLookup.get(id))
+      .filter(Boolean)
 
     // 3. Geração de Espelhos e AttendanceDays
     const results = []
-    for (const emp of employees) {
+    for (const emp of targetEmployees) {
       try {
         const mirror = await generateMirror(emp.id, startDate, endDate, periodKey)
         results.push({ id: emp.id, mirrorId: mirror.id, success: true })

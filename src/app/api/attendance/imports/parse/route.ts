@@ -26,15 +26,12 @@ export async function POST(req: NextRequest) {
 
     const analysis = analyzePunches(raw)
 
-    // Cruzar com o módulo de RH por pointMachineId OU serialId
-    const pointIds = analysis.employees.map((e) => e.pointMachineId)
-    const numericPointIds = pointIds.filter(id => !isNaN(Number(id))).map(id => parseInt(id))
-
+    // Cruzar com o módulo de RH de forma flexível (em memória para lidar com zeros à esquerda)
     const rhEmployees = await (prisma as any).employee.findMany({
-      where: { 
+      where: {
         OR: [
-          { pointMachineId: { in: pointIds } },
-          { serialId: { in: numericPointIds } }
+          { pointMachineId: { not: null } },
+          { serialId: { not: null } }
         ]
       },
       select: { id: true, fullName: true, socialName: true, pointMachineId: true, serialId: true },
@@ -42,8 +39,17 @@ export async function POST(req: NextRequest) {
 
     const empMap = new Map()
     rhEmployees.forEach((e: any) => {
-      if (e.pointMachineId) empMap.set(e.pointMachineId, e)
-      if (e.serialId) empMap.set(e.serialId.toString(), e)
+      // Mapeia o ID original
+      if (e.pointMachineId) {
+        empMap.set(e.pointMachineId, e)
+        // Mapeia a versão sem zeros à esquerda (ex: "007" -> "7")
+        const normalized = e.pointMachineId.replace(/^0+/, '')
+        if (normalized) empMap.set(normalized, e)
+      }
+      // Mapeia o serialId
+      if (e.serialId) {
+        empMap.set(e.serialId.toString(), e)
+      }
     })
 
     const response = {

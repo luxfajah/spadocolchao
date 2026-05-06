@@ -26,11 +26,11 @@ const STEPS = [
 ]
 
 const DOC_SLOTS = [
-  { key: "rg_cpf",     label: "Cópia do RG e CPF",             required: true },
+  { key: "rg_cpf",     label: "Cópia do RG e CPF",             required: false },
   { key: "ctps",       label: "Cópia da CTPS",                  required: false },
   { key: "pis",        label: "Cartão PIS / PASEP",              required: false },
-  { key: "admissional",label: "Exame Admissional",               required: true },
-  { key: "contrato",   label: "Contrato de Trabalho Assinado",   required: true },
+  { key: "admissional",label: "Exame Admissional",               required: false },
+  { key: "contrato",   label: "Contrato de Trabalho Assinado",   required: false },
   { key: "cnpj_pj",   label: "CNPJ / Contrato Social (PJ)",     required: false },
   { key: "titulo",     label: "Título de Eleitor",               required: false },
   { key: "reservista", label: "Certificado de Reservista",       required: false },
@@ -260,7 +260,8 @@ export default function NovoFuncionarioPage() {
   function canAdvance() {
     if (step === 1) return form.fullName.trim().length > 0 && form.cpf.trim().length > 0
     if (step === 4) return form.contractType.trim().length > 0 && form.jobTitleId.trim().length > 0 && form.costCenterId.trim().length > 0
-    if (step === 7) return DOC_SLOTS.filter(d => d.required).every(d => docs[d.key] !== null)
+    // Documentos agora são opcionais
+    if (step === 7) return true
     return true
   }
 
@@ -1067,7 +1068,7 @@ export default function NovoFuncionarioPage() {
                 <div>
                   <h2 className="font-black text-slate-800 uppercase tracking-tight text-lg font-outfit">Documentos Admissionais</h2>
                   <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                    Itens com <span className="text-rose-500">*</span> são obrigatórios para concluir o cadastro
+                    Você pode anexar os documentos agora ou posteriormente no perfil do colaborador.
                   </p>
                 </div>
               </div>

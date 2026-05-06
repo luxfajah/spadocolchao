@@ -109,13 +109,34 @@ function resolveContextualFinalExit(
 }
 
 function pairDayPunches(dayPunches: NormalizedPunch[], isSaturdayHalf: boolean) {
-  const entries = dayPunches.filter((p) => p.role === PunchRole.ENTRY_MORNING)
-  const lunchOuts = dayPunches.filter((p) => p.role === PunchRole.EXIT_LUNCH)
-  const lunchIns = dayPunches.filter((p) => p.role === PunchRole.RETURN_LUNCH)
-  const exits = dayPunches.filter((p) => p.role === PunchRole.EXIT_FINAL)
+  let entries = dayPunches.filter((p) => p.role === PunchRole.ENTRY_MORNING)
+  let lunchOuts = dayPunches.filter((p) => p.role === PunchRole.EXIT_LUNCH)
+  let lunchIns = dayPunches.filter((p) => p.role === PunchRole.RETURN_LUNCH)
+  let exits = dayPunches.filter((p) => p.role === PunchRole.EXIT_FINAL)
   const breaks = dayPunches.filter((p) => p.role === PunchRole.BREAK)
 
   const observations: string[] = []
+
+  // REPAIR: Se tivermos múltiplas entradas 'S' e nada mais, é provável que o arquivo seja AFD genérico.
+  // Nestes casos, o sistema deve parear sequencialmente para garantir o cálculo de horas.
+  if (entries.length > 1 && lunchOuts.length === 0 && lunchIns.length === 0 && exits.length === 0) {
+    if (entries.length === 2) {
+      exits = [entries[1]]
+      entries = [entries[0]]
+      observations.push("Pareamento AFD: 2 batidas (S -> F)")
+    } else if (entries.length === 3) {
+      lunchOuts = [entries[1]]
+      exits = [entries[2]]
+      entries = [entries[0]]
+      observations.push("Pareamento AFD: 3 batidas (S -> E -> F)")
+    } else if (entries.length >= 4) {
+      lunchOuts = [entries[1]]
+      lunchIns = [entries[2]]
+      exits = [entries[entries.length - 1]]
+      entries = [entries[0]]
+      observations.push(`Pareamento AFD: ${dayPunches.length} batidas (S -> E -> A -> F)`)
+    }
+  }
 
   const firstIn = entries.length > 0 ? entries[0] : null
   const lunchOut = lunchOuts.length > 0 ? lunchOuts[0] : null
