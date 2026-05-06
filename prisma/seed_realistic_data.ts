@@ -65,7 +65,7 @@ async function main() {
 
   // 2. Gerar Clientes
   console.log(`Criando massa de clientes...`);
-  const newCustomers = [];
+  const newCustomers: any[] = [];
   const firstNames = ['Ana', 'Carlos', 'Beatriz', 'Marcos', 'Fernanda', 'Lucas', 'Juliana', 'Rafael', 'Mariana', 'Roberto', 'Luiza', 'Ricardo'];
   const lastNames = ['Silva', 'Santos', 'Oliveira', 'Souza', 'Rodrigues', 'Alves', 'Lima', 'Gomes', 'Martins', 'Ferreira'];
   
@@ -84,7 +84,7 @@ async function main() {
   }
 
   // 3. Gerar Vendas
-  const generateSales = async (month, days, targetSalesCount, isCurrentMonth) => {
+  const generateSales = async (month: number, days: number, targetSalesCount: number, isCurrentMonth: boolean) => {
     let accumulated = 0;
     
     for (let i = 0; i < targetSalesCount; i++) {
@@ -97,19 +97,19 @@ async function main() {
       const leadSource = leadSources[Math.floor(Math.random() * leadSources.length)];
       
       // Variação de preço
-      let amount = prod.defaultPrice + (Math.random() * 500 - 250);
+      let amount = (prod.defaultPrice ?? 0) + (Math.random() * 500 - 250);
       
       // Se for a última venda do mês, ajusta o valor para bater a meta exatamente (para Março)
       if (month === 2 /* Março */ && i === targetSalesCount - 1) {
         amount = TARGET_MARCH_REVENUE - accumulated;
-        if (amount < 0) amount = prod.defaultPrice; // Fallback se já passou da meta acidentalmente
+        if (amount < 0) amount = (prod.defaultPrice ?? 0); // Fallback se já passou da meta acidentalmente
       }
       
       accumulated += amount;
 
       // Definir status do pedido com base no tempo
       let orderStatus = 'DELIVERED';
-      let deliveredAt = new Date(saleDate);
+      let deliveredAt: Date | null = new Date(saleDate);
       deliveredAt.setDate(deliveredAt.getDate() + 7);
       
       // Vendas recentes (fim de Março ou Abril) ficam em Produção
