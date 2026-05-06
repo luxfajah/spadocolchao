@@ -550,34 +550,106 @@ export function OrderDetails({ order }: OrderDetailsProps) {
               <p className="text-[10px] text-amber-700 font-bold uppercase mb-1">Previsão de Entrega</p>
               <p className="text-lg font-black text-amber-900">{order.promisedDate ? new Date(order.promisedDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
             </div>
-            <div className="space-y-3">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Itens da Ficha</p>
-              {selectedSlip.lines?.length > 0 ? selectedSlip.lines.map((line: any) => (
-                <div key={line.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-black text-contrast uppercase italic">{line.saleItem?.description || 'Item'}</p>
-                    <span className="text-sm font-bold text-primary">Qtd: {line.quantity}</span>
-                  </div>
-                  {(line.saleItem?.detailMattressReform || line.saleItem?.detailNewMattress) && (
-                    <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-4">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-1">Configuração e Serviços</p>
+              {selectedSlip.lines?.length > 0 ? selectedSlip.lines.map((line: any) => {
+                const item = line.saleItem;
+                const config = item?.detailMattressReform || item?.detailBoxReform || item?.detailNewMattress || item?.detailNewBox;
+                
+                const services = [];
+                if (item?.detailMattressReform) {
+                  const r = item.detailMattressReform;
+                  if (r.optTotalReplacement) services.push("Troca total de espuma");
+                  if (r.optFoamStructReinforce) services.push("Reforço estrutural de espuma");
+                  if (r.optRegluing) services.push("Recolagem estrutural");
+                  if (r.optSpringSystemRepl) services.push("Troca de molejo");
+                  if (r.optSpringSystemRepair) services.push("Reparo de molejo");
+                  if (r.optFullFabricRepl) services.push("Troca completa de tecido");
+                  if (r.optPartialFabricRepl) services.push("Troca parcial de tecido");
+                  if (r.optLeveling) services.push("Nivelamento");
+                  if (r.optWaterproofing) services.push("Impermeabilização");
+                }
+                if (item?.detailBoxReform) {
+                  const b = item.detailBoxReform;
+                  if (b.optStructureRepair) services.push("Reparo estrutural");
+                  if (b.optHardwareReplacement) services.push("Troca de ferragens");
+                  if (b.optWaterproofing) services.push("Impermeabilização");
+                }
+                if (item?.detailNewBox) {
+                  const nb = item.detailNewBox;
+                  if (nb.optStructureReinforce) services.push("Reforço de estrutura");
+                  if (nb.optHardwareReplacement) services.push("Troca de ferragens");
+                }
+
+                return (
+                  <div key={line.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-4">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Medidas</p>
+                        <p className="font-black text-contrast uppercase italic">{item?.description || 'Item'}</p>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">{item?.productService?.name || 'Reforma'}</p>
+                      </div>
+                      <span className="text-sm font-bold text-primary px-3 py-1 bg-primary/5 rounded-lg">Qtd: {line.quantity}</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase">Medidas Reais</p>
                         <p className="font-bold text-sm">
-                          {line.saleItem.detailMattressReform?.actualWidth || line.saleItem.detailNewMattress?.actualWidth || '?'} x {line.saleItem.detailMattressReform?.actualLength || line.saleItem.detailNewMattress?.actualLength || '?'} x {line.saleItem.detailMattressReform?.actualHeight || line.saleItem.detailNewMattress?.actualHeight || '?'} cm
+                          {config?.actualWidth || '?'} x {config?.actualLength || '?'} x {config?.actualHeight || '?'} cm
                         </p>
                       </div>
                       <div>
                         <p className="text-[10px] text-slate-400 font-bold uppercase">Tecidos</p>
-                        <p className="font-bold text-sm">T: {line.saleItem.detailMattressReform?.topFabricColor || 'Padrão'} / L: {line.saleItem.detailMattressReform?.sideFabricColor || 'Padrão'}</p>
+                        <p className="font-bold text-sm">
+                          T: {config?.topFabricColor || 'Padrão'} {config?.sideFabricColor ? `/ L: ${config.sideFabricColor}` : ''}
+                        </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Densidade</p>
-                        <p className="font-bold text-sm">{line.saleItem.detailMattressReform?.density || line.saleItem.detailNewMattress?.density || '---'}</p>
-                      </div>
+                      {config?.density && (
+                        <div>
+                          <p className="text-[10px] text-slate-400 font-bold uppercase">Densidade</p>
+                          <p className="font-bold text-sm">{config.density}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )) : (
+
+                    {services.length > 0 && (
+                      <div className="pt-3 border-t border-slate-200">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">Serviços Contratados</p>
+                        <div className="flex flex-wrap gap-2">
+                          {services.map((s, idx) => (
+                            <span key={idx} className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded-md">• {s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Insumos/Material Requirements */}
+                    {item?.materialRequirements?.length > 0 && (
+                      <div className="pt-3 border-t border-slate-200">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">Requisitos de Materiais (Insumos)</p>
+                        <table className="w-full text-left">
+                          <thead>
+                            <tr className="text-[10px] text-slate-400 uppercase">
+                              <th className="pb-1 font-bold">Parte</th>
+                              <th className="pb-1 font-bold">Insumo</th>
+                              <th className="pb-1 font-bold text-right">Qtd Prevista</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {item.materialRequirements.map((req: any) => (
+                              <tr key={req.id} className="text-[11px] text-slate-600">
+                                <td className="py-1 font-medium">{req.part || '---'}</td>
+                                <td className="py-1">{req.supplyItem?.name || '---'}</td>
+                                <td className="py-1 text-right font-bold text-contrast">{req.quantityCalculated} {req.unit}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              }) : (
                 <p className="text-sm text-slate-400 italic">Nenhum item registrado nesta ficha.</p>
               )}
             </div>

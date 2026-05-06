@@ -405,6 +405,11 @@ export async function getOrderById(id: string) {
               detailNewMattress: true,
               detailNewBox: true,
               detailUpholsteryCleaning: true,
+              materialRequirements: {
+                include: {
+                  supplyItem: true,
+                },
+              },
             },
           },
           installments: {
@@ -424,7 +429,19 @@ export async function getOrderById(id: string) {
         include: {
           lines: {
             include: {
-              saleItem: true,
+              saleItem: {
+                include: {
+                  detailMattressReform: true,
+                  detailBoxReform: true,
+                  detailNewMattress: true,
+                  detailNewBox: true,
+                  materialRequirements: {
+                    include: {
+                      supplyItem: true,
+                    },
+                  },
+                },
+              },
             },
           },
         },
