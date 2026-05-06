@@ -96,7 +96,7 @@ export function PosHeader() {
             )}
           </div>
 
-          <Link href="/vendas-clientes/vendas">
+          <Link href="/vendas-clientes/pedidos">
             <Button 
               variant="destructive" 
               className="h-11 gap-2 rounded-2xl bg-rose-600 px-6 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-rose-900/20 hover:bg-rose-700 hover:scale-105 transition-all border border-rose-500/30"
