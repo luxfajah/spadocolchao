@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer, FileDown, ArrowLeft } from "lucide-react";
+import { Printer, Eye, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -39,44 +39,38 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
     }
   };
 
-  const generatePDF = async () => {
-    if (!receiptRef.current) return;
-    
-    setIsGenerating(true);
-    try {
-      const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
-      });
-
-      const imgData = canvas.toDataURL("image/png");
-      
-      const pdfWidth = 80;
-      const imgWidth = canvas.width;
-      const imgHeight = canvas.height;
-      const pdfHeight = (imgHeight * pdfWidth) / imgWidth;
-
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: [pdfWidth, pdfHeight],
-      });
-
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`recibo-${sale.number || "venda"}.pdf`);
-    } catch (error) {
-      console.error("Erro ao gerar PDF:", error);
-      alert("Erro ao gerar o PDF do recibo.");
-    } finally {
-      setIsGenerating(false);
-    }
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
     <div className="min-h-screen bg-slate-100 p-4 md:p-8 flex flex-col items-center gap-6 print:bg-white print:p-0">
       
+      {/* Estilo para Forçar 80mm na Impressão */}
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: 80mm auto;
+            margin: 0;
+          }
+          body {
+            background: white;
+            margin: 0;
+            padding: 0;
+          }
+          .print-thermal {
+            width: 80mm !important;
+            max-width: 80mm !important;
+            padding: 4mm !important;
+            box-shadow: none !important;
+            border: none !important;
+          }
+          nav, header, .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       <div className="w-full max-w-[210mm] flex flex-wrap items-center justify-between gap-4 print:hidden bg-white/80 backdrop-blur-md p-4 rounded-3xl border border-white shadow-xl shadow-blue-900/5">
         <div className="flex items-center gap-4">
           <Link href="/vendas-clientes/pedidos">
@@ -91,28 +85,28 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={generatePDF}
-            disabled={isGenerating}
-            variant="outline"
-            className="h-12 gap-2 rounded-full border-slate-200 px-6 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:bg-slate-50"
-          >
-            <FileDown className="h-4 w-4" />
-            {isGenerating ? "Gerando..." : "Baixar PDF (80mm)"}
-          </Button>
+          <Link href={`/vendas-clientes/pedidos/${order.id}`}>
+            <Button 
+              variant="outline"
+              className="h-12 gap-2 rounded-full border-slate-200 px-6 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:bg-slate-50"
+            >
+              <Eye className="h-4 w-4" />
+              Ver Pedido
+            </Button>
+          </Link>
           
           <Button 
-            onClick={() => window.print()} 
+            onClick={handlePrint} 
             className="h-12 gap-2 rounded-full bg-[#02213f] px-8 text-xs font-black uppercase tracking-[0.15em] text-white shadow-lg shadow-blue-900/20 hover:bg-[#0b3156] hover:scale-105 transition-all"
           >
-            <Printer className="h-4 w-4" /> Imprimir
+            <Printer className="h-4 w-4" /> Imprimir 80mm
           </Button>
         </div>
       </div>
 
       <div 
         ref={receiptRef}
-        className="w-full max-w-[80mm] bg-white p-6 shadow-2xl print:shadow-none print:w-full print:p-0"
+        className="w-full max-w-[80mm] bg-white p-6 shadow-2xl print:shadow-none print:w-full print:p-0 print-thermal"
       >
         <div className="text-center border-b-2 border-slate-100 pb-6 mb-6">
           <h2 className="text-2xl font-black text-[#02213f] tracking-tighter uppercase italic">SPA DO COLCHÃO</h2>
