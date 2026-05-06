@@ -522,6 +522,3 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
     </div>
   );
 }
-
-  );
-}
