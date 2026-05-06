@@ -57,6 +57,11 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
     pillowType: 'NENHUM',
     lateralReinforce: false,
     viscoElastic: false,
+    massagem: false,
+    cromoterapia: false,
+    sistemaMagnetico: false,
+    somBluetooth: false,
+    camadaExtraEspuma: false,
 
     technicalNotes: '',
     finalPrice: product.price,
@@ -107,8 +112,12 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
     let extras = 0;
     
     if (data.pillowType !== 'NENHUM') extras += 250;
-    if (data.lateralReinforce) extras += 100;
-    if (data.viscoElastic) extras += 150;
+    if (data.viscoElastic) extras += 280;
+    if (data.massagem) extras += 450;
+    if (data.cromoterapia) extras += 200;
+    if (data.sistemaMagnetico) extras += 180;
+    if (data.somBluetooth) extras += 350;
+    if (data.camadaExtraEspuma) extras += 120;
     
     const levelObj = levels.find((l: any) => l.id === data.productLevel);
     if (levelObj) extras += levelObj.price;
@@ -327,6 +336,48 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
                           <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter">Alívio de pressão premium</span>
                         </div>
                       </label>
+
+                      <div className="grid grid-cols-2 gap-3 pt-2">
+                        <label className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border border-brand-100 cursor-pointer hover:bg-white transition-all shadow-sm">
+                          <input type="checkbox" name="massagem" checked={data.massagem} onChange={handleChange} className="h-5 w-5 rounded border-brand-300 text-brand-600 focus:ring-brand-600"/>
+                          <div>
+                            <span className="text-sm font-bold text-brand-900 block">Massagem</span>
+                            <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter">Sistema vibro</span>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border border-brand-100 cursor-pointer hover:bg-white transition-all shadow-sm">
+                          <input type="checkbox" name="cromoterapia" checked={data.cromoterapia} onChange={handleChange} className="h-5 w-5 rounded border-brand-300 text-brand-600 focus:ring-brand-600"/>
+                          <div>
+                            <span className="text-sm font-bold text-brand-900 block">Cromoterapia</span>
+                            <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter">Terapia por luz</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <label className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border border-brand-100 cursor-pointer hover:bg-white transition-all shadow-sm">
+                          <input type="checkbox" name="sistemaMagnetico" checked={data.sistemaMagnetico} onChange={handleChange} className="h-5 w-5 rounded border-brand-300 text-brand-600 focus:ring-brand-600"/>
+                          <div>
+                            <span className="text-sm font-bold text-brand-900 block">Magnético</span>
+                            <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter text-nowrap">Pastilhas magnéticas</span>
+                          </div>
+                        </label>
+                        <label className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border border-brand-100 cursor-pointer hover:bg-white transition-all shadow-sm">
+                          <input type="checkbox" name="somBluetooth" checked={data.somBluetooth} onChange={handleChange} className="h-5 w-5 rounded border-brand-300 text-brand-600 focus:ring-brand-600"/>
+                          <div>
+                            <span className="text-sm font-bold text-brand-900 block">Bluetooth</span>
+                            <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter text-nowrap">Som integrado</span>
+                          </div>
+                        </label>
+                      </div>
+
+                      <label className="flex items-center gap-3 p-3 rounded-xl bg-white/50 border border-brand-100 cursor-pointer hover:bg-white transition-all shadow-sm">
+                        <input type="checkbox" name="camadaExtraEspuma" checked={data.camadaExtraEspuma} onChange={handleChange} className="h-5 w-5 rounded border-brand-300 text-brand-600 focus:ring-brand-600"/>
+                        <div>
+                          <span className="text-sm font-bold text-brand-900 block">Camada Extra de Espuma</span>
+                          <span className="text-[10px] text-brand-700 font-medium leading-none uppercase tracking-tighter">Aumento de altura e conforto</span>
+                        </div>
+                      </label>
                     </div>
                   </div>
                 </div>
@@ -359,6 +410,11 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
                       {data.pillowType !== 'NENHUM' && <li>• Acabamento: {data.pillowType}</li>}
                       {data.lateralReinforce && <li>• Borda Perimetral Inclusa</li>}
                       {data.viscoElastic && <li>• Tecnologia Viscoelástica</li>}
+                      {data.massagem && <li>• Sistema de Massagem</li>}
+                      {data.cromoterapia && <li>• Cromoterapia</li>}
+                      {data.sistemaMagnetico && <li>• Sistema Magnético</li>}
+                      {data.somBluetooth && <li>• Som Bluetooth</li>}
+                      {data.camadaExtraEspuma && <li>• Camada Extra de Espuma</li>}
                     </ul>
                   </div>
                 </div>
