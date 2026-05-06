@@ -159,6 +159,3 @@ export function UpholsteryCleaningForm({ product, onAdd, onCancel }: { product: 
     </div>
   )
 }
-
-  )
-}

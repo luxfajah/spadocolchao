@@ -445,6 +445,3 @@ export function BoxReformForm({ product, onAdd, onCancel }: { product: any, onAd
     </div>
   );
 }
-
-  );
-}

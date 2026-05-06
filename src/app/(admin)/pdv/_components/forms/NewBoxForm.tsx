@@ -431,6 +431,3 @@ export function NewBoxForm({ product, onAdd, onCancel }: { product: any, onAdd: 
     </div>
   );
 }
-
-  );
-}
