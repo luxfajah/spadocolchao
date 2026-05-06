@@ -15,7 +15,6 @@ import { usePos } from "./PosContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { finalizeSale } from "../actions";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type PaymentEntry = {
@@ -88,20 +87,17 @@ export function PosSummary() {
     total,
     setGlobalDiscount,
     resetSale,
+    payments,
+    setPayments,
     leadSourceDetail,
     campaignName,
     referralName,
     externalSellerName,
   } = usePos();
 
-  const [payments, setPayments] = useState<PaymentEntry[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
 
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
 
   const [activeMethod, setActiveMethod] = useState<{
     id: string;
@@ -205,61 +201,6 @@ export function PosSummary() {
     setPayments(payments.filter((payment) => payment.id !== id));
   };
 
-  const handleFinalize = async () => {
-    if (!customer?.id) return alert("Selecione um cliente");
-    if (!leadSourceId) return alert("Selecione a origem da venda");
-    if (items.length === 0) return alert("Adicione produtos a venda");
-
-    if (remaining > 0.01) {
-      return alert("O pagamento ainda não foi concluído. Faltam " + formatBRL(remaining));
-    }
-
-    if (!deliveryDate) {
-      setShowDeliveryModal(true);
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const payload = {
-        customerId: customer.id,
-        sellerId,
-        leadSourceId,
-        sessionId: initialData?.session?.id,
-        items,
-        subtotal,
-        globalDiscount,
-        total,
-        payments,
-        deliveryDate: `${deliveryDate}T${deliveryTime || "00:00"}:00`,
-        recipientName,
-        recipientPhone,
-        leadSourceDetail,
-        campaignName,
-        referralName,
-        externalSellerName,
-      };
-
-      const result = await finalizeSale(payload);
-
-      if (result?.success && (result as any).result?.orderId) {
-        window.open(`/pdv/receipt/${(result as any).result.orderId}`, "_blank");
-        resetSale();
-        setPayments([]);
-        setDeliveryDate("");
-        setRecipientName("");
-        setRecipientPhone("");
-        setShowDeliveryModal(false);
-      } else {
-        alert("Erro: " + result?.error);
-      }
-    } catch (_error) {
-      alert("Ocorreu um erro fatal ao gerar o pedido.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <Card className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/90 shadow-lahomes backdrop-blur-sm">
@@ -422,27 +363,6 @@ export function PosSummary() {
           </div>
         )}
 
-        <div className="mt-auto rounded-[1.6rem] border border-slate-100 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm">
-          {remaining > 0.05 && items.length > 0 ? (
-            <div className="mb-4 rounded-[1.2rem] border border-amber-100 bg-amber-50 px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-amber-700">
-              Faltam {formatBRL(remaining)} para concluir.
-            </div>
-          ) : items.length > 0 ? (
-            <div className="mb-4 flex items-center justify-center gap-2 rounded-[1.2rem] border border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-[11px] font-black uppercase tracking-[0.18em] text-emerald-700">
-              <CheckCircle2 className="h-4 w-4" />
-              Pagamento pronto para finalizar
-            </div>
-          ) : null}
-
-          <Button
-            type="button"
-            onClick={handleFinalize}
-            disabled={isSubmitting || Math.abs(remaining) > 0.05 || items.length === 0}
-            className="h-14 w-full rounded-full bg-primary text-[11px] font-black uppercase tracking-[0.24em] text-white shadow-xl shadow-primary/20 transition-all hover:bg-slate-900 disabled:opacity-40"
-          >
-            {isSubmitting ? "Processando..." : items.length === 0 ? "Carrinho vazio" : "Finalizar pedido"}
-          </Button>
-        </div>
       </CardContent>
 
       <Dialog open={!!activeMethod} onOpenChange={(open) => !open && setActiveMethod(null)}>
@@ -513,90 +433,6 @@ export function PosSummary() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showDeliveryModal} onOpenChange={setShowDeliveryModal}>
-        <DialogContent className="overflow-hidden rounded-[2.2rem] border-none p-0 sm:max-w-[520px]">
-          <DialogHeader className="border-b border-slate-100 bg-slate-50/80 p-8">
-            <DialogTitle className="text-2xl font-black tracking-tight text-primary">Dados de entrega</DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-8 p-8">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Data de entrega
-                </label>
-                <Input
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(event) => setDeliveryDate(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-slate-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Horario aproximado
-                </label>
-                <Input
-                  type="time"
-                  value={deliveryTime}
-                  onChange={(event) => setDeliveryTime(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-slate-50"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-5 rounded-[1.6rem] border border-slate-100 bg-slate-50/70 p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-                Recebedor alternativo (opcional)
-              </p>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Nome do recebedor
-                </label>
-                <Input
-                  placeholder="Quem vai receber o produto?"
-                  value={recipientName}
-                  onChange={(event) => setRecipientName(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-white"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Telefone de contato
-                </label>
-                <Input
-                  placeholder="(00) 00000-0000"
-                  value={recipientPhone}
-                  onChange={(event) => setRecipientPhone(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-white"
-                />
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-slate-100 bg-slate-50/80 p-8 sm:justify-between">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowDeliveryModal(false)}
-              className="h-12 rounded-full px-6 text-[10px] font-black uppercase tracking-[0.22em] text-slate-500"
-            >
-              Voltar
-            </Button>
-            <Button
-              type="button"
-              onClick={handleFinalize}
-              disabled={!deliveryDate || isSubmitting}
-              className="h-12 rounded-full bg-primary px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white hover:bg-slate-900"
-            >
-              {isSubmitting ? "Finalizando..." : "Confirmar e gerar pedido"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Card>
   );
 }

@@ -91,18 +91,6 @@ export function PosCart() {
         )}
       </div>
 
-      <div className="border-t border-slate-100/80 p-4 sm:p-5">
-        <div className="flex items-center justify-between rounded-[1.5rem] bg-primary px-4 py-3 text-white shadow-lg shadow-primary/20">
-          <div className="flex items-center gap-3">
-            <Wallet className="h-4 w-4" />
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/70">Subtotal do carrinho</p>
-              <p className="text-sm font-semibold text-white/80">Pronto para seguir ao fechamento</p>
-            </div>
-          </div>
-          <p className="font-outfit text-2xl font-black tracking-tight">{formatBRL(subtotal)}</p>
-        </div>
-      </div>
     </div>
   );
 }

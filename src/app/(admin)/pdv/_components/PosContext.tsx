@@ -23,7 +23,8 @@ export type PosContextType = {
   setSellerId: (s: string | null) => void;
   leadSourceId: string | null;
   setLeadSourceId: (l: string | null) => void;
-  items: SaleItemType[];
+  payments: any[];
+  setPayments: (p: any[]) => void;
   addItem: (item: SaleItemType) => void;
   removeItem: (id: string) => void;
   updateItemPrice: (id: string, newPrice: number) => void;
@@ -54,6 +55,7 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
   const [externalSellerName, setExternalSellerName] = useState("");
   const [items, setItems] = useState<SaleItemType[]>([]);
   const [globalDiscount, setGlobalDiscount] = useState(0);
+  const [payments, setPayments] = useState<any[]>([]);
 
   // RECUPERAR RASCUNHO (DRAFT) AO VOLTAR DO CADASTRO
   useEffect(() => {
@@ -90,6 +92,7 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
     setExternalSellerName("");
     setItems([]);
     setGlobalDiscount(0);
+    setPayments([]);
     localStorage.removeItem('pdv_draft');
   };
 
@@ -104,6 +107,7 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
       leadSourceId, setLeadSourceId,
       items, addItem, removeItem, updateItemPrice,
       subtotal, total, globalDiscount, setGlobalDiscount,
+      payments, setPayments,
       leadSourceDetail, setLeadSourceDetail,
       campaignName, setCampaignName,
       referralName, setReferralName,
