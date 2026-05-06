@@ -38,28 +38,52 @@ export function OrderDetails({ order }: OrderDetailsProps) {
   const handlePrintSlip = () => {
     const content = printRef.current
     if (!content) return
-    const win = window.open('', '_blank', 'width=800,height=600')
-    if (!win) return
+    
+    const win = window.open('', '_blank', 'width=1000,height=800')
+    if (!win) {
+      alert('Por favor, permita popups para imprimir a ficha.')
+      return
+    }
+
     win.document.write(`
-      <html><head><title>Ficha de Produção</title>
-      <style>
-        body { font-family: Arial, sans-serif; padding: 32px; color: #111; }
-        h1 { font-size: 20px; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; }
-        .sub { font-size: 12px; color: #666; margin-bottom: 24px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
-        th { background: #f1f5f9; text-align: left; padding: 8px 12px; font-size: 11px; text-transform: uppercase; color: #64748b; }
-        td { padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-size: 13px; }
-        .badge { display: inline-block; background: #dcfce7; color: #166534; padding: 2px 10px; border-radius: 99px; font-size: 11px; font-weight: 700; }
-        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-        .label { font-size: 10px; text-transform: uppercase; color: #94a3b8; font-weight: 700; margin-bottom: 2px; }
-        .value { font-size: 14px; font-weight: 700; }
-        @media print { body { padding: 16px; } }
-      </style>
-      </head><body>${content.innerHTML}</body></html>
+      <html>
+        <head>
+          <title>Ficha de Produção - #${selectedSlip.number}</title>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+            body { 
+              font-family: 'Inter', sans-serif; 
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact;
+            }
+            @media print {
+              .no-print { display: none; }
+              body { padding: 0; margin: 0; }
+              .page-break { page-break-after: always; }
+            }
+            .ficha-container {
+              max-width: 800px;
+              margin: 0 auto;
+              padding: 20px;
+            }
+          </style>
+        </head>
+        <body class="bg-white">
+          <div class="ficha-container">
+            ${content.innerHTML}
+          </div>
+          <script>
+            // Wait for Tailwind to process the content
+            setTimeout(() => {
+              window.print();
+              // window.close(); // Optional: close after printing
+            }, 1000);
+          </script>
+        </body>
+      </html>
     `)
     win.document.close()
-    win.focus()
-    setTimeout(() => { win.print() }, 400)
   }
 
   const formatCurrency = (value: number) => {
@@ -550,8 +574,15 @@ export function OrderDetails({ order }: OrderDetailsProps) {
               <p className="text-[10px] text-amber-700 font-bold uppercase mb-1">Previsão de Entrega</p>
               <p className="text-lg font-black text-amber-900">{order.promisedDate ? new Date(order.promisedDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
             </div>
-            <div className="space-y-4">
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest border-b pb-1">Configuração e Serviços</p>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b-2 border-primary pb-4 mb-2">
+                <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Configuração Técnica e Serviços</p>
+                <div className="text-right">
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">Previsão</p>
+                  <p className="text-lg font-black text-primary italic">{order.promisedDate ? new Date(order.promisedDate).toLocaleDateString('pt-BR') : 'A definir'}</p>
+                </div>
+              </div>
+
               {selectedSlip.lines?.length > 0 ? selectedSlip.lines.map((line: any) => {
                 const item = line.saleItem;
                 const config = item?.detailMattressReform || item?.detailBoxReform || item?.detailNewMattress || item?.detailNewBox;
@@ -569,6 +600,7 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                   if (r.optLeveling) services.push("Nivelamento");
                   if (r.optWaterproofing) services.push("Impermeabilização");
                 }
+                // ... same service logic as before ...
                 if (item?.detailBoxReform) {
                   const b = item.detailBoxReform;
                   if (b.optStructureRepair) services.push("Reparo estrutural");
@@ -582,42 +614,48 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                 }
 
                 return (
-                  <div key={line.id} className="p-4 rounded-2xl border border-slate-100 bg-slate-50 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <div key={line.id} className="p-6 rounded-[2rem] border-2 border-slate-200 bg-white space-y-6 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-dashed border-slate-200 pb-4">
                       <div>
-                        <p className="font-black text-contrast uppercase italic">{item?.description || 'Item'}</p>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">{item?.productService?.name || 'Reforma'}</p>
+                        <h4 className="text-2xl font-black text-contrast uppercase italic leading-none">{item?.description || 'Item'}</h4>
+                        <p className="text-xs text-slate-400 font-bold uppercase mt-1">{item?.productService?.name || 'Reforma'}</p>
                       </div>
-                      <span className="text-sm font-bold text-primary px-3 py-1 bg-primary/5 rounded-lg">Qtd: {line.quantity}</span>
+                      <div className="bg-primary text-white px-6 py-2 rounded-2xl text-center">
+                        <p className="text-[10px] font-bold uppercase opacity-80">Quantidade</p>
+                        <p className="text-2xl font-black">{line.quantity}</p>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Medidas Reais</p>
-                        <p className="font-bold text-sm">
-                          {config?.actualWidth || '?'} x {config?.actualLength || '?'} x {config?.actualHeight || '?'} cm
+                    <div className="grid grid-cols-3 gap-8">
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Medidas Reais</p>
+                        <p className="text-2xl font-black text-contrast whitespace-nowrap">
+                          {config?.actualWidth || '?'} x {config?.actualLength || '?'} x {config?.actualHeight || '?'} <span className="text-xs">cm</span>
                         </p>
                       </div>
-                      <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase">Tecidos</p>
-                        <p className="font-bold text-sm">
-                          T: {config?.topFabricColor || 'Padrão'} {config?.sideFabricColor ? `/ L: ${config.sideFabricColor}` : ''}
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Tecidos Selecionados</p>
+                        <p className="font-black text-contrast text-sm leading-tight">
+                          T: {config?.topFabricColor || 'Padrão'} <br/>
+                          L: {config?.sideFabricColor || 'Padrão'}
                         </p>
                       </div>
-                      {config?.density && (
-                        <div>
-                          <p className="text-[10px] text-slate-400 font-bold uppercase">Densidade</p>
-                          <p className="font-bold text-sm">{config.density}</p>
-                        </div>
-                      )}
+                      <div className="space-y-1">
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Densidade / Tipo</p>
+                        <p className="text-xl font-black text-primary">{config?.density || '---'}</p>
+                      </div>
                     </div>
 
                     {services.length > 0 && (
-                      <div className="pt-3 border-t border-slate-200">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">Serviços Contratados</p>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10">
+                        <p className="text-[10px] text-primary font-black uppercase mb-3 flex items-center gap-2">
+                          <Settings className="h-3 w-3" /> Serviços e Processos de Produção
+                        </p>
+                        <div className="grid grid-cols-2 gap-y-2 gap-x-4">
                           {services.map((s, idx) => (
-                            <span key={idx} className="text-[10px] font-bold text-slate-600 bg-slate-200 px-2 py-1 rounded-md">• {s}</span>
+                            <div key={idx} className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                              <div className="w-1.5 h-1.5 rounded-full bg-primary" /> {s}
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -625,26 +663,30 @@ export function OrderDetails({ order }: OrderDetailsProps) {
 
                     {/* Insumos/Material Requirements */}
                     {item?.materialRequirements?.length > 0 && (
-                      <div className="pt-3 border-t border-slate-200">
-                        <p className="text-[10px] text-slate-400 font-bold uppercase mb-2">Requisitos de Materiais (Insumos)</p>
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="text-[10px] text-slate-400 uppercase">
-                              <th className="pb-1 font-bold">Parte</th>
-                              <th className="pb-1 font-bold">Insumo</th>
-                              <th className="pb-1 font-bold text-right">Qtd Prevista</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-100">
-                            {item.materialRequirements.map((req: any) => (
-                              <tr key={req.id} className="text-[11px] text-slate-600">
-                                <td className="py-1 font-medium">{req.part || '---'}</td>
-                                <td className="py-1">{req.supplyItem?.name || '---'}</td>
-                                <td className="py-1 text-right font-bold text-contrast">{req.quantityCalculated} {req.unit}</td>
+                      <div className="space-y-3 pt-2">
+                        <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center gap-2">
+                           <ClipboardList className="h-3 w-3" /> Lista de Insumos para Separação
+                        </p>
+                        <div className="rounded-2xl border border-slate-100 overflow-hidden">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 text-[9px] text-slate-400 uppercase font-black">
+                                <th className="px-4 py-2 border-b">Parte</th>
+                                <th className="px-4 py-2 border-b">Insumo / Material</th>
+                                <th className="px-4 py-2 border-b text-right">Qtd Prevista</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                              {item.materialRequirements.map((req: any) => (
+                                <tr key={req.id} className="text-xs text-slate-700 hover:bg-slate-50/50">
+                                  <td className="px-4 py-2.5 font-bold italic">{req.part || '---'}</td>
+                                  <td className="px-4 py-2.5">{req.supplyItem?.name || '---'}</td>
+                                  <td className="px-4 py-2.5 text-right font-black text-contrast">{req.quantityCalculated} <span className="text-[10px] text-slate-400 font-normal">{req.unit}</span></td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
                       </div>
                     )}
                   </div>
