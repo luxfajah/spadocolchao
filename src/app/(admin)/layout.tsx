@@ -10,6 +10,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const pathname = headers().get("x-pathname") || "/dashboard"
   const accessProfile = await requirePathAccess(user, pathname)
   const isKanban = pathname === "/vendas-clientes/kanban"
+  const isPdv = pathname === "/pdv"
 
   return (
     <AdminShell
@@ -25,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         canAccessSettings: accessProfile.canAccessSettings,
         homeHref: accessProfile.defaultRoute,
       }}
-      hideNavigation={isKanban}
+      hideNavigation={isKanban || isPdv}
     >
       {children}
     </AdminShell>

@@ -5,6 +5,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Clock3,
   Layers3,
+  LogOut,
   MapPinned,
   ReceiptText,
   Store,
@@ -12,6 +13,8 @@ import {
   WalletCards,
 } from "lucide-react";
 import { usePos } from "./PosContext";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 const formatBRL = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -97,13 +100,22 @@ export function PosHeader() {
             <div className="flex h-14 w-14 items-center justify-center rounded-[1.4rem] border border-white/20 bg-white/10 backdrop-blur">
               <Store className="h-7 w-7" />
             </div>
-            <div className="flex flex-wrap gap-2">
-              <div className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-white">
-                Novo cabecalho PDV
+            <div className="flex flex-wrap gap-2 items-center flex-1 justify-between">
+              <div className="flex gap-2">
+                <div className="rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-white">
+                  Terminal PDV
+                </div>
+                <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-50">
+                  Caixa aberto
+                </div>
               </div>
-              <div className="rounded-full border border-emerald-300/20 bg-emerald-400/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-[0.24em] text-emerald-50">
-                Caixa aberto
-              </div>
+
+              <Link href="/vendas-clientes/vendas">
+                <Button variant="ghost" className="h-9 gap-2 rounded-xl bg-white/10 text-[10px] font-black uppercase tracking-[0.18em] text-white hover:bg-white/20 hover:text-white border border-white/10">
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sair do PDV
+                </Button>
+              </Link>
             </div>
           </div>
 
