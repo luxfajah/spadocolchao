@@ -10,12 +10,19 @@ import { useRef, useState } from "react";
 interface ReceiptClientProps {
   order: any;
   formatBRL: (v: number) => string;
+  formatDate: (date: any) => string;
 }
 
-export function ReceiptClient({ order, formatBRL }: ReceiptClientProps) {
+export function ReceiptClient({ order, formatBRL, formatDate }: ReceiptClientProps) {
+  if (!order || !order.sale) return <div className="p-8 text-center font-bold text-rose-500">Erro: Dados da venda não encontrados.</div>;
+
   const { sale } = order;
-  const { customer, seller, items, installments } = sale;
-  const mainAddress = customer.addresses.find((a: any) => a.isMain) || customer.addresses[0];
+  const { customer, seller, items = [], installments = [] } = sale;
+  
+  if (!customer) return <div className="p-8 text-center font-bold text-rose-500">Erro: Dados do cliente não encontrados.</div>;
+
+  const addresses = customer.addresses || [];
+  const mainAddress = addresses.find((a: any) => a.isMain) || addresses[0];
   const receiptRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -110,7 +117,7 @@ export function ReceiptClient({ order, formatBRL }: ReceiptClientProps) {
           <div className="mt-6 py-4 border-y-2 border-slate-50 bg-slate-50/50 rounded-xl">
             <h3 className="font-outfit text-sm font-black uppercase italic tracking-tight text-primary">Recibo de Pedido</h3>
             <p className="text-xs font-bold mt-1">Nº {sale.number || order.id.slice(-6).toUpperCase()}</p>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{new Date(sale.saleDate).toLocaleString('pt-BR')}</p>
+            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">{formatDate(sale.saleDate)}</p>
           </div>
         </div>
 
@@ -186,9 +193,12 @@ export function ReceiptClient({ order, formatBRL }: ReceiptClientProps) {
           </p>
           <div className="space-y-2">
             {installments.map((inst: any) => (
-              <div key={inst.id} className="flex items-center justify-between text-[9px] font-bold">
-                <span className="text-slate-700">{inst.installmentNumber}x {inst.paymentMethod.name}</span>
-                <span className="text-[#02213f]">{formatBRL(inst.amount)}</span>
+              <div key={inst.id} className="flex flex-col gap-0.5 border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                <div className="flex items-center justify-between text-[9px] font-bold">
+                  <span className="text-slate-700">{inst.installmentNumber}x {inst.paymentMethod.name}</span>
+                  <span className="text-[#02213f]">{formatBRL(inst.amount)}</span>
+                </div>
+                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">Venc: {formatDate(inst.dueDate)}</p>
               </div>
             ))}
           </div>
