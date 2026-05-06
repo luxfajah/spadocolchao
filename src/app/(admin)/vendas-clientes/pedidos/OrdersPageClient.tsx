@@ -2,14 +2,12 @@
 
 import { OrdersSummary } from "@/components/pedidos/OrdersSummary"
 import { OrdersTable } from "@/components/pedidos/OrdersTable"
-import { OrderKanban } from "@/components/pedidos/OrderKanban"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PageHeader } from "@/components/layout/PageHeader"
 import {
   Activity,
   AlertTriangle,
-  Boxes,
   CheckCircle2,
   ClipboardList,
   Gauge,
@@ -225,26 +223,6 @@ export function OrdersPageClient({
           </div>
         </div>
 
-        <section id="kanban-operacional" className={isKanbanOnlyView ? "w-full" : "space-y-4"}>
-          {!isKanbanOnlyView && (
-            <div className="px-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-                Quadro operacional
-              </p>
-              <h3 className="mt-2 font-outfit text-2xl font-black uppercase italic tracking-tight text-primary">
-                Kanban integrado da central
-              </h3>
-            </div>
-          )}
-
-          <div className={isKanbanOnlyView ? "w-full" : "rounded-[2.8rem] border border-slate-100 bg-slate-50/50 p-6 shadow-inner md:p-8"}>
-            <OrderKanban
-              initialOrders={filteredOrders}
-              currentUserRole={currentUserRole}
-              kanbanMode={kanbanMode}
-            />
-          </div>
-        </section>
 
         {!isKanbanOnlyView ? (
           <section id="fila-detalhada" className="space-y-4">
@@ -270,20 +248,11 @@ export function OrdersPageClient({
     <div className="animate-in space-y-10 pb-10 duration-700 fade-in">
       <PageHeader
         title="Central de Pedidos"
-        subtitle="Dashboard operacional do fluxo de pedidos com leitura de gargalos, tempo médio por etapa, ranking de carteira e quadro kanban integrado."
+        subtitle="Dashboard operacional do fluxo de pedidos com leitura de gargalos, tempo médio por etapa e ranking de carteira."
         icon={<ClipboardList className="h-8 w-8" />}
         actionsWrap
         actions={
           <>
-            <Button
-              variant="outline"
-              className="h-12 rounded-full border-slate-200 px-6 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:bg-slate-50"
-              onClick={() =>
-                document.getElementById("kanban-operacional")?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <Boxes className="mr-2 h-4 w-4" /> Ir para Kanban
-            </Button>
             <Button
               variant="outline"
               className="h-12 rounded-full border-slate-200 px-6 text-xs font-bold uppercase tracking-wider shadow-sm transition-all hover:bg-slate-50"
@@ -317,8 +286,7 @@ export function OrdersPageClient({
                     Produção, entrega e kanban no mesmo painel
                   </h2>
                   <p className="max-w-3xl text-sm leading-relaxed text-slate-300">
-                    Acompanhe o ritmo da operação, identifique gargalos e mova pedidos no quadro
-                    sem sair da central.
+                    Acompanhe o ritmo da operação, identifique gargalos e monitore o fluxo de pedidos sem sair da central.
                   </p>
                 </div>
               </div>
@@ -665,28 +633,6 @@ export function OrdersPageClient({
         </div>
       </div>
 
-      <section id="kanban-operacional" className="space-y-4">
-        <div className="px-1">
-          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
-            Quadro operacional
-          </p>
-          <h3 className="mt-2 font-outfit text-2xl font-black uppercase italic tracking-tight text-primary">
-            Kanban integrado da central
-          </h3>
-          <p className="mt-2 max-w-4xl text-sm text-slate-500">
-            O quadro abaixo faz parte da Central de Pedidos e concentra a movimentação das etapas
-            de produção, entrega e fechamento.
-          </p>
-        </div>
-
-        <div className="rounded-[2.8rem] border border-slate-100 bg-slate-50/50 p-6 shadow-inner md:p-8">
-          <OrderKanban
-            initialOrders={filteredOrders}
-            currentUserRole={currentUserRole}
-            kanbanMode={kanbanMode}
-          />
-        </div>
-      </section>
 
       <section id="fila-detalhada" className="space-y-4">
         <div className="px-1">
