@@ -23,6 +23,7 @@ export type PosContextType = {
   setSellerId: (s: string | null) => void;
   leadSourceId: string | null;
   setLeadSourceId: (l: string | null) => void;
+  items: SaleItemType[];
   payments: any[];
   setPayments: (p: any[]) => void;
   addItem: (item: SaleItemType) => void;
