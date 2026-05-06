@@ -8,13 +8,17 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
   const { initialData } = usePos();
   const supplyItems = initialData?.supplyItems || [];
 
-  const allFabrics = supplyItems.filter((i: any) => i.category?.name === 'Tecidos e Revestimentos');
-  const topFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('tampo'));
-  const sideFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('lateral'));
-  const bottomFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('tnt') || f.name.toLowerCase().includes('tampo'));
-
+  const allFabrics = supplyItems.filter((i: any) => 
+    i.category?.name?.includes('Tecido') || 
+    i.category?.name?.includes('Revestimento')
+  );
+  const topFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('tampo') || f.name.toLowerCase().includes('jacquard') || f.name.toLowerCase().includes('malha'));
+  const sideFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('lateral') || f.name.toLowerCase().includes('suede'));
+  const bottomFabrics = allFabrics.filter((f: any) => f.name.toLowerCase().includes('tnt') || f.name.toLowerCase().includes('tampo') || f.name.toLowerCase().includes('fundo'));
   const foams = supplyItems.filter((i: any) => i.name.toLowerCase().includes('espuma') || i.category?.name?.includes('Espuma'));
-  const tapes = supplyItems.filter((i: any) => i.name.toLowerCase().includes('fita') && i.category?.name?.includes('Acessório'));
+  const tapes = supplyItems.filter((i: any) => 
+    (i.name.toLowerCase().includes('fita') || i.name.toLowerCase().includes('fitilho') || i.name.toLowerCase().includes('viés'))
+  );
   const mattressFeet = supplyItems.filter((i: any) => i.name.toLowerCase().includes('pé') || i.name.toLowerCase().includes('pezinho'));
 
   const [data, setData] = useState({

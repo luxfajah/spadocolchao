@@ -34,7 +34,7 @@ export async function getInitialPdvData() {
     prisma.paymentMethod.findMany({ select: { id: true, name: true, code: true, allowsInstallments: true, maxInstallments: true } }),
     prisma.productService.findMany({ select: { id: true, name: true, type: true, operationalCategory: true, defaultPrice: true, description: true } }),
     prisma.supplyItem.findMany({ 
-      where: { isActive: true, currentStock: { gt: 0 } },
+      where: { isActive: true },
       select: { id: true, name: true, currentStock: true, unit: true, category: { select: { name: true } } },
       orderBy: { name: 'asc' }
     })

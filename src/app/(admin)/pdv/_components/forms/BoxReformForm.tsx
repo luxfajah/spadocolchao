@@ -8,11 +8,16 @@ export function BoxReformForm({ product, onAdd, onCancel }: { product: any, onAd
   const { initialData } = usePos();
   const supplyItems = initialData?.supplyItems || [];
 
-  const fabrics = supplyItems.filter((i: any) => i.category?.name === 'Tecidos e Revestimentos');
-  const topFabrics = fabrics.filter((f: any) => f.name.toLowerCase().includes('tnt'));
-  const sideFabrics = fabrics.filter((f: any) => f.name.toLowerCase().includes('box'));
+  const fabrics = supplyItems.filter((i: any) => 
+    i.category?.name?.includes('Tecido') || 
+    i.category?.name?.includes('Revestimento')
+  );
+  const topFabrics = fabrics.filter((f: any) => f.name.toLowerCase().includes('tnt') || f.name.toLowerCase().includes('tampo'));
+  const sideFabrics = fabrics.filter((f: any) => f.name.toLowerCase().includes('box') || f.name.toLowerCase().includes('lateral') || f.name.toLowerCase().includes('suede'));
   
-  const tapes = supplyItems.filter((i: any) => i.name.toLowerCase().includes('fita') && i.category?.name?.includes('Acessório'));
+  const tapes = supplyItems.filter((i: any) => 
+    (i.name.toLowerCase().includes('fita') || i.name.toLowerCase().includes('fitilho') || i.name.toLowerCase().includes('viés'))
+  );
   const boxFeet = supplyItems.filter((i: any) => i.name.toLowerCase().includes('pé') || i.name.toLowerCase().includes('pezinho'));
 
   const [data, setData] = useState({
