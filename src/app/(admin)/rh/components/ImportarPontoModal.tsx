@@ -156,8 +156,13 @@ export function ImportarPontoModal({ open, onOpenChange }: Props) {
       })
 
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || "Erro ao analisar arquivo")
+        let data: any
+        try {
+          data = await res.json()
+        } catch (e) {
+          throw new Error("Erro de conexão ou resposta inválida do servidor.")
+        }
+        throw new Error(data.detail ? `${data.error} Detalhes: ${data.detail}` : data.error || "Erro ao analisar arquivo")
       }
 
       const data = await res.json()
@@ -294,7 +299,11 @@ export function ImportarPontoModal({ open, onOpenChange }: Props) {
                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em] mt-1">Ou clique para selecionar na pasta</p>
                 </div>
                 <input type="file" accept=".txt" className="hidden" 
-                  onChange={e => { const f = e.target.files?.[0]; if (f) handleFileUpload(f) }} />
+                  onChange={e => { 
+                    const f = e.target.files?.[0]; 
+                    if (f) handleFileUpload(f); 
+                    e.target.value = ""; 
+                  }} />
               </label>
 
               <div className="flex items-start gap-4 p-5 rounded-3xl bg-indigo-50/50 border border-indigo-100/50">
@@ -307,6 +316,16 @@ export function ImportarPontoModal({ open, onOpenChange }: Props) {
                   </p>
                 </div>
               </div>
+
+              {error && (
+                <div className="p-5 rounded-3xl bg-rose-50 border border-rose-100 text-rose-600 text-xs font-bold flex items-center gap-3 animate-in fade-in zoom-in-95 duration-300">
+                  <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                  <div className="flex flex-col gap-0.5">
+                    <p className="uppercase tracking-widest text-[10px]">Erro na Importação</p>
+                    <p className="font-medium text-[11px] leading-relaxed">{error}</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
