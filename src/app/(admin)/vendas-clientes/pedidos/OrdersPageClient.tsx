@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader"
 import {
   Activity,
   AlertTriangle,
+  Boxes,
   CheckCircle2,
   ClipboardList,
   Gauge,
