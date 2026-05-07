@@ -737,6 +737,7 @@ export type HoleriteEmployee = {
   } | null
   attendanceMirror: {
     id: string
+    period: string
     workedMinutes: number
     overtimeMinutes: number
     deficitMinutes: number
