@@ -17,6 +17,7 @@ import { getEmployeeLegalName, getEmployeePrimaryName } from "@/lib/employee-nam
 import { prisma } from "@/lib/prisma"
 
 import { PontoHistoryEmployeeFilter } from "./PontoHistoryEmployeeFilter"
+import { ApprovedMirrorPdfButton } from "../components/ApprovedMirrorPdfButton"
 
 function formatHours(minutes?: number | null) {
   if (!minutes) {
@@ -298,6 +299,11 @@ export default async function PontoHistoricoPage({
 
                   <TableCell className="text-right pr-8">
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                      <ApprovedMirrorPdfButton
+                        mirrorId={mirror.id}
+                        label="PDF"
+                        className="h-8 rounded-xl bg-slate-900 hover:bg-slate-800 px-3 text-white shadow-sm font-black text-[9px] uppercase tracking-widest gap-2"
+                      />
                       <Link href={`/rh/ponto/espelho/${mirror.id}`}>
                         <Button
                           variant="secondary"
