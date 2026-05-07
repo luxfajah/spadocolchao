@@ -21,7 +21,6 @@ import {
   Clock,
   Calendar,
   AlertCircle,
-  Info,
   History,
   CheckCircle2
 } from "lucide-react"
@@ -488,12 +487,7 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                 </div>
               </div>
 
-              <div className="flex gap-3 p-4 rounded-2xl bg-white/5 border border-white/5">
-                <Info className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />
-                <p className="text-[9px] text-slate-500 leading-relaxed font-bold uppercase tracking-[0.1em]">
-                  Base: {formatBRL(calculations.hourValue)}/hora. HE calculada com multiplicadores de 1.5x e 2.0x sobre o valor/hora da escala.
-                </p>
-              </div>
+
             </div>
 
             <div className="flex flex-col gap-3 relative mt-10">
