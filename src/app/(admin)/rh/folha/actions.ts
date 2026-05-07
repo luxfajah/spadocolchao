@@ -782,6 +782,7 @@ export async function getHoleritesData(period: string, query?: string, departmen
         take: 1,
         select: {
           id: true,
+          period: true,
           workedMinutes: true,
           overtimeMinutes: true,
           deficitMinutes: true,
