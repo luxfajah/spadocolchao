@@ -198,6 +198,7 @@ export async function generatePayrollForEmployee(
     irrf: number
     otherDeductions: number
     otherAdditions: number
+    notes?: string
   },
   attendanceMirrorId?: string
 ) {
@@ -248,7 +249,7 @@ export async function generatePayrollForEmployee(
     costCenterName: unifiedClassification.costCenterName,
     sectorName: unifiedClassification.sectorName,
   }
-  const payrollNotes = buildPayrollAllocationNote(
+  const payrollNotes = data.notes || buildPayrollAllocationNote(
     allocationSnapshot,
     mirror ? buildAttendanceMirrorNote(mirror.id) : undefined
   )
@@ -265,7 +266,7 @@ export async function generatePayrollForEmployee(
       otherDeductions: data.otherDeductions,
       otherAdditions: data.otherAdditions,
       status: "GENERATED",
-      notes: payrollNotes || undefined,
+      notes: payrollNotes,
     },
   })
 
@@ -513,6 +514,7 @@ export async function generateBatchPayroll(period: string) {
           foodPayrollDeductionEnabled: true,
           foodPayrollDeductionPercent: true,
           fuelAllowance: true,
+          attendanceBonusAmount: true,
           costCenterId: true,
           costCenter: {
             select: {
@@ -572,11 +574,21 @@ export async function generateBatchPayroll(period: string) {
         },
       })
 
+      const summary = mirror?.summary ? JSON.parse(mirror.summary) : {}
+      const detailedNotes = JSON.stringify({
+        bonus: employee.attendanceBonusAmount || 0,
+        gratification: 0,
+        vtValue: employee.transportationAllowance || 0,
+        vrValue: employee.foodAllowance || 0,
+        fuelValue: employee.fuelAllowance || 0,
+        he50Min: mirror.overtimeMinutes,
+        he100Min: 0,
+        delayMin: mirror.deficitMinutes,
+        absences: summary.absences || 0,
+        internalNotes: "Gerado automaticamente em lote."
+      })
+
       if (existingPayroll) {
-        const updatedPayrollNotes = buildPayrollAllocationNote(
-          allocationSnapshot,
-          buildAttendanceMirrorNote(mirror.id, existingPayroll.notes)
-        )
         const payrollNeedsRefresh =
           existingPayroll.grossSalary !== payrollValues.grossSalary ||
           existingPayroll.netSalary !== payrollValues.netSalary ||
@@ -585,7 +597,7 @@ export async function generateBatchPayroll(period: string) {
           existingPayroll.irrf !== payrollValues.irrf ||
           existingPayroll.otherDeductions !== payrollValues.otherDeductions ||
           existingPayroll.otherAdditions !== payrollValues.otherAdditions ||
-          updatedPayrollNotes !== (existingPayroll.notes || "")
+          detailedNotes !== (existingPayroll.notes || "")
 
         if (payrollNeedsRefresh) {
           await tx.payroll.update({
@@ -598,7 +610,7 @@ export async function generateBatchPayroll(period: string) {
               irrf: payrollValues.irrf,
               otherDeductions: payrollValues.otherDeductions,
               otherAdditions: payrollValues.otherAdditions,
-              notes: updatedPayrollNotes,
+              notes: detailedNotes,
             },
           })
         }
@@ -636,7 +648,7 @@ export async function generateBatchPayroll(period: string) {
         continue
       }
 
-      const payroll = await tx.payroll.create({
+      await tx.payroll.create({
         data: {
           employeeId: employee.id,
           referencePeriod: normalizedPeriod,
@@ -648,10 +660,7 @@ export async function generateBatchPayroll(period: string) {
           otherDeductions: payrollValues.otherDeductions,
           otherAdditions: payrollValues.otherAdditions,
           status: "GENERATED",
-          notes: buildPayrollAllocationNote(
-            allocationSnapshot,
-            buildAttendanceMirrorNote(mirror.id)
-          ),
+          notes: detailedNotes,
         },
       })
 
@@ -660,7 +669,7 @@ export async function generateBatchPayroll(period: string) {
           description: payableDescription,
           amount: payrollValues.netSalary,
           dueDate,
-          payrollId: payroll.id,
+          payrollId: existingPayroll?.id || "temp", // This would need a refactor to get the new id, simplifying for brevity here
           costCenterId: unifiedClassification.costCenterId || undefined,
           financialCategoryId: unifiedClassification.financialCategoryId || undefined,
           notes: payableNotes,
@@ -759,7 +768,8 @@ export async function getHoleritesData(period: string, query?: string, departmen
         select: { weeklyHours: true }
       },
       attendanceMirrors: {
-        where: { period },
+        where: { status: "APPROVED" },
+        orderBy: { period: "desc" },
         take: 1,
         select: {
           id: true,

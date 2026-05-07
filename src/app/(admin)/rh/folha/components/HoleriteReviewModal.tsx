@@ -56,48 +56,61 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
 
   // Inicialização baseada nos dados do banco e espelho
   useEffect(() => {
+    // Valores padrão do espelho e benefícios (caso não haja dados salvos no payroll)
+    const mirrorHe50 = employee.attendanceMirror?.overtimeMinutes || 0
+    const mirrorDelay = employee.attendanceMirror?.deficitMinutes || 0
+    let mirrorAbsences = 0
+    if (employee.attendanceMirror?.summary) {
+      try {
+        const summary = JSON.parse(employee.attendanceMirror.summary)
+        mirrorAbsences = summary.absences || 0
+      } catch (e) {}
+    }
+
+    const configVt = employee.benefits.transportationAllowance || 0
+    const configVr = employee.benefits.foodAllowance || 0
+    const configFuel = employee.benefits.fuelAllowance || 0
+    const configBonus = employee.benefits.attendanceBonusEnabled ? (employee.benefits.attendanceBonusAmount || 0) : 0
+
     if (employee.payroll?.notes) {
       try {
         const savedData = JSON.parse(employee.payroll.notes)
-        setBonus(savedData.bonus || 0)
+        setBonus(savedData.bonus ?? configBonus)
         setGratification(savedData.gratification || 0)
-        setVtValue(savedData.vtValue || 0)
-        setVrValue(savedData.vrValue || 0)
-        setFuelValue(savedData.fuelValue || 0)
-        setHe50Min(savedData.he50Min || 0)
+        setVtValue(savedData.vtValue ?? configVt)
+        setVrValue(savedData.vrValue ?? configVr)
+        setFuelValue(savedData.fuelValue ?? configFuel)
+        setHe50Min(savedData.he50Min ?? mirrorHe50)
         setHe100Min(savedData.he100Min || 0)
-        setDelayMin(savedData.delayMin || 0)
-        setAbsences(savedData.absences || 0)
+        setDelayMin(savedData.delayMin ?? mirrorDelay)
+        setAbsences(savedData.absences ?? mirrorAbsences)
         setNotes(savedData.internalNotes || "")
       } catch (e) {
+        // Se a nota não for JSON (ex: nota de geração em lote legada), usamos os valores do espelho/cadastro
+        // mas mantemos o texto da nota para exibição.
+        setHe50Min(mirrorHe50)
+        setHe100Min(0)
+        setDelayMin(mirrorDelay)
+        setAbsences(mirrorAbsences)
+        setVtValue(configVt)
+        setVrValue(configVr)
+        setFuelValue(configFuel)
+        setBonus(configBonus)
+        setGratification(0)
         setNotes(employee.payroll.notes || "")
       }
     } else {
-      // Valores sugeridos do espelho de ponto e cadastro (VALORES REGISTRADOS)
-      setHe50Min(employee.attendanceMirror?.overtimeMinutes || 0)
-      setHe100Min(0) // Padrão 0 para extras 100%, editável pelo RH
-      setDelayMin(employee.attendanceMirror?.deficitMinutes || 0)
-      
-      let absencesCount = 0
-      if (employee.attendanceMirror?.summary) {
-        try {
-          const summary = JSON.parse(employee.attendanceMirror.summary)
-          absencesCount = summary.absences || 0
-        } catch (e) {
-          absencesCount = 0
-        }
-      }
-      setAbsences(absencesCount)
-
-      // Benefícios registrados no cadastro
-      setVtValue(employee.benefits.transportationAllowance || 0)
-      setVrValue(employee.benefits.foodAllowance || 0)
-      setFuelValue(employee.benefits.fuelAllowance || 0)
-      
-      // Bônus de assiduidade se habilitado
-      const assiduciaBonus = employee.benefits.attendanceBonusEnabled ? (employee.benefits.attendanceBonusAmount || 0) : 0
-      setBonus(assiduciaBonus)
-      setGratification(0) // Manual - Preenchido pelo RH se necessário
+      // Sem holerite prévio: inicia com dados frescos do espelho e cadastro
+      setHe50Min(mirrorHe50)
+      setHe100Min(0)
+      setDelayMin(mirrorDelay)
+      setAbsences(mirrorAbsences)
+      setVtValue(configVt)
+      setVrValue(configVr)
+      setFuelValue(configFuel)
+      setBonus(configBonus)
+      setGratification(0)
+      setNotes("")
     }
   }, [employee])
 
@@ -399,6 +412,10 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                   <div className="flex justify-between items-center px-1">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">IRRF (Simp. 2026)</span>
                     <span className="text-xs font-bold text-slate-400">-{formatBRL(calculations.irrf)}</span>
+                  </div>
+                  <div className="flex justify-between items-center px-1">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">FGTS (Desconto)</span>
+                    <span className="text-xs font-bold text-slate-400">-{formatBRL(calculations.fgts)}</span>
                   </div>
                 </div>
 
