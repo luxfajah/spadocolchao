@@ -24,7 +24,8 @@ import {
   recalculateEmployeeMonth,
 } from "@/lib/attendance/service"
 
-import { generateEmployeePayroll } from "../../folha/actions"
+
+import { generateEmployeePayrollDraft } from "../../folha/actions"
 import { AttendancePeriodCalendar } from "../components/AttendancePeriodCalendar"
 import { AttendanceHeroPeriodPicker } from "@/app/(admin)/rh/ponto/components/AttendanceHeroPeriodPicker"
 import { ApprovedMirrorPdfButton } from "../components/ApprovedMirrorPdfButton"
@@ -174,18 +175,17 @@ async function confirmMirrorAction(formData: FormData) {
   redirect(`/rh/ponto/espelho/${mirror.id}?autoDownload=1`)
 }
 
-async function generatePayrollAction(formData: FormData) {
+async function generateDraftAction(formData: FormData) {
   "use server"
 
   const employeeId = String(formData.get("employeeId") || "")
   const period = String(formData.get("period") || "")
-  const mirrorId = String(formData.get("mirrorId") || "")
 
   if (!employeeId || !period) {
-    throw new Error("Dados inválidos para gerar o holerite.")
+    throw new Error("Dados inválidos para gerar o rascunho.")
   }
 
-  const result = await generateEmployeePayroll(employeeId, period, mirrorId || undefined)
+  const result = await generateEmployeePayrollDraft(employeeId, period)
   redirect(`/rh/folha?period=${encodeURIComponent(result.period)}&funcionario=${encodeURIComponent(employeeId)}`)
 }
 
@@ -251,7 +251,7 @@ export default async function EspelhoFuncionarioPage({
   }
 
   const mirrorStatusInfo = mirror ? mirrorStatusMeta[mirror.status] || mirrorStatusMeta.GENERATED : null
-  const canGeneratePayroll = canPrintApprovedMirror && !isLocked
+
 
   const flowSteps = [
     {
@@ -266,10 +266,7 @@ export default async function EspelhoFuncionarioPage({
       label: "Confirmar espelho",
       done: mirror?.status === "APPROVED",
     },
-    {
-      label: "Gerar rascunho",
-      done: isLocked,
-    },
+
   ]
 
   return (
@@ -567,7 +564,7 @@ export default async function EspelhoFuncionarioPage({
                 <div className="h-8 w-px bg-slate-200 mx-2 hidden xl:block" />
 
                 <div className="flex flex-wrap items-center gap-2">
-                  {mirror?.id && (
+                  {mirror?.id && !editingEnabled && (
                     <ApprovedMirrorPdfButton
                       mirrorId={mirror.id}
                       disabled={!canPrintApprovedMirror}
@@ -576,18 +573,19 @@ export default async function EspelhoFuncionarioPage({
                     />
                   )}
 
-                  <form action={generatePayrollAction}>
-                    <input type="hidden" name="employeeId" value={params.id} />
-                    <input type="hidden" name="period" value={periodSlug} />
-                    <input type="hidden" name="mirrorId" value={mirror?.id || ""} />
-                    <Button
-                      type="submit"
-                      disabled={!canGeneratePayroll}
-                      className="rounded-2xl h-11 px-8 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-                    >
-                      Gerar rascunho de holerite
-                    </Button>
-                  </form>
+                  {mirror?.id && (
+                    <form action={generateDraftAction}>
+                      <input type="hidden" name="employeeId" value={params.id} />
+                      <input type="hidden" name="period" value={periodSlug} />
+                      <Button
+                        type="submit"
+                        disabled={isLocked}
+                        className="rounded-2xl h-11 px-8 bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/20 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                      >
+                        Gerar Rascunho de Holerite
+                      </Button>
+                    </form>
+                  )}
                 </div>
               </>
             )}

@@ -22,9 +22,10 @@ import {
   Calendar,
   AlertCircle,
   Info,
-  History
+  History,
+  CheckCircle2
 } from "lucide-react"
-import { HoleriteEmployee, saveHolerite } from "../actions"
+import { HoleriteEmployee, saveHolerite, finalizeHolerite } from "../actions"
 import { calculatePayrollValuesByPeriod } from "@/lib/payroll/tax-policy"
 import { useToast } from "@/hooks/use-toast"
 
@@ -156,6 +157,55 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
     }
   }, [employee, period, bonus, gratification, vtValue, vrValue, fuelValue, he50Min, he100Min, delayMin, absences])
 
+  async function handleFinalize() {
+    startTransition(async () => {
+      try {
+        const detailedNotes = JSON.stringify({
+          bonus, gratification, vtValue, vrValue, fuelValue,
+          he50Min, he100Min, delayMin, absences,
+          internalNotes: notes
+        })
+
+        // Salva como rascunho primeiro para garantir que os valores estão atualizados
+        await saveHolerite(employee.id, period, {
+          grossSalary: calculations.grossSalary,
+          inss: calculations.inss,
+          fgts: calculations.fgts,
+          irrf: calculations.irrf,
+          otherAdditions: calculations.otherAdditions,
+          otherDeductions: calculations.otherDeductions,
+          notes: detailedNotes,
+          status: "DRAFT"
+        })
+
+        // Chama o saveHolerite com status GENERATED (isso já dispara o financeiro via generatePayrollForEmployee internamente)
+        await saveHolerite(employee.id, period, {
+          grossSalary: calculations.grossSalary,
+          inss: calculations.inss,
+          fgts: calculations.fgts,
+          irrf: calculations.irrf,
+          otherAdditions: calculations.otherAdditions,
+          otherDeductions: calculations.otherDeductions,
+          notes: detailedNotes,
+          status: "GENERATED"
+        })
+
+
+        toast({
+          title: "Holerite Gerado",
+          description: "O holerite foi processado e o lançamento financeiro foi criado.",
+        })
+        onClose()
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Erro ao gerar",
+          description: "Verifique os dados e tente novamente.",
+        })
+      }
+    })
+  }
+
   async function handleSave() {
     startTransition(async () => {
       try {
@@ -173,7 +223,8 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
           irrf: calculations.irrf,
           otherAdditions: calculations.otherAdditions,
           otherDeductions: calculations.otherDeductions,
-          notes: detailedNotes
+          notes: detailedNotes,
+          status: "DRAFT"
         })
 
         toast({
@@ -447,22 +498,33 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
 
             <div className="flex flex-col gap-3 relative mt-10">
               <Button 
-                onClick={handleSave}
+                onClick={handleFinalize}
                 disabled={isPending}
-                className="w-full h-16 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-black font-black uppercase text-sm tracking-[0.15em] shadow-xl shadow-emerald-500/10 transition-all hover:-translate-y-1 flex gap-2"
+                className="w-full h-16 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase text-sm tracking-[0.15em] shadow-xl shadow-indigo-500/10 transition-all hover:-translate-y-1 flex gap-2"
               >
                 {isPending ? "Processando..." : (
-                  <><Save className="h-5 w-5" /> Salvar Rascunho</>
+                  <><CheckCircle2 className="h-5 w-5" /> Gerar Holerite</>
+                )}
+              </Button>
+              <Button 
+                onClick={handleSave}
+                disabled={isPending}
+                variant="outline"
+                className="w-full h-14 rounded-2xl border-emerald-500/50 hover:bg-emerald-500/10 text-emerald-500 font-black uppercase text-[11px] tracking-[0.15em] transition-all flex gap-2"
+              >
+                {isPending ? "Processando..." : (
+                  <><Save className="h-4 w-4" /> Salvar Rascunho</>
                 )}
               </Button>
               <Button 
                 variant="ghost" 
                 onClick={onClose}
-                className="w-full h-12 rounded-2xl text-slate-500 hover:text-white hover:bg-white/5 font-black uppercase text-[10px] tracking-widest transition-all"
+                className="w-full h-10 rounded-2xl text-slate-500 hover:text-white hover:bg-white/5 font-black uppercase text-[9px] tracking-widest transition-all"
               >
                 <X className="mr-2 h-4 w-4" /> Cancelar
               </Button>
             </div>
+
           </div>
         </div>
       </DialogContent>

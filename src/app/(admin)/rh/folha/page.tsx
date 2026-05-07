@@ -42,11 +42,18 @@ export default async function FolhaPage({
         icon={<ReceiptText className="h-8 w-8 text-emerald-600" />}
         actions={
           <div className="flex gap-3">
+             <Button 
+               variant="outline"
+               className="rounded-full gap-2 border-slate-200 text-slate-600 hover:bg-slate-50 transition-all px-6 h-12 font-bold text-xs uppercase tracking-widest"
+             >
+               <Users className="h-4 w-4" /> Ver Lista
+             </Button>
              <BulkGenerationButton 
               period={period} 
               departments={departments}
             />
           </div>
+
         }
       />
 

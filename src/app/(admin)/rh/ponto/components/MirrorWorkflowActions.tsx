@@ -7,7 +7,7 @@ import { CheckCircle2, FileCheck2, LockOpen, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 
-import { GenerateEmployeePayrollButton } from "../../components/GenerateEmployeePayrollButton"
+
 import { confirmMirrorChanges, enableMirrorEditing } from "../[id]/adjust-actions"
 
 type MirrorWorkflowActionsProps = {
@@ -29,7 +29,7 @@ export function MirrorWorkflowActions({
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
 
-  const canGeneratePayroll = !!mirrorId && mirrorStatus === "APPROVED" && !payrollLocked
+
 
   function handleEnableEditing() {
     startTransition(async () => {
@@ -97,14 +97,7 @@ export function MirrorWorkflowActions({
         Confirmar Espelho
       </Button>
 
-      <GenerateEmployeePayrollButton
-        employeeId={employeeId}
-        period={period}
-        attendanceMirrorId={mirrorId || undefined}
-        disabled={!canGeneratePayroll}
-        label={payrollLocked ? "Holerite Gerado" : "Gerar Holerite"}
-        className="bg-emerald-500 hover:bg-emerald-600"
-      />
+
 
       {mirrorId && mirrorStatus === "APPROVED" && (
         <Button

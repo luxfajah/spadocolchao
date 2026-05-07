@@ -263,39 +263,52 @@ export async function generatePayrollForEmployee(
     mirror ? buildAttendanceMirrorNote(mirror.id) : undefined
   )
 
-  const payroll = await prisma.payroll.create({
-    data: {
-      employeeId,
-      attendanceMirrorId: mirror?.id || undefined,
-      referencePeriod: normalizedPeriod,
-      grossSalary: data.grossSalary,
-      netSalary,
-      inss: data.inss,
-      fgts: data.fgts,
-      irrf: data.irrf,
-      otherDeductions: data.otherDeductions,
-      otherAdditions: data.otherAdditions,
-      status: "GENERATED",
-      notes: payrollNotes,
-    },
+  const existingPayroll = await prisma.payroll.findFirst({
+    where: { employeeId, referencePeriod: normalizedPeriod },
+    include: { accountsPayable: { take: 1 } }
   })
 
-  await prisma.accountPayable.create({
-    data: {
-      description: buildPayrollPayableDescription(employeeDisplayName, allocationSnapshot),
-      amount: netSalary,
-      dueDate,
-      payrollId: payroll.id,
-      costCenterId: unifiedClassification.costCenterId || undefined,
-      financialCategoryId: unifiedClassification.financialCategoryId || undefined,
-      notes: buildPayrollPayableNotes(normalizedPeriod, mirror?.id, allocationSnapshot),
-      status: "PENDING",
-    },
-  })
+  const payrollData = {
+    attendanceMirrorId: mirror?.id || undefined,
+    grossSalary: data.grossSalary,
+    netSalary,
+    inss: data.inss,
+    fgts: data.fgts,
+    irrf: data.irrf,
+    otherDeductions: data.otherDeductions,
+    otherAdditions: data.otherAdditions,
+    status: "GENERATED" as const,
+    notes: payrollNotes,
+  }
+
+  const payroll = existingPayroll 
+    ? await prisma.payroll.update({ where: { id: existingPayroll.id }, data: payrollData })
+    : await prisma.payroll.create({ data: { ...payrollData, employeeId, referencePeriod: normalizedPeriod } })
+
+  const payableData = {
+    description: buildPayrollPayableDescription(employeeDisplayName, allocationSnapshot),
+    amount: netSalary,
+    dueDate,
+    payrollId: payroll.id,
+    costCenterId: unifiedClassification.costCenterId || undefined,
+    financialCategoryId: unifiedClassification.financialCategoryId || undefined,
+    notes: buildPayrollPayableNotes(normalizedPeriod, mirror?.id, allocationSnapshot),
+    status: "PENDING" as const,
+  }
+
+  if (existingPayroll?.accountsPayable?.[0]) {
+    await prisma.accountPayable.update({
+      where: { id: existingPayroll.accountsPayable[0].id },
+      data: payableData
+    })
+  } else {
+    await prisma.accountPayable.create({ data: payableData })
+  }
 
   revalidatePath("/rh/folha")
   return payroll
 }
+
 
 export async function generateEmployeePayroll(
   employeeId: string,
@@ -885,24 +898,156 @@ export async function saveHolerite(
     otherDeductions: number
     otherAdditions: number
     notes?: string
+    status?: "DRAFT" | "GENERATED"
   }
 ) {
-  // Chamamos generatePayrollForEmployee pois ja faz toda a integracao com contas a pagar
-  // mas alteramos o status final para DRAFT conforme o novo workflow
-  const payroll = await generatePayrollForEmployee(employeeId, period, data)
-  
-  // Update final para garantir que eh DRAFT e salvar as notes customizadas
-  await prisma.payroll.update({
-    where: { id: payroll.id },
-    data: {
+  const status = data.status || "DRAFT"
+
+  // Se for GENERATED, usamos a lógica completa que inclui financeiro
+  if (status === "GENERATED") {
+    return await generatePayrollForEmployee(employeeId, period, data)
+  }
+
+  // Se for DRAFT, apenas salvamos os valores sem disparar o financeiro
+  const normalizedPeriod = resolvePayrollPeriod(period)
+  const netSalary = data.grossSalary - data.inss - data.irrf - data.otherDeductions + data.otherAdditions
+
+  const payroll = await prisma.payroll.upsert({
+    where: {
+      id: (await prisma.payroll.findFirst({
+        where: { employeeId, referencePeriod: normalizedPeriod },
+        select: { id: true }
+      }))?.id || 'new-id'
+    },
+    create: {
+      employeeId,
+      referencePeriod: normalizedPeriod,
+      grossSalary: data.grossSalary,
+      netSalary,
+      inss: data.inss,
+      fgts: data.fgts,
+      irrf: data.irrf,
+      otherDeductions: data.otherDeductions,
+      otherAdditions: data.otherAdditions,
       status: "DRAFT",
-      notes: data.notes
+      notes: data.notes,
+    },
+    update: {
+      grossSalary: data.grossSalary,
+      netSalary,
+      inss: data.inss,
+      fgts: data.fgts,
+      irrf: data.irrf,
+      otherDeductions: data.otherDeductions,
+      otherAdditions: data.otherAdditions,
+      status: "DRAFT",
+      notes: data.notes,
     }
   })
 
   revalidatePath("/rh/folha")
   return payroll
 }
+
+export async function finalizeHolerite(payrollId: string) {
+  const payroll = await prisma.payroll.findUnique({
+    where: { id: payrollId },
+    include: { employee: true }
+  })
+
+  if (!payroll) throw new Error("Holerite não encontrado.")
+
+  // Chama a lógica de geração oficial que cria o financeiro
+  const result = await generatePayrollForEmployee(payroll.employeeId, payroll.referencePeriod, {
+    grossSalary: payroll.grossSalary,
+    inss: payroll.inss,
+    fgts: payroll.fgts,
+    irrf: payroll.irrf,
+    otherDeductions: payroll.otherDeductions,
+    otherAdditions: payroll.otherAdditions,
+    notes: payroll.notes || undefined
+  })
+
+  return result
+}
+
+export async function generateEmployeePayrollDraft(
+  employeeId: string,
+  period: string,
+) {
+  const normalizedPeriod = resolvePayrollPeriod(period)
+  const mirrorPeriod = resolveMirrorPeriod(normalizedPeriod)
+
+  const employee = await prisma.employee.findUnique({
+    where: { id: employeeId },
+    select: {
+      id: true,
+      fullName: true,
+      socialName: true,
+      salaryBase: true,
+      vtDailyValue: true,
+      vtWorkDaysPerMonth: true,
+      transportationAllowance: true,
+      transportationPayrollDeductionEnabled: true,
+      transportationPayrollDeductionPercent: true,
+      foodAllowance: true,
+      foodPayrollDeductionEnabled: true,
+      foodPayrollDeductionPercent: true,
+      fuelAllowance: true,
+    },
+  })
+
+  if (!employee) throw new Error("Funcionário não encontrado.")
+
+  // Busca o espelho do período de referência (independente do status) para H.E. e déficit
+  const mirror = await prisma.attendanceMirror.findFirst({
+    where: { employeeId, period: mirrorPeriod },
+  })
+
+  const payrollValues = calculatePayrollValues(employee, normalizedPeriod, mirror)
+
+  const payroll = await saveHolerite(employeeId, normalizedPeriod, {
+    grossSalary: payrollValues.grossSalary,
+    inss: payrollValues.inss,
+    fgts: payrollValues.fgts,
+    irrf: payrollValues.irrf,
+    otherDeductions: payrollValues.otherDeductions,
+    otherAdditions: payrollValues.otherAdditions,
+    status: "DRAFT",
+  })
+
+  revalidatePath("/rh/folha")
+  revalidatePath(`/rh/ponto/${employeeId}`)
+
+  return { payrollId: payroll.id, period: normalizedPeriod }
+}
+
+export async function finalizeBulkHolerites(period: string, department?: string) {
+
+  const drafts = await prisma.payroll.findMany({
+    where: {
+      referencePeriod: period,
+      status: "DRAFT",
+      employee: {
+        ...(department && department !== "all" ? { department } : {})
+      }
+    }
+  })
+
+  let count = 0
+  for (const draft of drafts) {
+    try {
+      await finalizeHolerite(draft.id)
+      count++
+    } catch (e) {
+      console.error(`Erro ao finalizar holerite ${draft.id}:`, e)
+    }
+  }
+
+  revalidatePath("/rh/folha")
+  return { count }
+}
+
 
 export async function generateBulkHolerites(period: string, department?: string) {
   const employees = await prisma.employee.findMany({

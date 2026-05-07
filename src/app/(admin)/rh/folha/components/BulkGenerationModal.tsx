@@ -22,7 +22,7 @@ import {
   AlertTriangle,
   Users
 } from "lucide-react"
-import { generateBulkHolerites } from "../actions"
+import { generateBulkHolerites, finalizeBulkHolerites } from "../actions"
 import { useToast } from "@/hooks/use-toast"
 
 type BulkGenerationModalProps = {
@@ -36,24 +36,33 @@ export function BulkGenerationModal({ isOpen, onClose, period, departments }: Bu
   const { toast } = useToast()
   const [isPending, startTransition] = useTransition()
   const [selectedDept, setSelectedDept] = useState("all")
+  const [mode, setMode] = useState<"draft" | "finalize">("finalize")
   const [step, setStep] = useState<"confirm" | "success">("confirm")
   const [generatedCount, setGeneratedCount] = useState(0)
 
-  function handleGenerate() {
+  function handleAction() {
     startTransition(async () => {
       try {
-        const result = await generateBulkHolerites(period, selectedDept)
+        let result
+        if (mode === "draft") {
+          result = await generateBulkHolerites(period, selectedDept)
+        } else {
+          result = await finalizeBulkHolerites(period, selectedDept)
+        }
+        
         setGeneratedCount(result.count)
         setStep("success")
         toast({
           title: "Sucesso",
-          description: `${result.count} holerites gerados com sucesso!`,
+          description: mode === "draft" 
+            ? `${result.count} rascunhos gerados com sucesso!` 
+            : `${result.count} holerites processados e finalizados!`,
         })
       } catch (error) {
         toast({
           variant: "destructive",
           title: "Erro",
-          description: "Erro ao gerar holerites em lote.",
+          description: "Erro ao processar operação em lote.",
         })
         onClose()
       }
@@ -83,6 +92,21 @@ export function BulkGenerationModal({ isOpen, onClose, period, departments }: Bu
             </div>
 
             <div className="space-y-4 bg-white/5 p-6 rounded-[2rem] border border-white/5">
+              <div className="grid grid-cols-2 gap-2 p-1 bg-slate-900 rounded-2xl mb-4">
+                <button 
+                  onClick={() => setMode("finalize")}
+                  className={`h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${mode === "finalize" ? "bg-indigo-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+                >
+                  Finalizar Rascunhos
+                </button>
+                <button 
+                  onClick={() => setMode("draft")}
+                  className={`h-10 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${mode === "draft" ? "bg-indigo-600 text-white shadow-lg" : "text-slate-500 hover:text-slate-300"}`}
+                >
+                  Gerar Rascunhos
+                </button>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Filtrar por Setor</label>
                 <Select value={selectedDept} onValueChange={setSelectedDept}>
@@ -103,21 +127,23 @@ export function BulkGenerationModal({ isOpen, onClose, period, departments }: Bu
               <div className="flex gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl transition-all">
                 <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
                 <p className="text-[9px] text-amber-200/80 font-medium uppercase tracking-wider leading-relaxed">
-                  Esta ação não sobrescreve holerites já revisados ou gerados manualmente. Apenas novas guias em rascunho (DRAFT) serão criadas.
+                  {mode === "finalize" 
+                    ? "Esta ação processará todos os holerites em status RASCUNHO (DRAFT) para PROCESSADO (GENERATED), criando os lançamentos financeiros correspondentes."
+                    : "O sistema irá criar rascunhos para todos os colaboradores ativos que ainda não possuem holerite nesta competência."}
                 </p>
               </div>
             </div>
 
             <div className="flex flex-col gap-3 pt-2">
               <Button 
-                onClick={handleGenerate}
+                onClick={handleAction}
                 disabled={isPending}
                 className="h-14 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-black uppercase text-xs tracking-widest transition-all hover:-translate-y-1 shadow-xl shadow-indigo-500/10"
               >
                 {isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processando...</>
                 ) : (
-                  "Iniciar Geração Automática"
+                  mode === "finalize" ? "Processar Holerites (Finalizar)" : "Gerar Novos Rascunhos"
                 )}
               </Button>
               <Button 
@@ -145,8 +171,9 @@ export function BulkGenerationModal({ isOpen, onClose, period, departments }: Bu
             </div>
 
             <p className="text-center text-slate-400 text-xs font-bold uppercase tracking-widest px-4 leading-relaxed">
-              Os holerites foram criados com status <span className="text-amber-400">Rascunho</span>. 
-              Você pode revisá-los individualmente na lista principal antes de finalizar a folha.
+              {mode === "draft" 
+                ? "Os holerites foram criados com status Rascunho. Você pode revisá-los individualmente na lista principal antes de finalizar a folha."
+                : "Os holerites foram finalizados e os lançamentos financeiros foram integrados com sucesso."}
             </p>
 
             <Button 
