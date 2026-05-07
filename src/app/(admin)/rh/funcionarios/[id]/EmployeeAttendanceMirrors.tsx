@@ -176,13 +176,11 @@ export function EmployeeAttendanceMirrors({ mirrors }: { mirrors: Mirror[] }) {
                   </TableCell>
                   <TableCell className="text-right pr-6">
                     <div className="flex justify-end gap-2">
-                      {mirror.status === "APPROVED" && (
-                        <ApprovedMirrorPdfButton
-                          mirrorId={mirror.id}
-                          label="PDF"
-                          className="h-9 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 text-white shadow-sm font-black text-[9px] uppercase tracking-widest gap-2"
-                        />
-                      )}
+                      <ApprovedMirrorPdfButton
+                        mirrorId={mirror.id}
+                        label="PDF"
+                        className="h-9 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 text-white shadow-sm font-black text-[9px] uppercase tracking-widest gap-2"
+                      />
                       <Link href={`/rh/ponto/espelho/${mirror.id}`}>
                         <Button
                           variant="ghost"

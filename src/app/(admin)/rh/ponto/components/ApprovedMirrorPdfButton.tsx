@@ -38,29 +38,24 @@ export function ApprovedMirrorPdfButton({
       try {
         const result = await issueApprovedMirrorPdf(mirrorId)
         if (typeof window !== "undefined") {
-          const newWindow = window.open(result.fileUrl, "_blank")
-          if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
-            // Popup blocked
-            toast({
-              title: "Popup Bloqueado",
-              description: (
-                <div className="flex flex-col gap-2">
-                  <p>O navegador bloqueou a abertura automática. Clique abaixo para abrir:</p>
-                  <a 
-                    href={result.fileUrl} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline font-bold"
-                  >
-                    Abrir PDF Oficial
-                  </a>
-                </div>
-              ),
-            })
-          } else {
+          if (result && result.fileUrl) {
+            const link = document.createElement("a")
+            link.href = result.fileUrl
+            link.target = "_blank"
+            link.rel = "noopener noreferrer"
+            document.body.appendChild(link)
+            link.click()
+            document.body.removeChild(link)
+            
             toast({
               title: "Espelho Gerado",
               description: "O PDF oficial foi aberto em uma nova aba e salvo no prontuário.",
+            })
+          } else {
+             toast({
+              title: "Erro ao gerar PDF",
+              description: "O arquivo não foi retornado pelo servidor.",
+              variant: "destructive",
             })
           }
         }
