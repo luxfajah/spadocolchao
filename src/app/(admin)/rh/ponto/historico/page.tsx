@@ -107,20 +107,29 @@ export default async function PontoHistoricoPage({
         },
         orderBy: [{ endDate: "desc" }, { createdAt: "desc" }],
       })
-    : []
+    : await (prisma as any).attendanceMirror.findMany({
+        include: {
+          employee: {
+            select: {
+              fullName: true,
+              socialName: true,
+            },
+          },
+        },
+        orderBy: [{ endDate: "desc" }, { createdAt: "desc" }],
+        take: 50,
+      })
 
-  const resultCount = selectedEmployee ? mirrors.length : employeeOptions.length
-  const resultLabel = selectedEmployee ? "Espelhos" : "Funcionários"
+  const resultCount = selectedEmployee ? mirrors.length : mirrors.length
+  const resultLabel = selectedEmployee ? "Espelhos" : "Últimos Espelhos"
   const selectedEmployeeName = selectedEmployee ? getEmployeePrimaryName(selectedEmployee) : null
   const selectedEmployeeLegalName = selectedEmployee ? getEmployeeLegalName(selectedEmployee) : null
 
-  const emptyStateMessage = !q && !selectedEmployeeId
-    ? "Digite o nome de um funcionário para localizar o histórico."
-    : q && employeeOptions.length === 0
-      ? "Nenhum funcionário encontrado para esse nome."
-      : !selectedEmployee
-        ? "Selecione um funcionário para ver todos os espelhos dele."
-        : "Este funcionário ainda não possui espelhos salvos."
+  const emptyStateMessage = mirrors.length === 0
+    ? q 
+      ? "Nenhum espelho encontrado para este funcionário."
+      : "Nenhum espelho foi processado no sistema ainda."
+    : ""
 
   return (
     <main className="flex-1 py-10 px-6 max-w-[1700px] mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
@@ -190,7 +199,7 @@ export default async function PontoHistoricoPage({
           <div className="flex items-center gap-2 text-indigo-800">
             <History className="w-5 h-5 text-indigo-500" />
             <h3 className="font-outfit font-black text-lg uppercase tracking-tight">
-              {selectedEmployeeName ? `Todos os espelhos de ${selectedEmployeeName}` : "Selecione um funcionário"}
+              {selectedEmployeeName ? `Todos os espelhos de ${selectedEmployeeName}` : "Últimos espelhos processados"}
             </h3>
           </div>
           {selectedEmployeeName && (
