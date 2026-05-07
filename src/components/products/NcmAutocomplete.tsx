@@ -10,15 +10,15 @@ interface NCM {
 }
 
 export function NcmAutocomplete({ 
-  defaultValue = "", 
+  defaultValue, 
   name = "ncm" 
 }: { 
-  defaultValue?: string
+  defaultValue?: string | null
   name?: string 
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
-  const [displayValue, setDisplayValue] = useState(defaultValue)
+  const [displayValue, setDisplayValue] = useState(defaultValue || "")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<NCM[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -102,7 +102,7 @@ export function NcmAutocomplete({
   return (
     <div className="relative w-full" ref={wrapperRef}>
       {/* Hidden input to store the actual NCM code for the form */}
-      <input type="hidden" name={name} value={displayValue.split(" - ")[0]} />
+      <input type="hidden" name={name} value={displayValue ? displayValue.split(" - ")[0] : ""} />
       
       <div 
         className="relative"
