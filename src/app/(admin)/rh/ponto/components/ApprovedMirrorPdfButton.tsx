@@ -15,6 +15,8 @@ type ApprovedMirrorPdfButtonProps = {
   className?: string
   label?: string
   autoOpen?: boolean
+  icon?: React.ReactNode
+  variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link" | "primary"
 }
 
 export function ApprovedMirrorPdfButton({
@@ -23,6 +25,8 @@ export function ApprovedMirrorPdfButton({
   className,
   label = "Imprimir Espelho",
   autoOpen = false,
+  icon,
+  variant = "default",
 }: ApprovedMirrorPdfButtonProps) {
   const router = useRouter()
   const { toast } = useToast()
@@ -34,19 +38,33 @@ export function ApprovedMirrorPdfButton({
       try {
         const result = await issueApprovedMirrorPdf(mirrorId)
         if (typeof window !== "undefined") {
-          const downloadLink = document.createElement("a")
-          downloadLink.href = result.fileUrl
-          downloadLink.download = `${result.documentName}.pdf`
-          downloadLink.rel = "noopener"
-          document.body.appendChild(downloadLink)
-          downloadLink.click()
-          document.body.removeChild(downloadLink)
+          const newWindow = window.open(result.fileUrl, "_blank")
+          if (!newWindow || newWindow.closed || typeof newWindow.closed === "undefined") {
+            // Popup blocked
+            toast({
+              title: "Popup Bloqueado",
+              description: (
+                <div className="flex flex-col gap-2">
+                  <p>O navegador bloqueou a abertura automática. Clique abaixo para abrir:</p>
+                  <a 
+                    href={result.fileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-500 underline font-bold"
+                  >
+                    Abrir PDF Oficial
+                  </a>
+                </div>
+              ),
+            })
+          } else {
+            toast({
+              title: "Espelho Gerado",
+              description: "O PDF oficial foi aberto em uma nova aba e salvo no prontuário.",
+            })
+          }
         }
 
-        toast({
-          title: "Espelho aprovado baixado",
-          description: "O PDF oficial foi salvo nos documentos do colaborador e baixado para envio ou impressão.",
-        })
         router.refresh()
       } catch (error) {
         toast({
@@ -77,6 +95,7 @@ export function ApprovedMirrorPdfButton({
       onClick={handleButtonClick}
       disabled={disabled || isPending}
       className={className}
+      variant={variant as any}
     >
       {isPending ? (
         <>
@@ -85,7 +104,7 @@ export function ApprovedMirrorPdfButton({
         </>
       ) : (
         <>
-          <FileOutput className="h-4 w-4" />
+          {icon || <FileOutput className="h-4 w-4" />}
           {label}
         </>
       )}

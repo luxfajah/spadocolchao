@@ -3,8 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { writeFile, mkdir } from "fs/promises"
-import { join } from "path"
+import { uploadFile } from "@/lib/storage-service"
 
 export async function createInsumo(formData: FormData) {
   const code = formData.get("code") as string
@@ -29,12 +28,8 @@ export async function createInsumo(formData: FormData) {
     const buffer = Buffer.from(bytes)
 
     const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '')}`
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'insumos')
-    
-    await mkdir(uploadDir, { recursive: true }).catch(console.error)
-    await writeFile(join(uploadDir, fileName), buffer)
-    
-    imageUrl = `/uploads/insumos/${fileName}`
+    const storagePath = `insumos/${fileName}`
+    imageUrl = await uploadFile(storagePath, buffer, imageFile.type)
   }
 
   await prisma.supplyItem.create({
@@ -71,12 +66,8 @@ export async function updateInsumo(id: string, formData: FormData) {
     const buffer = Buffer.from(bytes)
 
     const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9.-]/g, '')}`
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'insumos')
-    
-    await mkdir(uploadDir, { recursive: true }).catch(console.error)
-    await writeFile(join(uploadDir, fileName), buffer)
-    
-    imageUrl = `/uploads/insumos/${fileName}`
+    const storagePath = `insumos/${fileName}`
+    imageUrl = await uploadFile(storagePath, buffer, imageFile.type)
   }
 
   await prisma.supplyItem.update({

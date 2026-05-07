@@ -22,23 +22,19 @@ export function MirrorDetailHeaderActions({
   canGeneratePayroll = true,
   autoOpenPdf = false,
 }: MirrorDetailHeaderActionsProps) {
-  function handlePrint() {
-    window.print()
-  }
-
   return (
     <div id="mirror-actions" className="flex gap-3">
-      <Button
-        variant="secondary"
-        onClick={handlePrint}
-        className="rounded-full gap-2 bg-white border border-slate-100 hover:bg-slate-50 shadow-sm transition-all px-8 h-12 font-black text-xs uppercase tracking-[0.1em] text-slate-600"
-      >
-        <Printer className="h-4 w-4" /> Imprimir
-      </Button>
-
       <ApprovedMirrorPdfButton
         mirrorId={mirrorId}
         autoOpen={autoOpenPdf}
+        label="Imprimir"
+        icon={<Printer className="h-4 w-4" />}
+        variant="secondary"
+        className="rounded-full gap-2 bg-white border border-slate-100 hover:bg-slate-50 shadow-sm transition-all px-8 h-12 font-black text-xs uppercase tracking-[0.1em] text-slate-600"
+      />
+
+      <ApprovedMirrorPdfButton
+        mirrorId={mirrorId}
         label="PDF Oficial"
         className="rounded-full gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all px-8 h-12 font-black text-xs uppercase tracking-[0.1em] text-white"
       />
@@ -51,5 +47,5 @@ export function MirrorDetailHeaderActions({
         className="rounded-full h-12 px-8"
       />
     </div>
-  )
+  );
 }

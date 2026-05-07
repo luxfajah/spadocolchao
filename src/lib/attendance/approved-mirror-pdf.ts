@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from "fs/promises"
-import { join } from "path"
+import { uploadFile } from "@/lib/storage-service"
 
 import { prisma } from "@/lib/prisma"
 import { getEmployeeLegalName, getEmployeePrimaryName } from "@/lib/employee-name"
@@ -8,7 +7,7 @@ import {
   formatBusinessTime,
 } from "@/lib/attendance/business-time"
 
-const { jsPDF } = require("jspdf") as typeof import("jspdf")
+import { jsPDF } from "jspdf"
 
 export const APPROVED_ATTENDANCE_MIRROR_DOCUMENT_TYPE = "ATTENDANCE_MIRROR"
 
@@ -253,10 +252,6 @@ export async function generateApprovedAttendanceMirrorPdf(mirrorId: string) {
     throw new Error("Espelho não encontrado para emissão do PDF.")
   }
 
-  if (mirror.status !== "APPROVED") {
-    throw new Error("Confirme o espelho antes de emitir o PDF oficial.")
-  }
-
   const days =
     mirror.days.length > 0
       ? mirror.days
@@ -277,21 +272,10 @@ export async function generateApprovedAttendanceMirrorPdf(mirrorId: string) {
 
   const periodLabel = formatPeriodLabel(mirror.period)
   const fileName = `${sanitizeFileNamePart(`espelho-ponto-aprovado-${mirror.employeeId}-${mirror.period}-${mirror.id}`)}.pdf`
-  const uploadDir = join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "employee-documents",
-    mirror.employeeId,
-    "attendance-mirrors"
-  )
-
-  await mkdir(uploadDir, { recursive: true })
-
+  const storagePath = `employee-documents/${mirror.employeeId}/attendance-mirrors/${fileName}`
   const fileBuffer = buildApprovedMirrorPdfBuffer(mirror, days)
-  await writeFile(join(uploadDir, fileName), fileBuffer)
-
-  const fileUrl = `/uploads/employee-documents/${mirror.employeeId}/attendance-mirrors/${fileName}`
+  
+  const fileUrl = await uploadFile(storagePath, fileBuffer)
   const documentName = `Espelho de Ponto Aprovado - ${periodLabel}`
   const description = `Espelho aprovado da competência ${periodLabel}. MirrorId:${mirror.id}`
 

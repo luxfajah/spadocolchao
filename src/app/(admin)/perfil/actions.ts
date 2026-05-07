@@ -1,8 +1,7 @@
 "use server"
 
 import { randomUUID } from "crypto"
-import { mkdir, writeFile } from "fs/promises"
-import { extname, join } from "path"
+import { uploadFile } from "@/lib/storage-service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { getAuthenticatedUser, hashPassword, normalizeEmail, verifyPassword } from "@/lib/auth"
@@ -85,13 +84,10 @@ async function saveProfilePhoto(userId: string, photoFile: File) {
 
   const safeExtension = /^[.][a-z0-9]+$/.test(extension) ? extension : ".jpg"
   const storedName = `avatar-${userId}-${Date.now()}-${randomUUID()}${safeExtension}`
-  const uploadFolder = join(process.cwd(), "public", "uploads", "avatars")
+  const storagePath = `avatars/${storedName}`
   const fileBuffer = Buffer.from(await photoFile.arrayBuffer())
 
-  await mkdir(uploadFolder, { recursive: true })
-  await writeFile(join(uploadFolder, storedName), fileBuffer)
-
-  const avatarUrl = `/uploads/avatars/${storedName}`
+  const avatarUrl = await uploadFile(storagePath, fileBuffer, mimeType)
 
   await prisma.fileAttachment.create({
     data: {

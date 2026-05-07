@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from "fs/promises"
-import { join } from "path"
+import { uploadFile } from "@/lib/storage-service"
 
 import { prisma } from "@/lib/prisma"
 import { getEmployeeLegalName, getEmployeePrimaryName } from "@/lib/employee-name"
@@ -575,21 +574,10 @@ export async function generateOfficialPayrollPdf(payrollId: string) {
     : null
 
   const fileName = `${sanitizeFileNamePart(`holerite-${payroll.employeeId}-${payroll.referencePeriod}-${payroll.id}`)}.pdf`
-  const uploadDir = join(
-    process.cwd(),
-    "public",
-    "uploads",
-    "employee-documents",
-    payroll.employeeId,
-    "payrolls"
-  )
-
-  await mkdir(uploadDir, { recursive: true })
-
+  const storagePath = `employee-documents/${payroll.employeeId}/payrolls/${fileName}`
   const fileBuffer = buildPayrollPdfBuffer(payroll, mirror)
-  await writeFile(join(uploadDir, fileName), fileBuffer)
-
-  const fileUrl = `/uploads/employee-documents/${payroll.employeeId}/payrolls/${fileName}`
+  
+  const fileUrl = await uploadFile(storagePath, fileBuffer)
   const periodLabel = formatPeriodLabel(payroll.referencePeriod)
   const documentName = `Holerite - ${periodLabel}`
   const description = `Holerite da competência ${periodLabel}. PayrollId:${payroll.id}${mirror ? ` MirrorId:${mirror.id}` : ""}`

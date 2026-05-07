@@ -224,7 +224,7 @@ export default async function EspelhoFuncionarioPage({
   const canProcessSelectedPeriod = hasImportedPunches && !isLocked
   const canEnableEditing = canProcessSelectedPeriod && !!mirror?.id && hasProcessedDays
   const canConfirmMirror = canProcessSelectedPeriod && !!mirror?.id && hasProcessedDays
-  const canPrintApprovedMirror = !!mirror?.id && mirror?.status === "APPROVED" && hasImportedPunches && hasProcessedDays
+  const canPrintApprovedMirror = !!mirror?.id && hasImportedPunches && hasProcessedDays
   const recalculateLabel = mirror ? "Reprocessar Batidas" : "Processar Batidas"
 
   const mirrorStatusMeta: Record<string, { label: string; className: string; description: string }> = {
