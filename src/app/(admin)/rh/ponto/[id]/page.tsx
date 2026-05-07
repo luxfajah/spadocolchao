@@ -496,70 +496,91 @@ export default async function EspelhoFuncionarioPage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            <form action={recalculateMonthAction}>
-              <input type="hidden" name="employeeId" value={params.id} />
-              <input type="hidden" name="month" value={month} />
-              <input type="hidden" name="year" value={year} />
-              <Button
-                type="submit"
-                disabled={!canProcessSelectedPeriod}
-                className="rounded-2xl h-12 px-6 bg-slate-100 text-slate-900 hover:bg-slate-200 font-black text-[10px] uppercase tracking-widest border-0 transition-all active:scale-95"
-              >
-                {recalculateLabel}
-              </Button>
-            </form>
+            {isLocked && mirror?.id ? (
+              <>
+                <ApprovedMirrorPdfButton
+                  mirrorId={mirror.id}
+                  disabled={!canPrintApprovedMirror}
+                  label="Imprimir Espelho"
+                  className="rounded-2xl h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-[10px] uppercase tracking-widest"
+                />
+                <Link href={`/rh/ponto/espelho/${mirror.id}`}>
+                  <Button
+                    type="button"
+                    className="rounded-2xl h-12 px-8 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-600/30 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 gap-2"
+                  >
+                    Ver Espelho
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <form action={recalculateMonthAction}>
+                  <input type="hidden" name="employeeId" value={params.id} />
+                  <input type="hidden" name="month" value={month} />
+                  <input type="hidden" name="year" value={year} />
+                  <Button
+                    type="submit"
+                    disabled={!canProcessSelectedPeriod}
+                    className="rounded-2xl h-12 px-6 bg-slate-100 text-slate-900 hover:bg-slate-200 font-black text-[10px] uppercase tracking-widest border-0 transition-all active:scale-95"
+                  >
+                    {recalculateLabel}
+                  </Button>
+                </form>
 
-            <form action={enableEditingAction}>
-              <input type="hidden" name="employeeId" value={params.id} />
-              <input type="hidden" name="period" value={periodSlug} />
-              <input type="hidden" name="month" value={month} />
-              <input type="hidden" name="year" value={year} />
-              <Button
-                type="submit"
-                disabled={!canEnableEditing}
-                className={`rounded-2xl h-12 px-6 font-black text-[10px] uppercase tracking-widest border-0 shadow-lg transition-all active:scale-95 ${
-                  editingEnabled 
-                    ? "bg-amber-400 text-amber-950 shadow-amber-400/20 hover:bg-amber-500" 
-                    : "bg-slate-950 text-white shadow-slate-950/20 hover:bg-slate-900"
-                }`}
-              >
-                {editingEnabled ? "Edição Ativa" : "Habilitar Edição"}
-              </Button>
-            </form>
+                <form action={enableEditingAction}>
+                  <input type="hidden" name="employeeId" value={params.id} />
+                  <input type="hidden" name="period" value={periodSlug} />
+                  <input type="hidden" name="month" value={month} />
+                  <input type="hidden" name="year" value={year} />
+                  <Button
+                    type="submit"
+                    disabled={!canEnableEditing}
+                    className={`rounded-2xl h-12 px-6 font-black text-[10px] uppercase tracking-widest border-0 shadow-lg transition-all active:scale-95 ${
+                      editingEnabled 
+                        ? "bg-amber-400 text-amber-950 shadow-amber-400/20 hover:bg-amber-500" 
+                        : "bg-slate-950 text-white shadow-slate-950/20 hover:bg-slate-900"
+                    }`}
+                  >
+                    {editingEnabled ? "Edição Ativa" : "Habilitar Edição"}
+                  </Button>
+                </form>
 
-            <form action={confirmMirrorAction}>
-              <input type="hidden" name="employeeId" value={params.id} />
-              <input type="hidden" name="period" value={periodSlug} />
-              <Button
-                type="submit"
-                disabled={!canConfirmMirror}
-                className="rounded-2xl h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/30 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-              >
-                Confirmar Espelho
-              </Button>
-            </form>
+                <form action={confirmMirrorAction}>
+                  <input type="hidden" name="employeeId" value={params.id} />
+                  <input type="hidden" name="period" value={periodSlug} />
+                  <Button
+                    type="submit"
+                    disabled={!canConfirmMirror}
+                    className="rounded-2xl h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/30 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                  >
+                    Confirmar Espelho
+                  </Button>
+                </form>
 
-            {mirror?.id && (
-              <ApprovedMirrorPdfButton
-                mirrorId={mirror.id}
-                disabled={!canPrintApprovedMirror}
-                label="Imprimir Espelho"
-                className="rounded-2xl h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-[10px] uppercase tracking-widest"
-              />
+                {mirror?.id && (
+                  <ApprovedMirrorPdfButton
+                    mirrorId={mirror.id}
+                    disabled={!canPrintApprovedMirror}
+                    label="Imprimir Espelho"
+                    className="rounded-2xl h-12 px-6 bg-slate-100 hover:bg-slate-200 text-slate-900 font-black text-[10px] uppercase tracking-widest"
+                  />
+                )}
+
+                <form action={generatePayrollAction}>
+                  <input type="hidden" name="employeeId" value={params.id} />
+                  <input type="hidden" name="period" value={periodSlug} />
+                  <input type="hidden" name="mirrorId" value={mirror?.id || ""} />
+                  <Button
+                    type="submit"
+                    disabled={!canGeneratePayroll}
+                    className="rounded-2xl h-12 px-8 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
+                  >
+                    Processar Holerite
+                  </Button>
+                </form>
+              </>
             )}
-
-            <form action={generatePayrollAction}>
-              <input type="hidden" name="employeeId" value={params.id} />
-              <input type="hidden" name="period" value={periodSlug} />
-              <input type="hidden" name="mirrorId" value={mirror?.id || ""} />
-              <Button
-                type="submit"
-                disabled={!canGeneratePayroll}
-                className="rounded-2xl h-12 px-8 bg-emerald-500 hover:bg-emerald-600 text-white shadow-xl shadow-emerald-500/30 font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
-              >
-                {isLocked ? "Folha Materializada" : "Processar Holerite"}
-              </Button>
-            </form>
           </div>
         </div>
 
