@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Save } from "lucide-react"
+import { NcmAutocomplete } from "./NcmAutocomplete"
 
 export function ProductForm({ initialData = {}, onAction }: { initialData?: any, onAction: (data: any) => Promise<any> }) {
   const router = useRouter()
@@ -301,7 +302,7 @@ export function ProductForm({ initialData = {}, onAction }: { initialData?: any,
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="ncm">NCM</Label>
-                  <Input id="ncm" name="ncm" defaultValue={initialData.ncm} />
+                  <NcmAutocomplete defaultValue={initialData.ncm} name="ncm" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="cest">CEST</Label>
