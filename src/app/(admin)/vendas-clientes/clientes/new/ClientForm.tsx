@@ -62,6 +62,57 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
     }
   }
 
+  const [personType, setPersonType] = useState(initialData?.personType || "INDIVIDUAL")
+  const [clientData, setClientData] = useState({
+    document: initialData?.document || "",
+    fullName: initialData?.fullName || "",
+    tradeName: initialData?.tradeName || "",
+    email: initialData?.email || "",
+    phone: initialData?.phone || ""
+  })
+
+  const handleDocumentChange = async (val: string) => {
+    setClientData(prev => ({ ...prev, document: val }))
+    const cleanDoc = val.replace(/\D/g, "")
+    
+    if (cleanDoc.length > 11) {
+      setPersonType("COMPANY")
+    } else {
+      setPersonType("INDIVIDUAL")
+    }
+
+    if (cleanDoc.length === 14) {
+      try {
+        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanDoc}`)
+        if (res.ok) {
+          const data = await res.json()
+          setClientData(prev => ({
+            ...prev,
+            fullName: data.razao_social || prev.fullName,
+            tradeName: data.nome_fantasia || prev.tradeName,
+            email: data.email || prev.email,
+            phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone
+          }))
+          
+          if (data.cep) {
+             setAddress(prev => ({
+                ...prev,
+                zipCode: data.cep.toString(),
+                street: data.logradouro || prev.street,
+                number: data.numero || prev.number,
+                complement: data.complemento || prev.complement,
+                neighborhood: data.bairro || prev.neighborhood,
+                city: data.municipio || prev.city,
+                state: data.uf || prev.state
+             }))
+          }
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CNPJ", err)
+      }
+    }
+  }
+
   const sanitizeFormData = (incoming: FormData) => {
     const sanitized = new FormData()
 
@@ -144,7 +195,7 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Tipo de Pessoa</Label>
-                <Select name="personType" defaultValue={initialData?.personType || "INDIVIDUAL"}>
+                <Select name="personType" value={personType} onValueChange={setPersonType}>
                   <SelectTrigger className="bg-white">
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
@@ -158,7 +209,8 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 <Label>CPF / CNPJ</Label>
                 <MaskedInput 
                   name="document" 
-                  defaultValue={initialData?.document || ""} 
+                  value={clientData.document}
+                  onChange={(e) => handleDocumentChange(e.target.value)}
                   placeholder="000.000.000-00" 
                   maskType="cpf-cnpj"
                   className="bg-white" 
@@ -168,7 +220,7 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
 
             <div className="space-y-2">
               <Label>Nome Completo / Razão Social</Label>
-              <Input name="fullName" defaultValue={initialData?.fullName || ""} required placeholder="Nome do cliente" className="bg-white border-primary/20 font-bold" />
+              <Input name="fullName" value={clientData.fullName} onChange={e => setClientData(p => ({...p, fullName: e.target.value}))} required placeholder="Nome do cliente" className="bg-white border-primary/20 font-bold" />
             </div>
 
             {isFullMode && (
@@ -176,7 +228,7 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome Fantasia</Label>
-                    <Input name="tradeName" defaultValue={initialData?.tradeName || ""} className="bg-white" />
+                    <Input name="tradeName" value={clientData.tradeName} onChange={e => setClientData(p => ({...p, tradeName: e.target.value}))} className="bg-white" />
                   </div>
                   <div className="space-y-2">
                     <Label>RG</Label>
@@ -226,7 +278,8 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 <Label>Telefone Principal</Label>
                 <MaskedInput 
                   name="phone" 
-                  defaultValue={initialData?.phone || ""} 
+                  value={clientData.phone}
+                  onChange={(e) => setClientData(p => ({...p, phone: e.target.value}))}
                   placeholder="(00) 0000-0000" 
                   maskType="phone"
                   className="bg-white" 
@@ -245,7 +298,7 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
             </div>
             <div className="space-y-2">
               <Label>E-mail Principal</Label>
-              <Input name="email" type="email" defaultValue={initialData?.email || ""} placeholder="email@exemplo.com" className="bg-white" />
+              <Input name="email" type="email" value={clientData.email} onChange={e => setClientData(p => ({...p, email: e.target.value}))} placeholder="email@exemplo.com" className="bg-white" />
             </div>
             {isFullMode && (
               <div className="grid grid-cols-2 gap-4">
