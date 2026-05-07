@@ -1109,8 +1109,6 @@ export async function generateBulkHolerites(period: string, department?: string)
     include: {
       jobTitle: true,
       workSchedule: { select: { weeklyHours: true } },
-      attendanceBonusAmount: true,
-      attendanceBonusEnabled: true,
       attendanceMirrors: {
 
         where: { period: resolveMirrorPeriod(period) },
