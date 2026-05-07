@@ -658,7 +658,7 @@ export async function generateBatchPayroll(period: string) {
         continue
       }
 
-      await tx.payroll.create({
+      const payroll = await tx.payroll.create({
         data: {
           employeeId: employee.id,
           referencePeriod: normalizedPeriod,
@@ -679,7 +679,7 @@ export async function generateBatchPayroll(period: string) {
           description: payableDescription,
           amount: payrollValues.netSalary,
           dueDate,
-          payrollId: existingPayroll?.id || "temp", // This would need a refactor to get the new id, simplifying for brevity here
+          payrollId: payroll.id,
           costCenterId: unifiedClassification.costCenterId || undefined,
           financialCategoryId: unifiedClassification.financialCategoryId || undefined,
           notes: payableNotes,
