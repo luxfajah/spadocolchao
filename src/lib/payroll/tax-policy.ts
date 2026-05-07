@@ -223,7 +223,7 @@ export function calculatePayrollValuesByPeriod({
   if (policy.code !== "BR_2026_OFFICIAL") {
     const inss = roundCurrency(salaryBase * 0.09)
     const irrf = roundCurrency(salaryBase * 0.075)
-    const netSalary = roundCurrency(salaryBase - inss - irrf - deductions + additions)
+    const netSalary = roundCurrency(salaryBase - inss - irrf - deductions + additions - fgts)
 
     return {
       grossSalary: salaryBase,
@@ -270,7 +270,7 @@ export function calculatePayrollValuesByPeriod({
   const grossIrrf = roundCurrency(Math.max(0, irrfBase * irrfBand.rate - irrfBand.deduction))
   const irrfReduction = calculateIrrfReduction2026(taxableBaseIncome, grossIrrf)
   const irrf = roundCurrency(Math.max(0, grossIrrf - irrfReduction))
-  const netSalary = roundCurrency(salaryBase - inssProgressive.amount - irrf - deductions + additions)
+  const netSalary = roundCurrency(salaryBase - inssProgressive.amount - irrf - deductions + additions - fgts)
 
   return {
     grossSalary: salaryBase,

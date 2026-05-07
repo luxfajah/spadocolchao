@@ -115,7 +115,7 @@ function fitSingleLineText(
   return `${trimmedValue}...`
 }
 
-function buildEarnings(payroll: any, employee: any) {
+function buildEarnings(payroll: any, employee: any, mirror: any | null) {
   const benefitBreakdown = calculatePayrollBenefitBreakdown({
     salaryBase: employee.salaryBase,
     transportationAllowance: employee.transportationAllowance,
@@ -137,7 +137,16 @@ function buildEarnings(payroll: any, employee: any) {
   ]
 
   let remainingAdditions = Number(payroll.otherAdditions || 0)
+  const overtimeMinutes = mirror?.overtimeMinutes || 0
+  let overtimeAmount = 0
+  if (overtimeMinutes > 0 && employee.salaryBase) {
+    const hourlyRate = employee.salaryBase / 220
+    const overtimeRate = hourlyRate * 1.5
+    overtimeAmount = (overtimeMinutes / 60) * overtimeRate
+  }
+
   const additionsConfig = [
+    { code: "1002", description: "Horas Extras (50%)", amount: overtimeAmount },
     { code: "1601", description: "Vale transporte", amount: benefitBreakdown.transportationBenefit || 0 },
     { code: "1602", description: "Alimentação cedida na empresa", amount: benefitBreakdown.foodBenefit || 0 },
     { code: "1606", description: "Auxílio gasolina / diesel", amount: benefitBreakdown.fuelBenefit || 0 },
@@ -202,6 +211,12 @@ function buildDeductions(payroll: any, employee: any) {
       description: "IRRF",
       reference: payrollValues.taxPolicy.irrf.referenceLabel,
       amount: payroll.irrf || 0,
+    },
+    {
+      code: "4102",
+      description: "FGTS",
+      reference: "8%",
+      amount: payroll.fgts || 0,
     },
   ]
 
@@ -371,11 +386,11 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null) {
     sectorName: storedAllocationSnapshot.sectorName || employeeAllocationSnapshot.sectorName,
   }
   const issueDate = new Date()
-  const earnings = buildEarnings(payroll, employee)
+  const earnings = buildEarnings(payroll, employee, mirror)
   const deductions = buildDeductions(payroll, employee)
   const grossWithAdditions = Number(payroll.grossSalary || 0) + Number(payroll.otherAdditions || 0)
   const totalDeductions =
-    Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.otherDeductions || 0)
+    Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.fgts || 0) + Number(payroll.otherDeductions || 0)
   const paymentDueDate = payroll.accountsPayable?.[0]?.dueDate
   const taxPolicy = getPayrollTaxPolicySummary(payroll.referencePeriod)
 

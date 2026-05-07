@@ -53,9 +53,16 @@ function resolvePayrollDueDate(period: string) {
   return new Date(year, month, 5)
 }
 
-function calculatePayrollValues(employee: PayrollCalculationInput, period: string) {
+function calculatePayrollValues(employee: PayrollCalculationInput, period: string, mirror?: { overtimeMinutes: number; deficitMinutes: number } | null) {
   if (!employee.salaryBase || employee.salaryBase <= 0) {
     throw new Error(`O funcionário ${getEmployeePrimaryName(employee)} não possui salário base configurado.`)
+  }
+
+  let overtimeAddition = 0
+  if (mirror && mirror.overtimeMinutes > 0 && employee.salaryBase) {
+    const hourlyRate = employee.salaryBase / 220
+    const overtimeRate = hourlyRate * 1.5
+    overtimeAddition = (mirror.overtimeMinutes / 60) * overtimeRate
   }
 
   const benefitBreakdown = calculatePayrollBenefitBreakdown({
@@ -72,7 +79,7 @@ function calculatePayrollValues(employee: PayrollCalculationInput, period: strin
   return calculatePayrollValuesByPeriod({
     period,
     grossSalary: employee.salaryBase,
-    otherAdditions: benefitBreakdown.totalAdditions,
+    otherAdditions: benefitBreakdown.totalAdditions + overtimeAddition,
     otherDeductions: benefitBreakdown.totalDeductions,
   })
 }
@@ -332,7 +339,7 @@ export async function generateEmployeePayroll(
     throw new Error("Funcionário não encontrado para gerar o holerite.")
   }
 
-  const payrollValues = calculatePayrollValues(employee, approvedMirror.period)
+  const payrollValues = calculatePayrollValues(employee, approvedMirror.period, approvedMirror)
   const employeeDisplayName = getEmployeePrimaryName(employee)
   const unifiedClassification = await resolveUnifiedCostClassification(employee)
   const allocationSnapshot = {
@@ -550,7 +557,7 @@ export async function generateBatchPayroll(period: string) {
         continue
       }
 
-      const payrollValues = calculatePayrollValues(employee, normalizedPeriod)
+      const payrollValues = calculatePayrollValues(employee, normalizedPeriod, mirror)
 
       const existingPayroll = await tx.payroll.findFirst({
         where: {
