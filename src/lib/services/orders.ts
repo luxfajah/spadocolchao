@@ -310,8 +310,8 @@ export async function getOrders(filters: {
     if (filters.endDate) where.createdAt.lte = filters.endDate
   }
 
-  // Auto-archiving: exclude FINALIZED or CANCELLED orders older than 2 days
-  const twoDaysAgo = subDays(new Date(), 2)
+  // Auto-archiving: exclude FINALIZED or CANCELLED orders older than 30 days
+  const twoDaysAgo = subDays(new Date(), 30)
   where.AND = [
     ...(where.AND ? (Array.isArray(where.AND) ? where.AND : [where.AND]) : []),
     {
