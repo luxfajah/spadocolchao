@@ -29,6 +29,39 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
   // Derived address data if editing
   const mainAddress = initialData?.addresses?.find((a: any) => a.isMain) || initialData?.addresses?.[0]
 
+  const [address, setAddress] = useState({
+    zipCode: mainAddress?.zipCode || "",
+    street: mainAddress?.street || "",
+    number: mainAddress?.number || "",
+    neighborhood: mainAddress?.neighborhood || "",
+    city: mainAddress?.city || "",
+    state: mainAddress?.state || "",
+    complement: mainAddress?.complement || ""
+  })
+
+  const handleCepChange = async (val: string) => {
+    setAddress(prev => ({ ...prev, zipCode: val }))
+    const cleanCep = val.replace(/\D/g, "")
+    if (cleanCep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setAddress(prev => ({
+            ...prev,
+            street: data.logradouro,
+            neighborhood: data.bairro,
+            city: data.localidade,
+            state: data.uf,
+          }))
+          document.getElementById('addressNumber')?.focus()
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err)
+      }
+    }
+  }
+
   const sanitizeFormData = (incoming: FormData) => {
     const sanitized = new FormData()
 
@@ -243,7 +276,8 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 <Label>CEP</Label>
                 <MaskedInput 
                   name="zipCode" 
-                  defaultValue={mainAddress?.zipCode || ""} 
+                  value={address.zipCode}
+                  onChange={(e) => handleCepChange(e.target.value)}
                   placeholder="00000-000" 
                   maskType="cep"
                   className="bg-white" 
@@ -251,27 +285,27 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
               </div>
               <div className="md:col-span-2 space-y-2">
                 <Label>Rua / Logradouro</Label>
-                <Input name="street" defaultValue={mainAddress?.street || ""} className="bg-white" />
+                <Input name="street" value={address.street} onChange={e => setAddress(p => ({...p, street: e.target.value}))} className="bg-white" />
               </div>
               <div className="space-y-2">
                 <Label>Número</Label>
-                <Input name="number" defaultValue={mainAddress?.number || ""} className="bg-white" />
+                <Input id="addressNumber" name="number" value={address.number} onChange={e => setAddress(p => ({...p, number: e.target.value}))} className="bg-white" />
               </div>
               <div className="space-y-2">
                 <Label>Bairro</Label>
-                <Input name="neighborhood" defaultValue={mainAddress?.neighborhood || ""} className="bg-white" />
+                <Input name="neighborhood" value={address.neighborhood} onChange={e => setAddress(p => ({...p, neighborhood: e.target.value}))} className="bg-white" />
               </div>
               <div className="space-y-2">
                 <Label>Cidade</Label>
-                <Input name="city" defaultValue={mainAddress?.city || ""} className="bg-white" />
+                <Input name="city" value={address.city} onChange={e => setAddress(p => ({...p, city: e.target.value}))} className="bg-white" />
               </div>
               <div className="space-y-2">
                 <Label>Estado</Label>
-                <Input name="state" defaultValue={mainAddress?.state || ""} placeholder="UF" className="bg-white" />
+                <Input name="state" value={address.state} onChange={e => setAddress(p => ({...p, state: e.target.value.toUpperCase()}))} placeholder="UF" className="bg-white" />
               </div>
               <div className="md:col-span-2 space-y-2">
                 <Label>Complemento</Label>
-                <Input name="complement" defaultValue={mainAddress?.complement || ""} className="bg-white" />
+                <Input name="complement" value={address.complement} onChange={e => setAddress(p => ({...p, complement: e.target.value}))} className="bg-white" />
               </div>
             </div>
           </CardContent>

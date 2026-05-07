@@ -178,6 +178,29 @@ export default function NovoFuncionarioPage() {
     setForm(prev => ({ ...prev, [field]: value }))
   }
 
+  async function handleCepChange(val: string) {
+    setForm(prev => ({ ...prev, cep: val }))
+    const cleanCep = val.replace(/\D/g, "")
+    if (cleanCep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setForm(prev => ({
+            ...prev,
+            address: data.logradouro,
+            neighborhood: data.bairro,
+            city: data.localidade,
+            state: data.uf,
+          }))
+          document.getElementById('funcAddressNumber')?.focus()
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err)
+      }
+    }
+  }
+
   function applyJobTitleDefaults(jobTitleId: string) {
     const selectedJobTitle = jobTitles.find(job => job.id === jobTitleId)
 
@@ -603,7 +626,7 @@ export default function NovoFuncionarioPage() {
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CEP</label>
                   <MaskedInput 
                     value={form.cep} 
-                    onChange={e => set("cep", e.target.value)} 
+                    onChange={e => handleCepChange(e.target.value)} 
                     placeholder="00000-000" 
                     maskType="cep"
                     className={inputCls} 
@@ -619,7 +642,7 @@ export default function NovoFuncionarioPage() {
                 </div>
                 <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Número</label>
-                  <Input value={form.number} onChange={e => set("number", e.target.value)} placeholder="123" className={inputCls} />
+                  <Input id="funcAddressNumber" value={form.number} onChange={e => set("number", e.target.value)} placeholder="123" className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Complemento</label>

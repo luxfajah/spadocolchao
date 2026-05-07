@@ -1,30 +1,21 @@
 import { prisma } from "@/lib/prisma"
 import { Button } from "@/components/ui/button"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { PageHeader } from "@/components/layout/PageHeader"
+import { formatDocument } from "@/lib/utils"
 import Link from "next/link"
 import {
   Plus,
-  Search,
-  Edit,
-  Eye,
   Users,
   Crown,
   UserRound,
   Building2,
   Handshake,
 } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { PageHeader } from "@/components/layout/PageHeader"
-import { ClickableRow } from "@/components/ui/ClickableRow"
-import { formatDocument } from "@/lib/utils"
+import { ClientesListClient } from "./ClientesListClient"
+import { Suspense } from "react"
+
+const PAGE_SIZE = 20
 
 type CustomerWithMetrics = {
   id: string
@@ -96,67 +87,73 @@ function getTopCustomer(
 export default async function ClientesList({
   searchParams,
 }: {
-  searchParams?: { q?: string }
+  searchParams?: { q?: string; page?: string; sort?: string }
 }) {
   const q = searchParams?.q || ""
-  const normalizedQuery = q.trim()
+  const page = Math.max(1, parseInt(searchParams?.page || "1", 10))
+  const sort = searchParams?.sort || "date_desc"
+  const skip = (page - 1) * PAGE_SIZE
 
-  const customerWhere = normalizedQuery
+  // Only filter by name or CPF/CNPJ (as requested)
+  const customerWhere = q.trim()
     ? {
         OR: [
-          { fullName: { contains: normalizedQuery } },
-          { tradeName: { contains: normalizedQuery } },
-          { document: { contains: normalizedQuery } },
-          {
-            addresses: {
-              some: {
-                OR: [
-                  { city: { contains: normalizedQuery } },
-                  { state: { contains: normalizedQuery } },
-                  { street: { contains: normalizedQuery } },
-                ],
-              },
-            },
-          },
+          { fullName: { contains: q, mode: "insensitive" as const } },
+          { tradeName: { contains: q, mode: "insensitive" as const } },
+          { document: { contains: q } },
         ],
       }
     : {}
 
-  const clientesBase = await prisma.customer.findMany({
-    where: customerWhere,
-    include: {
-      addresses: {
-        where: { isMain: true },
-        take: 1,
-        select: {
-          city: true,
-          state: true,
+  // Sort mapping
+  const orderBy =
+    sort === "alpha_asc"
+      ? { fullName: "asc" as const }
+      : sort === "date_asc"
+        ? { createdAt: "asc" as const }
+        : { createdAt: "desc" as const }
+
+  // Parallel: paginated list + total count
+  const [clientesBase, totalCount] = await Promise.all([
+    prisma.customer.findMany({
+      where: customerWhere,
+      include: {
+        addresses: {
+          where: { isMain: true },
+          take: 1,
+          select: {
+            city: true,
+            state: true,
+          },
         },
-      },
-      leadSource: {
-        select: {
-          name: true,
-          category: true,
+        leadSource: {
+          select: {
+            name: true,
+            category: true,
+          },
         },
-      },
-      sales: {
-        where: { status: "CONFIRMED" },
-        orderBy: { saleDate: "desc" },
-        take: 1,
-        select: {
-          saleDate: true,
+        sales: {
+          where: { status: "CONFIRMED" },
+          orderBy: { saleDate: "desc" },
+          take: 1,
+          select: {
+            saleDate: true,
+          },
         },
-      },
-      _count: {
-        select: {
-          sales: {
-            where: { status: "CONFIRMED" },
+        _count: {
+          select: {
+            sales: {
+              where: { status: "CONFIRMED" },
+            },
           },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  })
+      orderBy,
+      skip,
+      take: PAGE_SIZE,
+    }),
+    prisma.customer.count({ where: customerWhere }),
+  ])
 
   const customerIds = clientesBase.map(customer => customer.id)
 
@@ -195,12 +192,65 @@ export default async function ClientesList({
     }
   })
 
-  const overallTopCustomer = getTopCustomer(clientes)
-  const pfTopCustomer = getTopCustomer(clientes, customer => customer.personType === "INDIVIDUAL")
-  const pjTopCustomer = getTopCustomer(clientes, customer => customer.personType === "COMPANY")
+  // Highlight cards always pull from the full (unpaginated) top customers
+  // For performance, load top 100 for the highlights (only when no query filter)
+  let highlightCustomers: CustomerWithMetrics[] = clientes
+  if (!q.trim()) {
+    const topBase = await prisma.customer.findMany({
+      include: {
+        addresses: { where: { isMain: true }, take: 1, select: { city: true, state: true } },
+        leadSource: { select: { name: true, category: true } },
+        sales: {
+          where: { status: "CONFIRMED" },
+          orderBy: { saleDate: "desc" },
+          take: 1,
+          select: { saleDate: true },
+        },
+        _count: { select: { sales: { where: { status: "CONFIRMED" } } } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100,
+    })
+
+    const topIds = topBase.map(c => c.id)
+    const topMetrics = topIds.length
+      ? await prisma.sale.groupBy({
+          by: ["customerId"],
+          where: { status: "CONFIRMED", customerId: { in: topIds } },
+          _sum: { totalAmount: true },
+          _count: { _all: true },
+          _max: { saleDate: true },
+        })
+      : []
+
+    const topMetricsMap = new Map(
+      topMetrics.map(m => [
+        m.customerId,
+        {
+          totalPurchased: m._sum.totalAmount || 0,
+          purchasesCount: m._count._all,
+          lastPurchaseDate: m._max.saleDate || null,
+        },
+      ])
+    )
+
+    highlightCustomers = topBase.map(customer => {
+      const m = topMetricsMap.get(customer.id)
+      return {
+        ...customer,
+        totalPurchased: m?.totalPurchased || 0,
+        purchasesCount: m?.purchasesCount || 0,
+        lastPurchaseDate: m?.lastPurchaseDate || customer.sales[0]?.saleDate || null,
+      }
+    })
+  }
+
+  const overallTopCustomer = getTopCustomer(highlightCustomers)
+  const pfTopCustomer = getTopCustomer(highlightCustomers, c => c.personType === "INDIVIDUAL")
+  const pjTopCustomer = getTopCustomer(highlightCustomers, c => c.personType === "COMPANY")
   const referralTopCustomer = getTopCustomer(
-    clientes,
-    customer => normalizeText(customer.leadSource?.category) === "indicacao"
+    highlightCustomers,
+    c => normalizeText(c.leadSource?.category) === "indicacao"
   )
 
   const highlightCards = [
@@ -238,6 +288,13 @@ export default async function ClientesList({
     },
   ]
 
+  // Serialize dates for client component
+  const serializedClientes = clientes.map(c => ({
+    ...c,
+    lastPurchaseDate: c.lastPurchaseDate ? new Date(c.lastPurchaseDate) : null,
+    sales: c.sales.map(s => ({ ...s, saleDate: new Date(s.saleDate) })),
+  }))
+
   return (
     <main className="flex-1 py-10 px-6 max-w-[1700px] mx-auto space-y-10 animate-in fade-in duration-700 pb-20">
       <PageHeader
@@ -253,6 +310,7 @@ export default async function ClientesList({
         }
       />
 
+      {/* Highlight cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6">
         {highlightCards.map(card => {
           const Icon = card.icon
@@ -279,7 +337,7 @@ export default async function ClientesList({
 
               <p className="mt-3 min-h-[2.5rem] text-sm leading-relaxed opacity-80">
                 {customer
-                  ? `${customer.tradeName || customer.document || "Cadastro ativo"}`
+                  ? `${customer.tradeName || formatDocument(customer.document) || "Cadastro ativo"}`
                   : card.description}
               </p>
 
@@ -327,142 +385,16 @@ export default async function ClientesList({
         })}
       </div>
 
-      <div className="flex flex-col xl:flex-row gap-4 items-center justify-between bg-white p-6 rounded-[2rem] shadow-lahomes border border-slate-50">
-        <form method="GET" className="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
-          <div className="relative w-full md:w-96 group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors font-bold" />
-            <Input
-              name="q"
-              placeholder="Buscar por nome, CPF/CNPJ ou cidade..."
-              defaultValue={q}
-              className="pl-12 rounded-full border-slate-100 focus-visible:ring-primary h-12 text-sm font-medium shadow-inner bg-slate-50/30"
-            />
-          </div>
-          <Button
-            type="submit"
-            variant="secondary"
-            className="rounded-full h-12 px-8 font-bold text-xs uppercase tracking-widest bg-slate-100/50 hover:bg-slate-100 transition-all"
-          >
-            Pesquisar Base
-          </Button>
-        </form>
-      </div>
-
-      <div className="bg-white rounded-[2.5rem] shadow-lahomes border border-slate-50 overflow-hidden">
-        <div className="overflow-x-auto no-scrollbar custom-scrollbar">
-          <Table className="min-w-[1100px]">
-            <TableHeader className="bg-slate-50/50">
-              <TableRow className="hover:bg-transparent border-slate-100">
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px] h-14 pl-8">
-                  Cliente / Documento
-                </TableHead>
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">
-                  Localização
-                </TableHead>
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">
-                  Limite Crédito
-                </TableHead>
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px] text-center">
-                  Frequência
-                </TableHead>
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">
-                  Última Compra
-                </TableHead>
-                <TableHead className="font-black text-slate-500 uppercase tracking-widest text-[10px]">
-                  Status
-                </TableHead>
-                <TableHead className="text-right pr-8"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {clientes.map(c => {
-                const mainAddress = c.addresses[0]
-                const lastSale = c.lastPurchaseDate
-
-                return (
-                  <ClickableRow
-                    key={c.id}
-                    href={`/vendas-clientes/clientes/${c.id}`}
-                    className="border-slate-50 h-20"
-                  >
-                    <TableCell className="pl-8">
-                      <div className="flex flex-col">
-                        <span className="font-black text-primary uppercase tracking-tight text-sm font-outfit">
-                          {c.fullName}
-                        </span>
-                        <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">
-                          {formatDocument(c.document) || "SEM DOCUMENTO"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-slate-500 font-bold text-xs uppercase tracking-tight">
-                      {mainAddress ? `${mainAddress.city} - ${mainAddress.state}` : "---"}
-                    </TableCell>
-                    <TableCell>
-                      <span className="text-sm font-black text-primary font-outfit italic">
-                        {c.creditLimit?.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        }) || "R$ 0,00"}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant="secondary"
-                        className="bg-slate-50 text-slate-500 font-black text-[10px] uppercase rounded-full border border-slate-100 h-6 px-3"
-                      >
-                        {c._count.sales} Compras
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-slate-500 font-bold text-xs uppercase tracking-tight">
-                      {lastSale ? new Date(lastSale).toLocaleDateString("pt-BR") : "Nunca Comprou"}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        className={`border-none font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full ${c.isActive ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-rose-100 text-rose-500"}`}
-                      >
-                        {c.isActive ? "Ativo" : "Bloqueado"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right pr-8">
-                      <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <Link href={`/vendas-clientes/clientes/${c.id}`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 rounded-xl text-primary bg-slate-50 border border-slate-100 hover:bg-white shadow-sm"
-                          >
-                            <Eye className="h-5 w-5" />
-                          </Button>
-                        </Link>
-                        <Link href={`/vendas-clientes/clientes/${c.id}/editar`}>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-10 w-10 rounded-xl text-slate-400 border border-transparent hover:border-slate-100 hover:bg-white shadow-sm"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
-                    </TableCell>
-                  </ClickableRow>
-                )
-              })}
-              {clientes.length === 0 && (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center h-40 text-slate-400 font-bold uppercase tracking-widest text-xs"
-                  >
-                    Nenhum cliente encontrado para sua pesquisa.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </div>
+      {/* Live search + table + pagination */}
+      <Suspense>
+        <ClientesListClient
+          initialCustomers={serializedClientes}
+          initialQuery={q}
+          initialPage={page}
+          initialSort={sort}
+          totalCount={totalCount}
+        />
+      </Suspense>
     </main>
   )
 }
