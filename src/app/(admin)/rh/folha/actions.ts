@@ -41,6 +41,14 @@ function resolvePayrollPeriod(period?: string) {
   return period || new Date().toISOString().slice(0, 7)
 }
 
+function resolveMirrorPeriod(payrollPeriod: string) {
+  const [year, month] = payrollPeriod.split("-").map(Number)
+  if (month === 1) {
+    return `${year - 1}-12`
+  }
+  return `${year}-${String(month - 1).padStart(2, '0')}`
+}
+
 function resolvePayrollDueDate(period: string) {
   const [yearPart, monthPart] = period.split("-")
   const year = Number(yearPart)
@@ -202,10 +210,11 @@ export async function generatePayrollForEmployee(
   },
   attendanceMirrorId?: string
 ) {
+  const mirrorPeriod = resolveMirrorPeriod(resolvePayrollPeriod(period))
   const mirror = attendanceMirrorId
-    ? await getApprovedMirror(employeeId, resolvePayrollPeriod(period), attendanceMirrorId)
+    ? await getApprovedMirror(employeeId, mirrorPeriod, attendanceMirrorId)
     : null
-  const normalizedPeriod = mirror?.period || resolvePayrollPeriod(period)
+  const normalizedPeriod = resolvePayrollPeriod(period)
   const netSalary =
     data.grossSalary - data.inss - data.irrf - data.otherDeductions + data.otherAdditions
   const dueDate = resolvePayrollDueDate(normalizedPeriod)
@@ -257,6 +266,7 @@ export async function generatePayrollForEmployee(
   const payroll = await prisma.payroll.create({
     data: {
       employeeId,
+      attendanceMirrorId: mirror?.id || undefined,
       referencePeriod: normalizedPeriod,
       grossSalary: data.grossSalary,
       netSalary,
@@ -768,8 +778,7 @@ export async function getHoleritesData(period: string, query?: string, departmen
         select: { weeklyHours: true }
       },
       attendanceMirrors: {
-        where: { status: "APPROVED" },
-        orderBy: { period: "desc" },
+        where: { period: resolveMirrorPeriod(period) },
         take: 1,
         select: {
           id: true,
@@ -907,7 +916,7 @@ export async function generateBulkHolerites(period: string, department?: string)
       jobTitle: true,
       workSchedule: { select: { weeklyHours: true } },
       attendanceMirrors: {
-        where: { period },
+        where: { period: resolveMirrorPeriod(period) },
         take: 1
       }
     }

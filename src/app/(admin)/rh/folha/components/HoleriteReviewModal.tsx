@@ -208,7 +208,14 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                 </div>
                 <div>
                   <h2 className="font-outfit font-black text-2xl uppercase italic tracking-tight leading-none">Checkout de Holerite</h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-2">Competência {period.split("-").reverse().join("/")}</p>
+                  <div className="flex flex-col gap-1 mt-2">
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Competência {period.split("-").reverse().join("/")}</p>
+                    {employee.attendanceMirror && (
+                      <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <History className="h-3 w-3" /> Baseado no espelho de {employee.attendanceMirror.period.split("-").reverse().join("/")}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
               <Badge variant="outline" className="h-8 rounded-full border-white/10 bg-white/5 px-4 font-black text-[9px] uppercase tracking-widest text-slate-400">
