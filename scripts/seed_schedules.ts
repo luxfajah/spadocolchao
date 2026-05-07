@@ -174,7 +174,7 @@ async function main() {
     // Build the dynamic times payload
     const timesPayload: any = {};
     for (const day of ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']) {
-      if (s.days.includes(day)) {
+      if ((s.days as string[]).includes(day)) {
         timesPayload[`${day}In1`] = s.times.in1;
         timesPayload[`${day}Out1`] = s.times.out1;
         timesPayload[`${day}In2`] = s.times.in2;
