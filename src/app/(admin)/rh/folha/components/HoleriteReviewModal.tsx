@@ -408,9 +408,9 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                 
                 <div className="space-y-3">
                   <div className="flex justify-between items-center px-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Horas Trabalhadas</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Horas Regulares</span>
                     <span className="text-xs font-bold text-slate-300">
-                      {Math.floor((employee.attendanceMirror?.workedMinutes || 0) / 60)}h {((employee.attendanceMirror?.workedMinutes || 0) % 60)}min
+                      {Math.floor(Math.max(0, (employee.attendanceMirror?.workedMinutes || 0) - he50Min - he100Min) / 60)}h {Math.max(0, (employee.attendanceMirror?.workedMinutes || 0) - he50Min - he100Min) % 60}min
                     </span>
                   </div>
 
@@ -421,14 +421,14 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                   
                   {calculations.totalHe50 > 0 && (
                     <div className="flex justify-between items-center px-1 animate-in slide-in-from-right-2 duration-300">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">Horas Extras 50%</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">Horas Extras 50% ({Math.floor(he50Min / 60)}h {he50Min % 60}m)</span>
                       <span className="text-xs font-black text-emerald-400">+{formatBRL(calculations.totalHe50)}</span>
                     </div>
                   )}
 
                   {calculations.totalHe100 > 0 && (
                     <div className="flex justify-between items-center px-1 animate-in slide-in-from-right-2 duration-300">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">Horas Extras 100%</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-500/80">Horas Extras 100% ({Math.floor(he100Min / 60)}h {he100Min % 60}m)</span>
                       <span className="text-xs font-black text-emerald-400">+{formatBRL(calculations.totalHe100)}</span>
                     </div>
                   )}
