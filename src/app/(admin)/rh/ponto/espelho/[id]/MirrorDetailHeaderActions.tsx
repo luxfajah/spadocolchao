@@ -39,13 +39,7 @@ export function MirrorDetailHeaderActions({
         className="rounded-full gap-2 bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20 transition-all px-8 h-12 font-black text-xs uppercase tracking-[0.1em] text-white"
       />
 
-      <GenerateEmployeePayrollButton
-        employeeId={employeeId}
-        period={period}
-        attendanceMirrorId={mirrorId}
-        disabled={!canGeneratePayroll}
-        className="rounded-full h-12 px-8"
-      />
+
     </div>
   );
 }

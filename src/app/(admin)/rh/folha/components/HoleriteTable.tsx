@@ -18,11 +18,24 @@ import {
   CheckCircle2, 
   AlertCircle,
   MoreHorizontal,
-  FileText
+  FileText,
+  Loader2
 } from "lucide-react"
-import { HoleriteEmployee } from "../actions"
-import { useState } from "react"
+import { HoleriteEmployee, issuePayrollPdf } from "../actions"
+import { useState, useTransition } from "react"
 import { HoleriteReviewModal } from "./HoleriteReviewModal"
+import { useToast } from "@/hooks/use-toast"
+
+function triggerBrowserDownload(fileUrl: string, documentName: string) {
+  if (typeof window === "undefined") return
+  const downloadLink = document.createElement("a")
+  downloadLink.href = fileUrl
+  downloadLink.download = `${documentName}.pdf`
+  downloadLink.rel = "noopener"
+  document.body.appendChild(downloadLink)
+  downloadLink.click()
+  document.body.removeChild(downloadLink)
+}
 
 type HoleriteTableProps = {
   employees: HoleriteEmployee[]
@@ -31,6 +44,8 @@ type HoleriteTableProps = {
 
 export function HoleriteTable({ employees, period }: HoleriteTableProps) {
   const [selectedEmployee, setSelectedEmployee] = useState<HoleriteEmployee | null>(null)
+  const [isDownloading, startDownloadTransition] = useTransition()
+  const { toast } = useToast()
 
   const formatBRL = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
@@ -127,17 +142,40 @@ export function HoleriteTable({ employees, period }: HoleriteTableProps) {
                     <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       {isProcessed ? (
                          <>
-                          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary shadow-sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            onClick={() => setSelectedEmployee(e)}
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-10 w-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-amber-500 shadow-sm"
-                          >
-                            <FileEdit className="h-4 w-4" />
-                          </Button>
+                           <Button 
+                             onClick={() => {
+                               startDownloadTransition(async () => {
+                                 try {
+                                   const result = await issuePayrollPdf(e.payroll!.id)
+                                   triggerBrowserDownload(result.fileUrl, result.documentName)
+                                   toast({
+                                     title: "Holerite baixado",
+                                     description: "O documento foi gerado e baixado com sucesso."
+                                   })
+                                 } catch (err) {
+                                   toast({
+                                     title: "Erro ao baixar",
+                                     description: err instanceof Error ? err.message : "Tente novamente.",
+                                     variant: "destructive"
+                                   })
+                                 }
+                               })
+                             }}
+                             disabled={isDownloading}
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-10 w-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-primary shadow-sm"
+                           >
+                             {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                           </Button>
+                           <Button 
+                             onClick={() => setSelectedEmployee(e)}
+                             variant="ghost" 
+                             size="icon" 
+                             className="h-10 w-10 rounded-xl bg-white border border-slate-100 text-slate-400 hover:text-amber-500 shadow-sm"
+                           >
+                             <FileEdit className="h-4 w-4" />
+                           </Button>
                          </>
                       ) : (
                         <Button 
@@ -175,6 +213,7 @@ export function HoleriteTable({ employees, period }: HoleriteTableProps) {
           period={period} 
           isOpen={!!selectedEmployee} 
           onClose={() => setSelectedEmployee(null)} 
+          key={selectedEmployee.id}
         />
       )}
     </div>
