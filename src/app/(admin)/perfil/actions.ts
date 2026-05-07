@@ -1,6 +1,7 @@
 "use server"
 
 import { randomUUID } from "crypto"
+import { extname } from "path"
 import { uploadFile } from "@/lib/storage-service"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
