@@ -35,7 +35,10 @@ type PayrollCalculationInput = {
   foodPayrollDeductionEnabled?: boolean | null
   foodPayrollDeductionPercent?: number | null
   fuelAllowance?: number | null
+  attendanceBonusEnabled?: boolean | null
+  attendanceBonusAmount?: number | null
 }
+
 
 function resolvePayrollPeriod(period?: string) {
   return period || new Date().toISOString().slice(0, 7)
@@ -61,16 +64,27 @@ function resolvePayrollDueDate(period: string) {
   return new Date(year, month, 5)
 }
 
-function calculatePayrollValues(employee: PayrollCalculationInput, period: string, mirror?: { overtimeMinutes: number; deficitMinutes: number } | null) {
+function calculatePayrollValues(employee: PayrollCalculationInput, period: string, mirror?: { overtimeMinutes: number; deficitMinutes: number; summary?: string | null } | null) {
   if (!employee.salaryBase || employee.salaryBase <= 0) {
     throw new Error(`O funcionário ${getEmployeePrimaryName(employee)} não possui salário base configurado.`)
   }
 
-  let overtimeAddition = 0
-  if (mirror && mirror.overtimeMinutes > 0 && employee.salaryBase) {
-    const hourlyRate = employee.salaryBase / 220
-    const overtimeRate = hourlyRate * 1.5
-    overtimeAddition = (mirror.overtimeMinutes / 60) * overtimeRate
+  const hourlyRate = employee.salaryBase / 220
+  const dayValue = employee.salaryBase / 30
+
+  let delayDeduction = 0
+  if (mirror && mirror.deficitMinutes > 0) {
+    delayDeduction = (mirror.deficitMinutes / 60) * hourlyRate
+  }
+
+  let absenceDeduction = 0
+  if (mirror?.summary) {
+    try {
+      const summary = JSON.parse(mirror.summary)
+      if (summary.absences > 0) {
+        absenceDeduction = summary.absences * dayValue
+      }
+    } catch (e) {}
   }
 
   const benefitBreakdown = calculatePayrollBenefitBreakdown({
@@ -84,13 +98,22 @@ function calculatePayrollValues(employee: PayrollCalculationInput, period: strin
     fuelAllowance: employee.fuelAllowance,
   })
 
+  const overtimeAddition = (mirror?.overtimeMinutes || 0) > 0 ? ((mirror!.overtimeMinutes / 60) * hourlyRate * 1.5) : 0
+  const dsrAddition = overtimeAddition * 0.1667
+
+  const bonusAddition = employee.attendanceBonusEnabled ? (employee.attendanceBonusAmount || 0) : 0
+
   return calculatePayrollValuesByPeriod({
     period,
     grossSalary: employee.salaryBase,
-    otherAdditions: benefitBreakdown.totalAdditions + overtimeAddition,
-    otherDeductions: benefitBreakdown.totalDeductions,
+    otherAdditions: benefitBreakdown.totalAdditions + overtimeAddition + dsrAddition + bonusAddition,
+    otherDeductions: benefitBreakdown.totalDeductions + delayDeduction + absenceDeduction,
   })
 }
+
+
+
+
 
 async function getApprovedMirror(employeeId: string, period: string, attendanceMirrorId?: string) {
   const where = attendanceMirrorId
@@ -994,7 +1017,10 @@ export async function generateEmployeePayrollDraft(
       foodPayrollDeductionEnabled: true,
       foodPayrollDeductionPercent: true,
       fuelAllowance: true,
+      attendanceBonusAmount: true,
+      attendanceBonusEnabled: true,
     },
+
   })
 
   if (!employee) throw new Error("Funcionário não encontrado.")
@@ -1004,7 +1030,24 @@ export async function generateEmployeePayrollDraft(
     where: { employeeId, period: mirrorPeriod },
   })
 
-  const payrollValues = calculatePayrollValues(employee, normalizedPeriod, mirror)
+  const summary = mirror?.summary ? JSON.parse(mirror.summary) : {}
+  const absences = summary.absences || 0
+  const he50Min = mirror?.overtimeMinutes || 0
+  const delayMin = mirror?.deficitMinutes || 0
+
+  const detailedNotes = JSON.stringify({
+    bonus: employee.attendanceBonusEnabled ? (employee.attendanceBonusAmount || 0) : 0,
+    gratification: 0,
+
+    vtValue: employee.transportationAllowance || 0,
+    vrValue: employee.foodAllowance || 0,
+    fuelValue: employee.fuelAllowance || 0,
+    he50Min,
+    he100Min: 0,
+    delayMin,
+    absences,
+    internalNotes: "Gerado a partir do espelho de ponto."
+  })
 
   const payroll = await saveHolerite(employeeId, normalizedPeriod, {
     grossSalary: payrollValues.grossSalary,
@@ -1014,7 +1057,9 @@ export async function generateEmployeePayrollDraft(
     otherDeductions: payrollValues.otherDeductions,
     otherAdditions: payrollValues.otherAdditions,
     status: "DRAFT",
+    notes: detailedNotes,
   })
+
 
   revalidatePath("/rh/folha")
   revalidatePath(`/rh/ponto/${employeeId}`)
@@ -1062,7 +1107,10 @@ export async function generateBulkHolerites(period: string, department?: string)
     include: {
       jobTitle: true,
       workSchedule: { select: { weeklyHours: true } },
+      attendanceBonusAmount: true,
+      attendanceBonusEnabled: true,
       attendanceMirrors: {
+
         where: { period: resolveMirrorPeriod(period) },
         take: 1
       }
@@ -1111,7 +1159,8 @@ export async function generateBulkHolerites(period: string, department?: string)
     })
 
     const detailedNotes = JSON.stringify({
-      bonus: e.attendanceBonusAmount || 0,
+      bonus: e.attendanceBonusEnabled ? (e.attendanceBonusAmount || 0) : 0,
+
       gratification: 0,
       vtValue: e.transportationAllowance || 0,
       vrValue: e.foodAllowance || 0,

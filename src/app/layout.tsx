@@ -25,6 +25,7 @@ export default function RootLayout({
         <div className="flex min-h-screen w-full flex-col">
           {children}
         </div>
+        <Toaster />
       </body>
     </html>
   )

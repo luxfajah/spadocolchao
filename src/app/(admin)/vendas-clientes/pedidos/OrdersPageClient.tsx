@@ -2,6 +2,7 @@
 
 import { OrdersSummary } from "@/components/pedidos/OrdersSummary"
 import { OrdersTable } from "@/components/pedidos/OrdersTable"
+import { OrderKanban } from "@/components/pedidos/OrderKanban"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { PageHeader } from "@/components/layout/PageHeader"
@@ -240,7 +241,23 @@ export function OrdersPageClient({
               <OrdersTable orders={filteredOrders} />
             </div>
           </section>
-        ) : null}
+        ) : (
+          <section className="space-y-4">
+            <div className="px-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+                Quadro de movimentação
+              </p>
+              <h3 className="mt-2 font-outfit text-2xl font-black uppercase italic tracking-tight text-primary">
+                Fluxo operacional de pedidos
+              </h3>
+            </div>
+            <OrderKanban 
+              initialOrders={filteredOrders} 
+              currentUserRole={currentUserRole}
+              kanbanMode={kanbanMode}
+            />
+          </section>
+        )}
       </div>
     )
   }
@@ -600,6 +617,22 @@ export function OrdersPageClient({
           </div>
         </div>
       </div>
+
+      <section className="space-y-4">
+        <div className="px-1">
+          <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
+            Quadro de movimentação
+          </p>
+          <h3 className="mt-2 font-outfit text-2xl font-black uppercase italic tracking-tight text-primary">
+            Fluxo operacional de pedidos
+          </h3>
+        </div>
+        <OrderKanban 
+          initialOrders={filteredOrders} 
+          currentUserRole={currentUserRole}
+          kanbanMode={kanbanMode}
+        />
+      </section>
 
       <div className="flex flex-col items-center justify-between gap-4 rounded-[2rem] border border-slate-50 bg-white p-6 shadow-lahomes xl:flex-row">
         <div className="flex w-full flex-col items-center gap-4 md:flex-row xl:w-auto">
