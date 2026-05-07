@@ -158,5 +158,6 @@ function parseCustomerFormData(formData: FormData) {
     invoiceEmail: formData.get("invoiceEmail") as string,
     motherName: formData.get("motherName") as string,
     fatherName: formData.get("fatherName") as string,
+    companySize: formData.get("companySize") as string,
   }
 }

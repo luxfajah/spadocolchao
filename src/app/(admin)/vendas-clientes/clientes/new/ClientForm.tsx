@@ -68,7 +68,10 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
     fullName: initialData?.fullName || "",
     tradeName: initialData?.tradeName || "",
     email: initialData?.email || "",
-    phone: initialData?.phone || ""
+    invoiceEmail: initialData?.invoiceEmail || "",
+    companySize: initialData?.companySize || "",
+    phone: initialData?.phone || "",
+    whatsapp: initialData?.whatsapp || ""
   })
 
   const handleDocumentChange = async (val: string) => {
@@ -86,12 +89,34 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
         const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanDoc}`)
         if (res.ok) {
           const data = await res.json()
+          let phone1 = clientData.phone
+          let whatsapp = clientData.whatsapp
+          if (data.ddd_telefone_1) {
+            const formatted = `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}`
+            if (data.ddd_telefone_1.substring(2).startsWith("9")) {
+               whatsapp = formatted
+            } else {
+               phone1 = formatted
+            }
+          }
+          if (data.ddd_telefone_2) {
+             const formatted = `(${data.ddd_telefone_2.substring(0,2)}) ${data.ddd_telefone_2.substring(2)}`
+             if (data.ddd_telefone_2.substring(2).startsWith("9")) {
+               whatsapp = formatted
+             } else if (!phone1) {
+               phone1 = formatted
+             }
+          }
+
           setClientData(prev => ({
             ...prev,
             fullName: data.razao_social || prev.fullName,
             tradeName: data.nome_fantasia || prev.tradeName,
             email: data.email || prev.email,
-            phone: data.ddd_telefone_1 ? `(${data.ddd_telefone_1.substring(0,2)}) ${data.ddd_telefone_1.substring(2)}` : prev.phone
+            invoiceEmail: data.email || prev.invoiceEmail,
+            companySize: data.porte || prev.companySize,
+            phone: phone1,
+            whatsapp: whatsapp
           }))
           
           if (data.cep) {
@@ -230,15 +255,22 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                     <Label>Nome Fantasia</Label>
                     <Input name="tradeName" value={clientData.tradeName} onChange={e => setClientData(p => ({...p, tradeName: e.target.value}))} className="bg-white" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>RG</Label>
-                    <MaskedInput 
-                      name="rg" 
-                      defaultValue={initialData?.rg || ""} 
-                      maskType="rg"
-                      className="bg-white" 
-                    />
-                  </div>
+                  {personType === "INDIVIDUAL" ? (
+                    <div className="space-y-2">
+                      <Label>RG</Label>
+                      <MaskedInput 
+                        name="rg" 
+                        defaultValue={initialData?.rg || ""} 
+                        maskType="rg"
+                        className="bg-white" 
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>Porte da Empresa</Label>
+                      <Input name="companySize" value={clientData.companySize} onChange={e => setClientData(p => ({...p, companySize: e.target.value}))} placeholder="Ex: ME, EPP" className="bg-white" />
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -289,7 +321,8 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 <Label>WhatsApp</Label>
                 <MaskedInput 
                   name="whatsapp" 
-                  defaultValue={initialData?.whatsapp || ""} 
+                  value={clientData.whatsapp}
+                  onChange={e => setClientData(p => ({...p, whatsapp: e.target.value}))}
                   placeholder="(00) 90000-0000" 
                   maskType="phone"
                   className="bg-white" 
@@ -447,7 +480,7 @@ export function ClientForm({ sellers, leadSources, initialData }: ClientFormProp
                 </div>
                 <div className="space-y-2">
                   <Label>E-mail para Nota Fiscal</Label>
-                  <Input name="invoiceEmail" defaultValue={initialData?.invoiceEmail || ""} className="bg-white" />
+                  <Input name="invoiceEmail" value={clientData.invoiceEmail} onChange={e => setClientData(p => ({...p, invoiceEmail: e.target.value}))} className="bg-white" />
                 </div>
               </CardContent>
             </Card>
