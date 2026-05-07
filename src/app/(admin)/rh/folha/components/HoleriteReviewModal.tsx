@@ -472,8 +472,8 @@ export function HoleriteReviewModal({ employee, period, isOpen, onClose }: Holer
                     <span className="text-xs font-bold text-slate-400">-{formatBRL(calculations.irrf)}</span>
                   </div>
                   <div className="flex justify-between items-center px-1">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">FGTS (Desconto)</span>
-                    <span className="text-xs font-bold text-slate-400">-{formatBRL(calculations.fgts)}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">FGTS (Custo Empresa)</span>
+                    <span className="text-xs font-bold text-amber-500/80">{formatBRL(calculations.fgts)}</span>
                   </div>
                 </div>
 

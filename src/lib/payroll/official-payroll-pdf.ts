@@ -212,12 +212,6 @@ function buildDeductions(payroll: any, employee: any) {
       reference: payrollValues.taxPolicy.irrf.referenceLabel,
       amount: payroll.irrf || 0,
     },
-    {
-      code: "4102",
-      description: "FGTS",
-      reference: "8%",
-      amount: payroll.fgts || 0,
-    },
   ]
 
   if (benefitBreakdown.transportationDeduction > 0) {
@@ -390,7 +384,7 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null) {
   const deductions = buildDeductions(payroll, employee)
   const grossWithAdditions = Number(payroll.grossSalary || 0) + Number(payroll.otherAdditions || 0)
   const totalDeductions =
-    Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.fgts || 0) + Number(payroll.otherDeductions || 0)
+    Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.otherDeductions || 0)
   const paymentDueDate = payroll.accountsPayable?.[0]?.dueDate
   const taxPolicy = getPayrollTaxPolicySummary(payroll.referencePeriod)
 
