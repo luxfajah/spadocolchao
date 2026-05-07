@@ -1049,6 +1049,8 @@ export async function generateEmployeePayrollDraft(
     internalNotes: "Gerado a partir do espelho de ponto."
   })
 
+  const payrollValues = calculatePayrollValues(employee, normalizedPeriod, mirror)
+
   const payroll = await saveHolerite(employeeId, normalizedPeriod, {
     grossSalary: payrollValues.grossSalary,
     inss: payrollValues.inss,
