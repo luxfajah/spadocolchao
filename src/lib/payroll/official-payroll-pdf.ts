@@ -171,8 +171,8 @@ function buildEarnings(payroll: any, employee: any, mirror: any | null) {
 
   if (remainingAdditions > 0) {
     lines.push({
-      code: "1699",
-      description: "Outras verbas",
+      code: "1002",
+      description: "Horas Extras (50%)",
       reference: "--",
       amount: remainingAdditions,
     })
@@ -397,7 +397,6 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: st
   pdf.text("RECIBO DE PAGAMENTO / HOLERITE", 14, 25)
 
   pdf.setFontSize(7.5)
-  pdf.text(companyCnpj, 142, 18)
   pdf.text(`Emissão: ${formatDate(issueDate)}`, 142, 23)
   pdf.text(`Competência: ${formatPeriodLabel(payroll.referencePeriod)}`, 142, 28)
 
