@@ -50,10 +50,22 @@ export async function GET() {
       },
     })
 
+    const allApprovedMirrors = await prisma.attendanceMirror.findMany({
+      where: { status: "APPROVED" },
+      select: { id: true, employeeId: true, period: true }
+    })
+
     return NextResponse.json({
       message: "Cleanup completed",
       linked: updatedCount,
       deletedPdfs: deleteResult.count,
+      unlinkedPayrolls: payrolls.map(p => ({
+        id: p.id,
+        employee: p.employee.fullName,
+        period: p.referencePeriod,
+        notes: p.notes
+      })),
+      availableMirrors: allApprovedMirrors,
       details: results
     })
   } catch (error: any) {
