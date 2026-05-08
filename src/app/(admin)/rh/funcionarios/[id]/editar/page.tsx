@@ -139,6 +139,9 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
         number: emp.number || "",
         complement: emp.complement || "",
         // Se a escala do funcionário for individual (customizada), carregar os dados
+        isCustomSchedule: emp.workSchedule?.name?.includes("Individual") || false,
+        customScheduleData: emp.workSchedule ? {
+          ...prev.customScheduleData,
           ...emp.workSchedule,
           weeklyHours: emp.workSchedule.weeklyHours?.toString() || "0"
         } : prev.customScheduleData,
