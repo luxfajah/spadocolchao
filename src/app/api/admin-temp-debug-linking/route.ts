@@ -33,13 +33,19 @@ export async function GET() {
     return NextResponse.json({
       payrollsTotal: payrolls.length,
       mirrorsTotal: mirrors.length,
-      payrollsWithoutLink: payrollsWithoutLink.map(p => ({
-        id: p.id,
-        employee: p.employee.fullName,
-        period: p.referencePeriod,
-        notes: p.notes,
-        mirrorMatches: mirrors.filter(m => m.employeeId === p.employeeId && m.period === p.referencePeriod).map(m => m.id)
-      })),
+      payrollsWithoutLink: payrollsWithoutLink.map(p => {
+        const [year, month] = p.referencePeriod.split("-").map(Number)
+        const mirrorPeriod = month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`
+        
+        return {
+          id: p.id,
+          employee: p.employee.fullName,
+          period: p.referencePeriod,
+          expectedMirrorPeriod: mirrorPeriod,
+          notes: p.notes,
+          mirrorMatches: mirrors.filter(m => m.employeeId === p.employeeId && m.period === mirrorPeriod).map(m => m.id)
+        }
+      }),
       allMirrors: mirrors.map(m => ({
         id: m.id,
         employee: m.employee.fullName,

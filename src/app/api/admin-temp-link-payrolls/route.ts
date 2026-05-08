@@ -18,11 +18,17 @@ export async function GET() {
     let updatedCount = 0
 
     for (const payroll of payrolls) {
-      // Tenta encontrar o espelho aprovado para o funcionário no período
+      const payrollPeriod = payroll.referencePeriod
+      const [year, month] = payrollPeriod.split("-").map(Number)
+      const mirrorPeriod = month === 1 
+        ? `${year - 1}-12` 
+        : `${year}-${String(month - 1).padStart(2, '0')}`
+
+      // Tenta encontrar o espelho aprovado para o funcionário no período anterior
       const mirror = await prisma.attendanceMirror.findFirst({
         where: {
           employeeId: payroll.employeeId,
-          period: payroll.referencePeriod,
+          period: mirrorPeriod,
           status: "APPROVED",
         },
       })
