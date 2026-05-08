@@ -92,6 +92,8 @@ export async function POST(request: NextRequest) {
       fgtsOptionDate,
       fgtsAccount,
       fgtsRectificationDate,
+      motherName,
+      fatherName,
     } = body
 
     if (!fullName || !contractType || !jobTitleId) {
@@ -211,6 +213,8 @@ export async function POST(request: NextRequest) {
         gender,
         maritalStatus,
         educationLevel,
+        motherName,
+        fatherName,
         nationality,
         raceColor,
         voterCardNumber,

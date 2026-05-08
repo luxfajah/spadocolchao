@@ -110,6 +110,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       fgtsOptionDate,
       fgtsAccount,
       fgtsRectificationDate,
+      motherName,
+      fatherName,
     } = body
 
     if (!jobTitleId) {
@@ -210,6 +212,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         gender,
         maritalStatus,
         educationLevel,
+        motherName,
+        fatherName,
         nationality,
         raceColor,
         voterCardNumber,

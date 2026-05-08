@@ -254,7 +254,7 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
           cep: unmask(form.cep),
           number: form.number,
           complement: form.complement,
-          rg: form.rg.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(),
+          rg: form.rg ? form.rg.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() : "",
           rgIssuanceDate: form.rgIssuanceDate ? new Date(form.rgIssuanceDate) : undefined,
           ctpsIssuanceDate: form.ctpsIssuanceDate ? new Date(form.ctpsIssuanceDate) : undefined,
           fgtsOptionDate: form.fgtsOptionDate ? new Date(form.fgtsOptionDate) : undefined,
