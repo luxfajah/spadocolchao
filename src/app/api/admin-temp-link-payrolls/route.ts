@@ -18,11 +18,19 @@ export async function GET() {
     let updatedCount = 0
 
     for (const payroll of payrolls) {
-      // Tenta encontrar o espelho aprovado para o funcionário no período
+      // Resolve o período do espelho (mês anterior ao da folha)
+      const [year, month] = payroll.referencePeriod.split("-").map(Number)
+      const mirrorPeriod = month === 1 
+        ? `${year - 1}-12` 
+        : `${year}-${String(month - 1).padStart(2, '0')}`
+
+      console.log(`Buscando espelho para ${payroll.employee.fullName}: Folha ${payroll.referencePeriod} -> Espelho ${mirrorPeriod}`)
+
+      // Tenta encontrar o espelho aprovado para o funcionário no período do espelho
       const mirror = await prisma.attendanceMirror.findFirst({
         where: {
           employeeId: payroll.employeeId,
-          period: payroll.referencePeriod,
+          period: mirrorPeriod,
           status: "APPROVED",
         },
       })
@@ -33,7 +41,25 @@ export async function GET() {
           data: { attendanceMirrorId: mirror.id },
         })
         updatedCount++
-        results.push(`Vinculado: ${payroll.employee.fullName} (${payroll.referencePeriod})`)
+        results.push(`Vinculado: ${payroll.employee.fullName} (Folha: ${payroll.referencePeriod} -> Espelho: ${mirrorPeriod})`)
+      } else {
+        // Tenta buscar no mesmo mês caso a lógica da empresa seja diferente
+        const sameMonthMirror = await prisma.attendanceMirror.findFirst({
+          where: {
+            employeeId: payroll.employeeId,
+            period: payroll.referencePeriod,
+            status: "APPROVED",
+          },
+        })
+
+        if (sameMonthMirror) {
+          await prisma.payroll.update({
+            where: { id: payroll.id },
+            data: { attendanceMirrorId: sameMonthMirror.id },
+          })
+          updatedCount++
+          results.push(`Vinculado (Mesmo Mês): ${payroll.employee.fullName} (${payroll.referencePeriod})`)
+        }
       }
     }
 
