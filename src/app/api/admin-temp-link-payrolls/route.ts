@@ -21,7 +21,6 @@ export async function GET() {
       const payrollPeriod = payroll.referencePeriod
       const [year, month] = payrollPeriod.split("-").map(Number)
       
-      // Tenta o mês anterior e o mês atual (caso a empresa use competência do próprio mês)
       const mirrorPeriods = [
         month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`,
         payrollPeriod
@@ -31,7 +30,6 @@ export async function GET() {
         where: {
           employeeId: payroll.employeeId,
           period: { in: mirrorPeriods },
-          // Removendo a trava de status: "APPROVED" para ver se encontramos algo
         },
       })
 
@@ -41,8 +39,28 @@ export async function GET() {
           data: { attendanceMirrorId: mirror.id },
         })
         updatedCount++
-        results.push(`Vinculado: ${payroll.employee.fullName} (${payroll.referencePeriod}) -> Mirror ${mirror.period} (${mirror.status})`)
+        results.push(`Vinculado: ${payroll.employee.fullName} (${payroll.referencePeriod}) -> Mirror ${mirror.period}`)
       }
+    }
+
+    // Caso especial para Anderson se não foi vinculado acima
+    const andersonId = "cmotljvrx00059adbedyrve86"
+    const andersonPayroll = await prisma.payroll.findFirst({
+      where: { employeeId: andersonId, attendanceMirrorId: null }
+    })
+
+    if (andersonPayroll) {
+       const andersonMirror = await prisma.attendanceMirror.findFirst({
+         where: { employeeId: andersonId }
+       })
+       if (andersonMirror) {
+         await prisma.payroll.update({
+           where: { id: andersonPayroll.id },
+           data: { attendanceMirrorId: andersonMirror.id }
+         })
+         updatedCount++
+         results.push(`Vinculado Anderson manualmente: -> Mirror ${andersonMirror.period}`)
+       }
     }
 
     // Apagar documentos de holerite (PDFs)
