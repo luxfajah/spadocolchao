@@ -82,6 +82,7 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
     pharmacyAllowance: "", childcareAllowance: "", otherBenefits: "",
     bankName: "", bankBranch: "", bankAccount: "", bankAccountType: "CHECKING",
     pixKey: "", pixKeyType: "CPF", serialId: "", pointMachineId: "",
+    number: "", complement: "",
   })
 
   useEffect(() => {
@@ -128,7 +129,9 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
         childcareAllowance: emp.childcareAllowance?.toString() || "",
         serialId: emp.serialId?.toString() || "",
         cep: emp.zipCode || "",
-        // Se a escala do funcionÃ¡rio for individual (customizada), carregar os dados
+        number: emp.number || "",
+        complement: emp.complement || "",
+        // Se a escala do funcionário for individual (customizada), carregar os dados
         isCustomSchedule: emp.workSchedule?.name?.includes("Individual") || false,
         customScheduleData: emp.workSchedule ? {
           ...prev.customScheduleData,
@@ -144,6 +147,29 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
 
   function set(field: string, value: any) {
     setForm((prev: any) => ({ ...prev, [field]: value }))
+  }
+
+  async function handleCepChange(val: string) {
+    setForm((prev: any) => ({ ...prev, cep: val }))
+    const cleanCep = val.replace(/\D/g, "")
+    if (cleanCep.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setForm((prev: any) => ({
+            ...prev,
+            address: data.logradouro,
+            neighborhood: data.bairro,
+            city: data.localidade,
+            state: data.uf,
+          }))
+          document.getElementById('funcAddressNumber')?.focus()
+        }
+      } catch (err) {
+        console.error("Erro ao buscar CEP", err)
+      }
+    }
   }
 
   function applyJobTitleDefaults(jobTitleId: string) {
@@ -215,6 +241,8 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
           phone: unmask(form.phone),
           whatsapp: unmask(form.whatsapp),
           cep: unmask(form.cep),
+          number: form.number,
+          complement: form.complement,
           rg: form.rg.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(),
           transportationAllowance: vtMonthly > 0 ? vtMonthly : undefined,
         })
@@ -335,11 +363,19 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">CEP</label>
-              <MaskedInput value={form.cep} onChange={e => set("cep", e.target.value)} maskType="cep" className={inputCls} />
+              <MaskedInput value={form.cep} onChange={e => handleCepChange(e.target.value)} maskType="cep" className={inputCls} />
             </div>
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">Logradouro</label>
               <Input value={form.address} onChange={e => set("address", e.target.value)} className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">Número</label>
+              <Input id="funcAddressNumber" value={form.number} onChange={e => set("number", e.target.value)} placeholder="123" className={inputCls} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">Complemento</label>
+              <Input value={form.complement} onChange={e => set("complement", e.target.value)} placeholder="Apto 12, Bloco B" className={inputCls} />
             </div>
             <div>
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">Bairro</label>

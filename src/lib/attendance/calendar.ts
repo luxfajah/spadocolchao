@@ -210,7 +210,17 @@ function pairDayPunches(dayPunches: NormalizedPunch[], isSaturdayHalf: boolean) 
     observations.push("Sabado: F orfao sem A - requer revisao manual")
   }
 
-  const totalWorked = morningMinutes + afternoonMinutes
+  let totalWorked = morningMinutes + afternoonMinutes
+
+  // REPAIR: Para funcionários que trabalham em turno único (como aprendizes), 
+  // se houver apenas Entrada (S) e Saída Final (F), calculamos a jornada direta.
+  if (firstIn && lastOut && !lunchOut && !lunchIn && dayPunches.length === 2) {
+    totalWorked = calculateWorkedMinutes(firstIn.dateTime, lastOut.dateTime)
+    morningMinutes = totalWorked
+    morningComplete = true
+    afternoonComplete = true
+    observations.push("Jornada de turno único detectada (S -> F)")
+  }
 
   return {
     firstIn: firstIn?.dateTime || null,
