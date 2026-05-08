@@ -433,6 +433,7 @@ export async function generateEmployeePayroll(
         await tx.payroll.update({
           where: { id: existingPayroll.id },
           data: {
+            attendanceMirrorId: approvedMirror.id,
             grossSalary: payrollValues.grossSalary,
             netSalary: payrollValues.netSalary,
             inss: payrollValues.inss,
@@ -483,6 +484,7 @@ export async function generateEmployeePayroll(
     const payroll = await tx.payroll.create({
       data: {
         employeeId,
+        attendanceMirrorId: approvedMirror.id,
         referencePeriod: approvedMirror.period,
         grossSalary: payrollValues.grossSalary,
         netSalary: payrollValues.netSalary,
@@ -649,6 +651,7 @@ export async function generateBatchPayroll(period: string) {
           await tx.payroll.update({
             where: { id: existingPayroll.id },
             data: {
+              attendanceMirrorId: mirror.id,
               grossSalary: payrollValues.grossSalary,
               netSalary: payrollValues.netSalary,
               inss: payrollValues.inss,
@@ -697,6 +700,7 @@ export async function generateBatchPayroll(period: string) {
       const payroll = await tx.payroll.create({
         data: {
           employeeId: employee.id,
+          attendanceMirrorId: mirror.id,
           referencePeriod: normalizedPeriod,
           grossSalary: payrollValues.grossSalary,
           netSalary: payrollValues.netSalary,
