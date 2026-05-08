@@ -114,7 +114,7 @@ function drawTableHeader(pdf: import("jspdf").jsPDF, y: number) {
   }
 }
 
-function buildApprovedMirrorPdfBuffer(mirror: any, days: any[]) {
+function buildApprovedMirrorPdfBuffer(mirror: any, days: any[], companyName: string) {
   const pdf = new jsPDF("p", "mm", "a4")
   const pageHeight = pdf.internal.pageSize.getHeight()
   const primaryName = getEmployeePrimaryName(mirror.employee)
@@ -127,7 +127,7 @@ function buildApprovedMirrorPdfBuffer(mirror: any, days: any[]) {
     pdf.setTextColor(255, 255, 255)
     pdf.setFont("helvetica", "bold")
     pdf.setFontSize(15)
-    pdf.text("SPA DO COLCHAO", 14, 18)
+    pdf.text(companyName, 14, 18)
     pdf.setFontSize(10)
     pdf.text("ESPELHO DE PONTO APROVADO", 14, 24)
 
@@ -273,7 +273,9 @@ export async function generateApprovedAttendanceMirrorPdf(mirrorId: string) {
   const periodLabel = formatPeriodLabel(mirror.period)
   const fileName = `${sanitizeFileNamePart(`espelho-ponto-aprovado-${mirror.employeeId}-${mirror.period}-${mirror.id}`)}.pdf`
   const storagePath = `employee-documents/${mirror.employeeId}/attendance-mirrors/${fileName}`
-  const fileBuffer = buildApprovedMirrorPdfBuffer(mirror, days)
+  const companyProfile = await prisma.companyProfile.findFirst()
+  const companyName = companyProfile?.legalName || companyProfile?.tradeName || "SPA DO COLCHAO"
+  const fileBuffer = buildApprovedMirrorPdfBuffer(mirror, days, companyName)
   
   const fileUrl = await uploadFile(storagePath, fileBuffer)
   const documentName = `Espelho de Ponto Aprovado - ${periodLabel}`

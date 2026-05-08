@@ -17,8 +17,7 @@ const { jsPDF } = require("jspdf") as typeof import("jspdf")
 
 export const PAYROLL_DOCUMENT_TYPE = "PAYROLL"
 
-const COMPANY_NAME = "SPA DO COLCHAO"
-const COMPANY_DOCUMENT = "CNPJ NÃO INFORMADO NO SISTEMA"
+
 
 type RubricaLine = {
   code: string
@@ -368,7 +367,7 @@ function drawObservationBox(
   return boxHeight
 }
 
-function buildPayrollPdfBuffer(payroll: any, mirror: any | null) {
+function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: string, companyCnpj: string) {
   const pdf = new jsPDF("p", "mm", "a4")
   const employee = payroll.employee
   const primaryName = getEmployeePrimaryName(employee)
@@ -393,12 +392,12 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null) {
   pdf.setFont("helvetica", "bold")
   pdf.setFontSize(15)
   pdf.setTextColor(255, 255, 255)
-  pdf.text(COMPANY_NAME, 14, 19)
+  pdf.text(companyName, 14, 19)
   pdf.setFontSize(9)
   pdf.text("RECIBO DE PAGAMENTO / HOLERITE", 14, 25)
 
   pdf.setFontSize(7.5)
-  pdf.text(COMPANY_DOCUMENT, 142, 18)
+  pdf.text(companyCnpj, 142, 18)
   pdf.text(`Emissão: ${formatDate(issueDate)}`, 142, 23)
   pdf.text(`Competência: ${formatPeriodLabel(payroll.referencePeriod)}`, 142, 28)
 
@@ -584,7 +583,11 @@ export async function generateOfficialPayrollPdf(payrollId: string) {
 
   const fileName = `${sanitizeFileNamePart(`holerite-${payroll.employeeId}-${payroll.referencePeriod}-${payroll.id}`)}.pdf`
   const storagePath = `employee-documents/${payroll.employeeId}/payrolls/${fileName}`
-  const fileBuffer = buildPayrollPdfBuffer(payroll, mirror)
+  const companyProfile = await prisma.companyProfile.findFirst()
+  const companyName = companyProfile?.legalName || companyProfile?.tradeName || "SPA DO COLCHAO"
+  const companyCnpj = companyProfile?.cnpj ? `CNPJ: ${companyProfile.cnpj}` : "CNPJ NÃO INFORMADO NO SISTEMA"
+
+  const fileBuffer = buildPayrollPdfBuffer(payroll, mirror, companyName, companyCnpj)
   
   const fileUrl = await uploadFile(storagePath, fileBuffer)
   const periodLabel = formatPeriodLabel(payroll.referencePeriod)

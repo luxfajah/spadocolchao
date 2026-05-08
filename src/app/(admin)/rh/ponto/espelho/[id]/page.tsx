@@ -56,6 +56,9 @@ export default async function EspelhoDetalhePage({
 
   const primaryName = getEmployeePrimaryName(mirror.employee)
   const legalName = getEmployeeLegalName(mirror.employee)
+  const companyProfile = await (prisma as any).companyProfile.findFirst()
+  const companyName = companyProfile?.legalName || companyProfile?.tradeName || "SPA DO COLCHÃO"
+  const companyCnpj = companyProfile?.cnpj || "00.000.000/0001-00"
 
   const statusMap: Record<string, { label: string, color: string, bg: string }> = {
     WORKED_COMPLETE: { label: "Completo", color: "text-emerald-700", bg: "bg-emerald-50 border-emerald-100" },
@@ -81,8 +84,8 @@ export default async function EspelhoDetalhePage({
     <main id="mirror-content" className="flex-1 py-10 px-6 max-w-[1700px] mx-auto space-y-8 animate-in fade-in duration-700 pb-20 bg-white">
       <div className="hidden border-b-2 border-slate-900 pb-6 mb-8 print:flex items-center justify-between">
         <div className="flex flex-col">
-          <h1 className="text-2xl font-black font-outfit uppercase">SPA DO COLCHÃO</h1>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">CNPJ: 00.000.000/0001-00 • Relatório de Espelho de Ponto</p>
+          <h1 className="text-2xl font-black font-outfit uppercase">{companyName}</h1>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">CNPJ: {companyCnpj} • Relatório de Espelho de Ponto</p>
         </div>
         <div className="text-right">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data de Emissão</p>
