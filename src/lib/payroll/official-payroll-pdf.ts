@@ -269,22 +269,27 @@ function drawField(
   pdf.setFont("helvetica", "bold")
   pdf.setFontSize(6.5)
   pdf.setTextColor(100, 116, 139)
-  pdf.text(label.toUpperCase(), x, y)
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(9.5)
+  pdf.text(label.toUpperCase(), x + 1, y)
+  
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(9)
   pdf.setTextColor(15, 23, 42)
-  pdf.text(fitSingleLineText(pdf, value, width), x, y + 5)
+  pdf.text(fitSingleLineText(pdf, value, width - 2), x + 1, y + 5)
+  
   pdf.setDrawColor(226, 232, 240)
-  pdf.line(x, y + 7.4, x + width, y + 7.4)
+  pdf.setLineWidth(0.2)
+  pdf.line(x, y + 7, x + width, y + 7)
 }
 
 function drawSectionTitle(pdf: import("jspdf").jsPDF, y: number, title: string) {
-  pdf.setFillColor(241, 245, 249)
-  pdf.roundedRect(10, y, 190, 8, 1.5, 1.5, "F")
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(8)
-  pdf.setTextColor(51, 65, 85)
-  pdf.text(title.toUpperCase(), 14, y + 5.2)
+  pdf.setFontSize(9)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(title.toUpperCase(), 10, y + 5)
+  
+  pdf.setDrawColor(15, 23, 42)
+  pdf.setLineWidth(0.4)
+  pdf.line(10, y + 7, 200, y + 7)
 }
 
 function drawRubricaTable(
@@ -294,57 +299,66 @@ function drawRubricaTable(
   width: number,
   title: string,
   rows: RubricaLine[],
-  highlight: { r: number; g: number; b: number }
+  headerColor: { r: number; g: number; b: number }
 ) {
-  pdf.setFillColor(highlight.r, highlight.g, highlight.b)
-  pdf.roundedRect(x, y, width, 8, 1.5, 1.5, "F")
+  // Table Header
+  pdf.setFillColor(248, 250, 252)
+  pdf.rect(x, y, width, 7, "F")
+  pdf.setDrawColor(226, 232, 240)
+  pdf.rect(x, y, width, 7, "D")
+  
   pdf.setFont("helvetica", "bold")
   pdf.setFontSize(7.5)
-  pdf.setTextColor(255, 255, 255)
-  pdf.text(title.toUpperCase(), x + 3, y + 5.2)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(title.toUpperCase(), x + 3, y + 4.8)
 
-  pdf.setFillColor(248, 250, 252)
-  pdf.rect(x, y + 10, width, 7, "F")
-  pdf.setFontSize(6.4)
-  pdf.setTextColor(71, 85, 105)
-  pdf.text("COD.", x + 3, y + 14.4)
-  pdf.text("RUBRICA", x + 16, y + 14.4)
-  pdf.text("REF.", x + width - 30, y + 14.4)
-  pdf.text("VALOR", x + width - 14, y + 14.4, { align: "right" })
+  // Column Headers
+  const colY = y + 7
+  pdf.setFillColor(255, 255, 255)
+  pdf.rect(x, colY, width, 6, "F")
+  pdf.rect(x, colY, width, 6, "D")
+  
+  pdf.setFontSize(6.5)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text("CÓD.", x + 2, colY + 4)
+  pdf.text("DESCRIÇÃO", x + 14, colY + 4)
+  pdf.text("REF.", x + width - 28, colY + 4)
+  pdf.text("VALOR", x + width - 2, colY + 4, { align: "right" })
 
-  let currentY = y + 20
+  let currentY = colY + 6
 
   if (rows.length === 0) {
-    pdf.setDrawColor(226, 232, 240)
-    pdf.rect(x, currentY - 3, width, 8)
-    pdf.setFont("helvetica", "normal")
+    pdf.rect(x, currentY, width, 8, "D")
+    pdf.setFont("helvetica", "italic")
     pdf.setFontSize(7)
     pdf.setTextColor(148, 163, 184)
-    pdf.text("Sem lançamentos.", x + 3, currentY + 2)
+    pdf.text("Sem lançamentos.", x + 3, currentY + 5)
     currentY += 8
   } else {
     for (const row of rows) {
-      pdf.setDrawColor(226, 232, 240)
-      pdf.rect(x, currentY - 3, width, 8)
+      pdf.setDrawColor(241, 245, 249)
+      pdf.rect(x, currentY, width, 8, "D")
       pdf.setFont("helvetica", "normal")
-      pdf.setFontSize(7)
-      pdf.setTextColor(15, 23, 42)
-      pdf.text(row.code, x + 3, currentY + 2)
-      pdf.text(row.description, x + 16, currentY + 2)
-      pdf.text(row.reference || "--", x + width - 30, currentY + 2)
-      pdf.text(formatCurrency(row.amount), x + width - 3, currentY + 2, { align: "right" })
+      pdf.setFontSize(7.5)
+      pdf.setTextColor(30, 41, 59)
+      pdf.text(row.code, x + 2, currentY + 5)
+      pdf.text(fitSingleLineText(pdf, row.description, width - 45), x + 14, currentY + 5)
+      pdf.text(row.reference || "--", x + width - 28, currentY + 5)
+      pdf.text(formatCurrency(row.amount), x + width - 2, currentY + 5, { align: "right" })
       currentY += 8
     }
   }
 
+  // Table Total
   const total = rows.reduce((sum, row) => sum + row.amount, 0)
-  pdf.setFillColor(241, 245, 249)
-  pdf.rect(x, currentY - 2, width, 8, "F")
+  pdf.setFillColor(248, 250, 252)
+  pdf.setDrawColor(226, 232, 240)
+  pdf.rect(x, currentY, width, 8, "FD")
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(7.2)
-  pdf.setTextColor(30, 41, 59)
-  pdf.text("TOTAL", x + 3, currentY + 2.5)
-  pdf.text(formatCurrency(total), x + width - 3, currentY + 2.5, { align: "right" })
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text("TOTAL", x + 3, currentY + 5.5)
+  pdf.text(formatCurrency(total), x + width - 2, currentY + 5.5, { align: "right" })
 }
 
 function drawObservationBox(
@@ -355,55 +369,23 @@ function drawObservationBox(
   title: string,
   value: string
 ) {
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(8)
-  const lines = pdf.splitTextToSize(value || "--", width - 8) as string[]
-  const boxHeight = Math.max(14, 8 + lines.length * 4.2)
+  pdf.setFontSize(7)
+  const lines = pdf.splitTextToSize(value || "--", width - 6) as string[]
+  const boxHeight = Math.max(12, 6 + lines.length * 4)
 
-  pdf.setFillColor(248, 250, 252)
   pdf.setDrawColor(226, 232, 240)
-  pdf.roundedRect(x, y, width, boxHeight, 2, 2, "FD")
+  pdf.rect(x, y, width, boxHeight, "D")
 
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(7)
-  pdf.setTextColor(71, 85, 105)
-  pdf.text(title.toUpperCase(), x + 4, y + 4.8)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text(title.toUpperCase(), x + 3, y + 4)
 
   pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(8)
   pdf.setTextColor(15, 23, 42)
-  pdf.text(lines, x + 4, y + 9.5)
+  pdf.setFontSize(7)
+  pdf.text(lines, x + 3, y + 8)
 
   return boxHeight
-}
-
-function drawDivider(pdf: import("jspdf").jsPDF, y: number) {
-  pdf.setDrawColor(226, 232, 240)
-  pdf.setLineWidth(0.3)
-  pdf.line(10, y, 200, y)
-  pdf.setLineWidth(0.2)
-}
-
-function drawInfoCard(
-  pdf: import("jspdf").jsPDF,
-  x: number, y: number, width: number,
-  label: string, value: string,
-  accent?: { r: number; g: number; b: number }
-) {
-  pdf.setFillColor(248, 250, 252)
-  pdf.roundedRect(x, y, width, 13, 1.5, 1.5, "F")
-  if (accent) {
-    pdf.setFillColor(accent.r, accent.g, accent.b)
-    pdf.roundedRect(x, y, 2, 13, 0.5, 0.5, "F")
-  }
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(6)
-  pdf.setTextColor(148, 163, 184)
-  pdf.text(label.toUpperCase(), x + 4, y + 4.5)
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(8.5)
-  pdf.setTextColor(15, 23, 42)
-  pdf.text(fitSingleLineText(pdf, value, width - 6), x + 4, y + 10.5)
 }
 
 function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: string, companyCnpj: string) {
@@ -426,199 +408,134 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: st
   const taxPolicy = getPayrollTaxPolicySummary(payroll.referencePeriod)
 
   // ── HEADER ─────────────────────────────────────────────────────────────────
-  // Dark gradient-style header
-  pdf.setFillColor(15, 23, 42)
-  pdf.rect(0, 0, 210, 32, "F")
-  // Left accent bar
-  pdf.setFillColor(16, 185, 129)
-  pdf.rect(0, 0, 3, 32, "F")
-
+  // Clean white header with top border
+  pdf.setDrawColor(15, 23, 42)
+  pdf.setLineWidth(1)
+  pdf.line(10, 10, 200, 10)
+  
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(16)
-  pdf.setTextColor(255, 255, 255)
-  pdf.text(companyName.toUpperCase(), 8, 13)
-
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(100, 116, 139)
-  pdf.text("RECIBO DE PAGAMENTO DE SALÁRIO", 8, 20)
-  pdf.text(companyCnpj, 8, 26)
-
-  // Right info block
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(7)
-  pdf.setTextColor(148, 163, 184)
-  pdf.text("EMISSÃO", 150, 11)
-  pdf.text("COMPETÊNCIA", 150, 20)
-  pdf.text("SITUAÇÃO", 150, 29)
-  pdf.setFont("helvetica", "bold")
-  pdf.setTextColor(255, 255, 255)
-  pdf.text(formatDate(issueDate), 178, 11)
-  pdf.text(formatPeriodLabel(payroll.referencePeriod), 178, 20)
-  pdf.setTextColor(16, 185, 129)
-  pdf.text("PROCESSADO", 178, 29)
-
-  // ── IDENTIFICATION ──────────────────────────────────────────────────────────
-  let y = 38
-
-  // Employee name — large prominent
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(13)
+  pdf.setFontSize(14)
   pdf.setTextColor(15, 23, 42)
-  pdf.text(primaryName, 10, y + 6)
-  if (legalName) {
-    pdf.setFont("helvetica", "normal")
-    pdf.setFontSize(7.5)
-    pdf.setTextColor(100, 116, 139)
-    pdf.text(`Nome legal: ${legalName}`, 10, y + 12)
-    y += 4
-  }
-  pdf.setFont("helvetica", "normal")
+  pdf.text(companyName.toUpperCase(), 10, 18)
+  
   pdf.setFontSize(8)
-  pdf.setTextColor(71, 85, 105)
-  pdf.text(employee.jobTitle?.name || "Cargo não informado", 10, y + 18)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text(companyCnpj, 10, 23)
+  
+  pdf.setFontSize(10)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text("DEMONSTRATIVO DE PAGAMENTO MENSAL", 10, 30)
 
-  y += 24
-  drawDivider(pdf, y)
-  y += 5
-
-  // Info cards row 1: CPF, Matrícula, Admissão, Contrato
-  const card1w = 44
-  drawInfoCard(pdf, 10, y, card1w, "CPF", formatCpf(employee.cpf), { r: 59, g: 130, b: 246 })
-  drawInfoCard(pdf, 57, y, card1w, "Matrícula", formatDocumentValue(employee.code || employee.serialId?.toString() || employee.pointMachineId), { r: 139, g: 92, b: 246 })
-  drawInfoCard(pdf, 104, y, card1w, "Admissão", formatDate(employee.admissionDate), { r: 249, g: 115, b: 22 })
-  drawInfoCard(pdf, 151, y, 49, "Contrato", formatDocumentValue(employee.contractType), { r: 20, g: 184, b: 166 })
-
-  y += 17
-  // Info cards row 2: Centro de custo, Setor, PIS
-  drawInfoCard(pdf, 10, y, 59, "Centro de custo", allocationSnapshot.costCenterName || "Não informado", { r: 16, g: 185, b: 129 })
-  drawInfoCard(pdf, 72, y, 81, "Setor / Função", allocationSnapshot.sectorName || "Não informado", { r: 16, g: 185, b: 129 })
-  drawInfoCard(pdf, 156, y, 44, "PIS / PASEP", formatDocumentValue(employee.pis), { r: 100, g: 116, b: 139 })
-
-  y += 20
-  drawDivider(pdf, y)
-  y += 4
-
-  // ── SECTION TITLE ──────────────────────────────────────────────────────────
-  pdf.setFillColor(15, 23, 42)
-  pdf.roundedRect(10, y, 190, 7, 1.5, 1.5, "F")
-  pdf.setFillColor(16, 185, 129)
-  pdf.roundedRect(10, y, 2.5, 7, 0.5, 0.5, "F")
+  // Right Side Info
+  pdf.setFontSize(8)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text("COMPETÊNCIA:", 150, 18)
+  pdf.text("DATA EMISSÃO:", 150, 23)
+  
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(255, 255, 255)
-  pdf.text("DEMONSTRATIVO FINANCEIRO", 15, y + 4.8)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(formatPeriodLabel(payroll.referencePeriod), 180, 18)
+  pdf.text(formatDate(issueDate), 180, 23)
 
-  y += 11
+  let y = 40
 
-  // ── EARNINGS TABLE ─────────────────────────────────────────────────────────
-  const tableW = 92
-  drawRubricaTable(pdf, 10, y, tableW, "Proventos", earnings, { r: 16, g: 185, b: 129 })
-  drawRubricaTable(pdf, 108, y, tableW, "Descontos", deductions, { r: 37, g: 99, b: 235 })
+  // ── EMPLOYEE INFO ──────────────────────────────────────────────────────────
+  drawSectionTitle(pdf, y, "Identificação do Colaborador")
+  y += 12
+  
+  drawField(pdf, 10, y, 90, "Nome Completo", primaryName)
+  drawField(pdf, 110, y, 90, "Cargo / Função", employee.jobTitle?.name || "Não informado")
+  
+  y += 12
+  drawField(pdf, 10, y, 45, "CPF", formatCpf(employee.cpf))
+  drawField(pdf, 60, y, 45, "Matrícula", formatDocumentValue(employee.code || employee.serialId?.toString() || employee.pointMachineId))
+  drawField(pdf, 110, y, 45, "Data Admissão", formatDate(employee.admissionDate))
+  drawField(pdf, 160, y, 40, "PIS", formatDocumentValue(employee.pis))
+  
+  y += 12
+  drawField(pdf, 10, y, 60, "Centro de Custo", allocationSnapshot.costCenterName || "Não informado")
+  drawField(pdf, 75, y, 65, "Setor", allocationSnapshot.sectorName || "Não informado")
+  drawField(pdf, 145, y, 55, "Tipo Contrato", formatDocumentValue(employee.contractType))
+
+  y += 18
+
+  // ── FINANCIAL DETAILS ──────────────────────────────────────────────────────
+  drawSectionTitle(pdf, y, "Demonstrativo de Valores")
+  y += 12
+  
+  const tableWidth = 92
+  drawRubricaTable(pdf, 10, y, tableWidth, "Proventos (Vencimentos)", earnings, { r: 15, g: 23, b: 42 })
+  drawRubricaTable(pdf, 108, y, tableWidth, "Descontos", deductions, { r: 15, g: 23, b: 42 })
 
   const tablesHeight = Math.max(getRubricaTableHeight(earnings), getRubricaTableHeight(deductions))
-  y += tablesHeight + 8
+  y += tablesHeight + 5
 
-  // ── LIQUID NET HIGHLIGHT ────────────────────────────────────────────────────
-  // Three totals side by side
-  drawInfoCard(pdf, 10, y, 57, "Base Bruta (Salário)", formatCurrency(payroll.grossSalary || 0), { r: 100, g: 116, b: 139 })
-  drawInfoCard(pdf, 70, y, 57, "Total Proventos", formatCurrency(grossWithAdditions), { r: 59, g: 130, b: 246 })
-  drawInfoCard(pdf, 130, y, 57, "Total Descontos", formatCurrency(totalDeductions), { r: 239, g: 68, b: 68 })
-
-  y += 17
-
-  // Net salary — big green box
-  pdf.setFillColor(16, 185, 129)
-  pdf.roundedRect(10, y, 190, 16, 2, 2, "F")
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(255, 255, 255)
-  pdf.text("LÍQUIDO A RECEBER", 15, y + 5.5)
-  pdf.setFontSize(15)
-  pdf.text(formatCurrency(payroll.netSalary || 0), 15, y + 13)
-  pdf.setFontSize(8)
-  pdf.text(`Pagamento previsto: ${formatDate(paymentDueDate)}`, 130, y + 9)
-
-  y += 22
-
-  // ── COMPLEMENTARY INFO ──────────────────────────────────────────────────────
-  drawDivider(pdf, y)
-  y += 4
-
-  pdf.setFillColor(241, 245, 249)
-  pdf.roundedRect(10, y, 190, 7, 1.5, 1.5, "F")
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(51, 65, 85)
-  pdf.text("INFORMAÇÕES COMPLEMENTARES", 14, y + 4.8)
-  y += 11
-
-  const card2w = 57
-  drawInfoCard(pdf, 10, y, card2w, "FGTS do mês", formatCurrency(payroll.fgts || 0), { r: 249, g: 115, b: 22 })
-  drawInfoCard(pdf, 70, y, card2w, "Banco / Conta",
-    employee.bankName ? `${employee.bankName}${employee.bankAccount ? ` - ${employee.bankAccount}` : ""}` : "Não informado",
-    { r: 100, g: 116, b: 139 }
-  )
-  drawInfoCard(pdf, 130, y, 70, "Espelho de ponto",
-    mirror ? `${formatPeriodLabel(mirror.period)} — ${formatMinutes(mirror.workedMinutes)} trab. / ${formatMinutes(mirror.overtimeMinutes)} extra` : "Sem espelho vinculado",
-    mirror ? { r: 16, g: 185, b: 129 } : { r: 239, g: 68, b: 68 }
-  )
-
-  y += 17
-
-  // ── FISCAL POLICY NOTE ─────────────────────────────────────────────────────
-  const noteText = mirror
-    ? `Espelho aprovado vinculado. Horas trabalhadas: ${formatMinutes(mirror.workedMinutes)} | Horas extras: ${formatMinutes(mirror.overtimeMinutes)} | Débito: ${formatMinutes(mirror.deficitMinutes)}. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
-    : `Sem espelho aprovado vinculado. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
-
-  const noteLines = pdf.splitTextToSize(noteText, 178) as string[]
-  const noteH = Math.max(12, 6 + noteLines.length * 4.2)
-  pdf.setFillColor(248, 250, 252)
-  pdf.setDrawColor(226, 232, 240)
-  pdf.setLineWidth(0.3)
-  pdf.roundedRect(10, y, 190, noteH, 1.5, 1.5, "FD")
-  pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(6.5)
-  pdf.setTextColor(100, 116, 139)
-  pdf.text("POLÍTICA FISCAL E REFERÊNCIA DE ESPELHO", 14, y + 4.5)
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(7)
-  pdf.setTextColor(51, 65, 85)
-  pdf.text(noteLines, 14, y + 9.5)
-  y += noteH + 8
-
-  // ── RECEIPT / SIGNATURE ────────────────────────────────────────────────────
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(7.5)
-  pdf.setTextColor(71, 85, 105)
-  pdf.text("Declaro ter recebido as verbas discriminadas neste demonstrativo, conforme a competência indicada acima.", 10, y)
-  y += 10
-
+  // ── TOTALS ─────────────────────────────────────────────────────────────────
+  // Clean totals summary box
   pdf.setDrawColor(15, 23, 42)
-  pdf.setLineWidth(0.4)
-  pdf.line(15, y + 6, 85, y + 6)
-  pdf.line(120, y + 6, 195, y + 6)
+  pdf.setLineWidth(0.5)
+  pdf.rect(10, y, 190, 25, "D")
+  
   pdf.setFont("helvetica", "bold")
   pdf.setFontSize(7)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text("TOTAL PROVENTOS", 15, y + 8)
+  pdf.text("TOTAL DESCONTOS", 75, y + 8)
+  pdf.text("VALOR LÍQUIDO A RECEBER", 135, y + 8)
+  
+  pdf.setFontSize(10)
   pdf.setTextColor(15, 23, 42)
-  pdf.text("Responsável pela empresa", 35, y + 11)
-  pdf.text("Assinatura do colaborador", 138, y + 11)
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(6)
-  pdf.setTextColor(148, 163, 184)
-  pdf.text(companyName, 35, y + 15.5)
-  pdf.text(primaryName, 138, y + 15.5)
+  pdf.text(formatCurrency(grossWithAdditions), 15, y + 15)
+  pdf.text(formatCurrency(totalDeductions), 75, y + 15)
+  
+  pdf.setFontSize(14)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(formatCurrency(payroll.netSalary || 0), 135, y + 18)
+  
+  y += 30
 
-  // ── FOOTER ──────────────────────────────────────────────────────────────────
-  pdf.setFillColor(241, 245, 249)
-  pdf.rect(0, 287, 210, 10, "F")
+  // ── COMPLEMENTARY ──────────────────────────────────────────────────────────
+  drawSectionTitle(pdf, y, "Informações Complementares")
+  y += 12
+  
+  drawField(pdf, 10, y, 45, "Base FGTS", formatCurrency(payroll.grossSalary || 0))
+  drawField(pdf, 60, y, 45, "FGTS Recolhido", formatCurrency(payroll.fgts || 0))
+  drawField(pdf, 110, y, 45, "Data de Pagamento", formatDate(paymentDueDate))
+  drawField(pdf, 160, y, 40, "Agência / Conta", employee.bankAccount || "N/A")
+
+  y += 15
+  
+  const mirrorText = mirror
+    ? `Espelho de Ponto Vinculado: ${formatPeriodLabel(mirror.period)}. Horas Trab: ${formatMinutes(mirror.workedMinutes)} | Extras 50%: ${formatMinutes(mirror.overtimeMinutes)} | Débito: ${formatMinutes(mirror.deficitMinutes)}.`
+    : "Não há espelho de ponto aprovado vinculado a este demonstrativo."
+    
+  const infoH = drawObservationBox(pdf, 10, y, 190, "Referência de Ponto e Notas Fiscais", `${mirrorText} ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`)
+  
+  y += infoH + 15
+
+  // ── SIGNATURES ─────────────────────────────────────────────────────────────
+  pdf.setFontSize(8)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text("Declaro ter recebido a importância líquida discriminada neste demonstrativo.", 10, y)
+  
+  y += 15
+  pdf.setLineWidth(0.3)
+  pdf.line(15, y, 85, y)
+  pdf.line(120, y, 190, y)
+  
+  pdf.setFontSize(7)
+  pdf.text("ASSINATURA DO COLABORADOR", 32, y + 4)
+  pdf.text("RESPONSÁVEL PELA EMPRESA", 137, y + 4)
+  
   pdf.setFont("helvetica", "normal")
   pdf.setFontSize(6)
   pdf.setTextColor(148, 163, 184)
-  pdf.text("Documento digital emitido para conferência, download e arquivo no prontuário do colaborador.", 10, 292)
-  pdf.text(`${companyName} • ${companyCnpj} • Emitido em ${formatDate(issueDate)}`, 10, 295.5)
+  pdf.text(`Emitido em: ${formatDate(issueDate)} às ${new Date().toLocaleTimeString("pt-BR")}`, 10, 290)
+  pdf.text(`Documento gerado pelo sistema Spa do Colchão ERP.`, 10, 293)
 
   return Buffer.from(pdf.output("arraybuffer"))
 }
+
 
 export async function generateOfficialPayrollPdf(payrollId: string) {
   const payroll = await (prisma as any).payroll.findUnique({
