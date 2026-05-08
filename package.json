@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
+    "maintenance:link": "tsx .gemini/antigravity/scratch/link_and_cleanup_payrolls.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {

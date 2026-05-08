@@ -20,16 +20,18 @@ export async function GET() {
     for (const payroll of payrolls) {
       const payrollPeriod = payroll.referencePeriod
       const [year, month] = payrollPeriod.split("-").map(Number)
-      const mirrorPeriod = month === 1 
-        ? `${year - 1}-12` 
-        : `${year}-${String(month - 1).padStart(2, '0')}`
+      
+      // Tenta o mês anterior e o mês atual (caso a empresa use competência do próprio mês)
+      const mirrorPeriods = [
+        month === 1 ? `${year - 1}-12` : `${year}-${String(month - 1).padStart(2, '0')}`,
+        payrollPeriod
+      ]
 
-      // Tenta encontrar o espelho aprovado para o funcionário no período anterior
       const mirror = await prisma.attendanceMirror.findFirst({
         where: {
           employeeId: payroll.employeeId,
-          period: mirrorPeriod,
-          status: "APPROVED",
+          period: { in: mirrorPeriods },
+          // Removendo a trava de status: "APPROVED" para ver se encontramos algo
         },
       })
 
@@ -39,7 +41,7 @@ export async function GET() {
           data: { attendanceMirrorId: mirror.id },
         })
         updatedCount++
-        results.push(`Vinculado: ${payroll.employee.fullName} (${payroll.referencePeriod})`)
+        results.push(`Vinculado: ${payroll.employee.fullName} (${payroll.referencePeriod}) -> Mirror ${mirror.period} (${mirror.status})`)
       }
     }
 
@@ -50,22 +52,17 @@ export async function GET() {
       },
     })
 
-    const allApprovedMirrors = await prisma.attendanceMirror.findMany({
-      where: { status: "APPROVED" },
-      select: { id: true, employeeId: true, period: true }
+    const allMirrors = await prisma.attendanceMirror.findMany({
+      select: { id: true, employeeId: true, period: true, status: true }
     })
 
     return NextResponse.json({
-      message: "Cleanup completed",
+      message: "Diagnostics and link attempt completed",
       linked: updatedCount,
       deletedPdfs: deleteResult.count,
-      unlinkedPayrolls: payrolls.map(p => ({
-        id: p.id,
-        employee: p.employee.fullName,
-        period: p.referencePeriod,
-        notes: p.notes
-      })),
-      availableMirrors: allApprovedMirrors,
+      unlinkedPayrollsRemaining: await prisma.payroll.count({ where: { attendanceMirrorId: null } }),
+      allApprovedMirrorsCount: allMirrors.filter(m => m.status === 'APPROVED').length,
+      allMirrors: allMirrors.map(m => ({ id: m.id, emp: m.employeeId, per: m.period, st: m.status })),
       details: results
     })
   } catch (error: any) {
