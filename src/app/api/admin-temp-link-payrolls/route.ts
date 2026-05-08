@@ -53,24 +53,29 @@ export async function GET() {
     })
 
     const allMirrors = await prisma.attendanceMirror.findMany({
-      select: { id: true, employeeId: true, period: true, status: true }
+      include: { employee: true }
+    })
+
+    const unlinked = await prisma.payroll.findMany({
+      where: { attendanceMirrorId: null },
+      include: { employee: true }
     })
 
     return NextResponse.json({
-      message: "Diagnostics and link attempt completed",
-      linked: updatedCount,
-      deletedPdfs: deleteResult.count,
-      unlinkedPayrollsRemaining: (await prisma.payroll.findMany({
-        where: { attendanceMirrorId: null },
-        include: { employee: true }
-      })).map(p => ({
-        id: p.id,
-        employee: p.employee.fullName,
+      message: "Diagnostics",
+      unlinked: unlinked.map(p => ({
+        payrollId: p.id,
+        employeeName: p.employee.fullName,
         employeeId: p.employeeId,
-        period: p.referencePeriod,
-        notes: p.notes
+        period: p.referencePeriod
       })),
-      details: results
+      mirrors: allMirrors.map(m => ({
+        mirrorId: m.id,
+        employeeName: m.employee.fullName,
+        employeeId: m.employeeId,
+        period: m.period,
+        status: m.status
+      }))
     })
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 })
