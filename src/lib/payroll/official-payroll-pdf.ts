@@ -135,51 +135,61 @@ function buildEarnings(payroll: any, employee: any, mirror: any | null) {
     },
   ]
 
-  let remainingAdditions = Number(payroll.otherAdditions || 0)
+  // Horas extras calculadas diretamente do espelho vinculado
   const overtimeMinutes = mirror?.overtimeMinutes || 0
-  let overtimeAmount = 0
   if (overtimeMinutes > 0 && employee.salaryBase) {
     const hourlyRate = employee.salaryBase / 220
     const overtimeRate = hourlyRate * 1.5
-    overtimeAmount = (overtimeMinutes / 60) * overtimeRate
+    const overtimeAmount = (overtimeMinutes / 60) * overtimeRate
+    if (overtimeAmount > 0) {
+      lines.push({
+        code: "1002",
+        description: "Horas Extras (50%)",
+        reference: `${Math.floor(overtimeMinutes / 60)}h${(overtimeMinutes % 60).toString().padStart(2, "0")}`,
+        amount: overtimeAmount,
+      })
+    }
   }
 
-  const additionsConfig = [
-    { code: "1002", description: "Horas Extras (50%)", amount: overtimeAmount },
+  // Benefícios/proventos com valores reais
+  const benefitLines = [
     { code: "1601", description: "Vale transporte", amount: benefitBreakdown.transportationBenefit || 0 },
     { code: "1602", description: "Alimentação cedida na empresa", amount: benefitBreakdown.foodBenefit || 0 },
     { code: "1606", description: "Auxílio gasolina / diesel", amount: benefitBreakdown.fuelBenefit || 0 },
-    { code: "1603", description: "Bônus assiduidade", amount: employee.attendanceBonusAmount || employee.attendanceBonus || 0 },
-    { code: "1604", description: "Auxílio farmácia", amount: employee.pharmacyAllowance || 0 },
-    { code: "1605", description: "Auxílio creche", amount: employee.childcareAllowance || 0 },
+    { code: "1603", description: "Bônus assiduidade", amount: Number(employee.attendanceBonusAmount || employee.attendanceBonus || 0) },
+    { code: "1604", description: "Auxílio farmácia", amount: Number(employee.pharmacyAllowance || 0) },
+    { code: "1605", description: "Auxílio creche", amount: Number(employee.childcareAllowance || 0) },
   ]
 
-  for (const item of additionsConfig) {
-    if (remainingAdditions <= 0 || item.amount <= 0) {
-      continue
+  for (const item of benefitLines) {
+    if (item.amount > 0) {
+      lines.push({
+        code: item.code,
+        description: item.description,
+        reference: "--",
+        amount: item.amount,
+      })
     }
-
-    const amount = Math.min(Number(item.amount), remainingAdditions)
-    lines.push({
-      code: item.code,
-      description: item.description,
-      reference: "--",
-      amount,
-    })
-    remainingAdditions -= amount
   }
 
-  if (remainingAdditions > 0) {
+  // Calcula o total de proventos já detalhados (excluindo salário base)
+  const detailedTotal = lines.slice(1).reduce((sum, l) => sum + l.amount, 0)
+  const otherAdditions = Number(payroll.otherAdditions || 0)
+  const residual = otherAdditions - detailedTotal
+
+  // Só exibe "Outras verbas" se houver valor residual não explicado
+  if (residual > 0.01) {
     lines.push({
-      code: "1002",
-      description: "Horas Extras (50%)",
+      code: "1699",
+      description: "Outras verbas",
       reference: "--",
-      amount: remainingAdditions,
+      amount: residual,
     })
   }
 
   return lines.filter((line) => line.amount > 0)
 }
+
 
 function buildDeductions(payroll: any, employee: any) {
   const benefitBreakdown = calculatePayrollBenefitBreakdown({
@@ -397,6 +407,7 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: st
   pdf.text("RECIBO DE PAGAMENTO / HOLERITE", 14, 25)
 
   pdf.setFontSize(7.5)
+  pdf.text(companyCnpj, 142, 18)
   pdf.text(`Emissão: ${formatDate(issueDate)}`, 142, 23)
   pdf.text(`Competência: ${formatPeriodLabel(payroll.referencePeriod)}`, 142, 28)
 
