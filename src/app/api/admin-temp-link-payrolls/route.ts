@@ -60,9 +60,16 @@ export async function GET() {
       message: "Diagnostics and link attempt completed",
       linked: updatedCount,
       deletedPdfs: deleteResult.count,
-      unlinkedPayrollsRemaining: await prisma.payroll.count({ where: { attendanceMirrorId: null } }),
-      allApprovedMirrorsCount: allMirrors.filter(m => m.status === 'APPROVED').length,
-      allMirrors: allMirrors.map(m => ({ id: m.id, emp: m.employeeId, per: m.period, st: m.status })),
+      unlinkedPayrollsRemaining: (await prisma.payroll.findMany({
+        where: { attendanceMirrorId: null },
+        include: { employee: true }
+      })).map(p => ({
+        id: p.id,
+        employee: p.employee.fullName,
+        employeeId: p.employeeId,
+        period: p.referencePeriod,
+        notes: p.notes
+      })),
       details: results
     })
   } catch (error: any) {
