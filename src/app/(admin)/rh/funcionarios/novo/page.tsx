@@ -130,9 +130,15 @@ export default function NovoFuncionarioPage() {
 
   const [form, setForm] = useState({
     // Etapa 1 — Identificação
-    fullName: "", socialName: "", cpf: "", rg: "", rgExpeditor: "",
+    fullName: "", socialName: "", cpf: "", rg: "", rgExpeditor: "", rgIssuanceDate: "",
     pis: "", birthDate: "", birthCity: "", birthState: "",
     nationality: "Brasileiro(a)", gender: "", maritalStatus: "", educationLevel: "",
+    raceColor: "", motherName: "", fatherName: "",
+    voterCardNumber: "", voterCardZone: "", voterCardSection: "",
+    professionalCouncilNumber: "", professionalCouncilName: "",
+    ctpsNumber: "", ctpsSeries: "", ctpsIssuanceDate: "", ctpsUf: "",
+    cnhNumber: "", cnhCategory: "",
+    militaryDocumentNumber: "", militaryDocumentCategory: "",
     phone: "", whatsapp: "", email: "",
     photoUrl: "",
     // Etapa 2 — Saúde / PcD
@@ -164,6 +170,7 @@ export default function NovoFuncionarioPage() {
     dentalPlan: false, lifeInsurance: false,
     attendanceBonusEnabled: false, attendanceBonusAmount: "",
     pharmacyAllowance: "", childcareAllowance: "", otherBenefits: "",
+    fgtsOptionDate: new Date().toISOString().split("T")[0], fgtsAccount: "", fgtsRectificationDate: "",
     // Etapa 6 — Banco
     bankName: "", bankBranch: "", bankAccount: "", bankAccountType: "CHECKING",
     pixKey: "", pixKeyType: "CPF",
@@ -313,7 +320,11 @@ export default function NovoFuncionarioPage() {
         pis: cleanNumericValues(form.pis),
         phone: cleanNumericValues(form.phone),
         cep: cleanNumericValues(form.cep),
-        rg: form.rg.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(), // RG flexível
+        rg: form.rg.replace(/[^a-zA-Z0-9]/g, "").toUpperCase(),
+        rgIssuanceDate: form.rgIssuanceDate ? new Date(form.rgIssuanceDate) : undefined,
+        ctpsIssuanceDate: form.ctpsIssuanceDate ? new Date(form.ctpsIssuanceDate) : undefined,
+        fgtsOptionDate: form.fgtsOptionDate ? new Date(form.fgtsOptionDate) : undefined,
+        fgtsRectificationDate: form.fgtsRectificationDate ? new Date(form.fgtsRectificationDate) : undefined,
         salaryBase: form.salaryBase ? parseFloat(form.salaryBase) : undefined,
       }
 
@@ -480,6 +491,18 @@ export default function NovoFuncionarioPage() {
                   </select>
                 </div>
                 <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Raça / Cor</label>
+                  <select value={form.raceColor} onChange={e => set("raceColor", e.target.value)} className={selectCls}>
+                    <option value="">Selecione...</option>
+                    <option value="WHITE">Branca</option>
+                    <option value="BLACK">Preta</option>
+                    <option value="PARDA">Parda</option>
+                    <option value="YELLOW">Amarela</option>
+                    <option value="INDIGENOUS">Indígena</option>
+                    <option value="NOT_INFORMED">Não informado</option>
+                  </select>
+                </div>
+                <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CPF *</label>
                   <MaskedInput 
                     required 
@@ -505,6 +528,10 @@ export default function NovoFuncionarioPage() {
                   <Input value={form.rgExpeditor} onChange={e => set("rgExpeditor", e.target.value)} placeholder="SSP/SP" className={inputCls} />
                 </div>
                 <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Data de Emissão RG</label>
+                  <Input type="date" value={form.rgIssuanceDate} onChange={e => set("rgIssuanceDate", e.target.value)} className={inputCls} />
+                </div>
+                <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">PIS / PASEP</label>
                   <MaskedInput 
                     value={form.pis} 
@@ -513,6 +540,75 @@ export default function NovoFuncionarioPage() {
                     maskType="cpf" // PIS can use a similar mask or numeric
                     className={inputCls} 
                   />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">País de Nacionalidade</label>
+                  <Input value={form.nationality} onChange={e => set("nationality", e.target.value)} placeholder="Brasil" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Nome da Mãe</label>
+                  <Input value={form.motherName} onChange={e => set("motherName", e.target.value)} placeholder="Nome completo da mãe" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Nome do Pai</label>
+                  <Input value={form.fatherName} onChange={e => set("fatherName", e.target.value)} placeholder="Nome completo do pai" className={inputCls} />
+                </div>
+                <div className="md:col-span-2 pt-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2">Documentos Complementares</p>
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Título de Eleitor</label>
+                  <Input value={form.voterCardNumber} onChange={e => set("voterCardNumber", e.target.value)} placeholder="Número do título" className={inputCls} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Zona</label>
+                    <Input value={form.voterCardZone} onChange={e => set("voterCardZone", e.target.value)} placeholder="000" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Seção</label>
+                    <Input value={form.voterCardSection} onChange={e => set("voterCardSection", e.target.value)} placeholder="0000" className={inputCls} />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Órgão de Classe</label>
+                  <Input value={form.professionalCouncilName} onChange={e => set("professionalCouncilName", e.target.value)} placeholder="Ex: CRM, OAB, CORE" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Inscrição Órgão de Classe</label>
+                  <Input value={form.professionalCouncilNumber} onChange={e => set("professionalCouncilNumber", e.target.value)} placeholder="Número do registro" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CTPS (Número)</label>
+                  <Input value={form.ctpsNumber} onChange={e => set("ctpsNumber", e.target.value)} placeholder="Número CTPS" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CTPS (Série)</label>
+                  <Input value={form.ctpsSeries} onChange={e => set("ctpsSeries", e.target.value)} placeholder="Série" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CTPS (Data Expedição)</label>
+                  <Input type="date" value={form.ctpsIssuanceDate} onChange={e => set("ctpsIssuanceDate", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CTPS (UF)</label>
+                  <Input value={form.ctpsUf} onChange={e => set("ctpsUf", e.target.value.toUpperCase())} maxLength={2} placeholder="SP" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CNH (Número)</label>
+                  <Input value={form.cnhNumber} onChange={e => set("cnhNumber", e.target.value)} placeholder="Número CNH" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">CNH (Categoria)</label>
+                  <Input value={form.cnhCategory} onChange={e => set("cnhCategory", e.target.value.toUpperCase())} placeholder="Ex: AB" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Doc. Militar (Número)</label>
+                  <Input value={form.militaryDocumentNumber} onChange={e => set("militaryDocumentNumber", e.target.value)} placeholder="Número" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Doc. Militar (Categoria)</label>
+                  <Input value={form.militaryDocumentCategory} onChange={e => set("militaryDocumentCategory", e.target.value)} placeholder="Ex: Reservista" className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Data de Nascimento</label>
@@ -688,12 +784,27 @@ export default function NovoFuncionarioPage() {
                   <Input required type="date" value={form.admissionDate} onChange={e => set("admissionDate", e.target.value)} className={inputCls} />
                 </div>
                 <div>
-                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Cargo / Função</label>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Cargo / Função (Descritivo)</label>
                   <Input value={form.department} onChange={e => set("department", e.target.value)} placeholder="Ex: Auxiliar de Produção" className={inputCls} />
                 </div>
                 <div>
                   <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Salário Base (R$)</label>
                   <Input type="number" min="0" step="0.01" value={form.salaryBase} onChange={e => set("salaryBase", e.target.value)} placeholder="0,00" className={inputCls} />
+                </div>
+                <div className="md:col-span-2 pt-4">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-2">FGTS</p>
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Opção em (Data de Admissão)</label>
+                  <Input type="date" value={form.fgtsOptionDate} onChange={e => set("fgtsOptionDate", e.target.value)} className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Conta Vinculada (Banco)</label>
+                  <Input value={form.fgtsAccount} onChange={e => set("fgtsAccount", e.target.value)} placeholder="Ex: Caixa Econômica" className={inputCls} />
+                </div>
+                <div>
+                  <label className="text-xs font-black text-slate-500 uppercase tracking-widest block mb-2 pl-2">Data de Retificação FGTS</label>
+                  <Input type="date" value={form.fgtsRectificationDate} onChange={e => set("fgtsRectificationDate", e.target.value)} className={inputCls} />
                 </div>
                 <div className="md:col-span-2">
                   <div className="mb-2 flex items-center justify-between gap-2 pl-2">
@@ -726,6 +837,7 @@ export default function NovoFuncionarioPage() {
                     </p>
                     <p className="mt-2 text-[10px] font-black uppercase tracking-widest text-sky-600">
                       Centro de custo padrão: {selectedJobTitle?.costCenter?.name || "Não vinculado"}
+                      {selectedJobTitle?.cbo ? ` • CBO: ${selectedJobTitle.cbo}` : ""}
                     </p>
                     <p className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
                       O RH pode ajustar cargo, centro de custo, jornada, turno e remuneração antes de concluir a admissão.

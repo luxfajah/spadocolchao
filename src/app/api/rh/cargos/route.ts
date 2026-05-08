@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       costCenterId,
       isPdvSellerRole,
       isActive,
+      cbo,
     } = body
 
     if (!name?.trim()) {
@@ -101,6 +102,7 @@ export async function POST(request: NextRequest) {
         workScheduleId: workScheduleId || null,
         isPdvSellerRole: Boolean(isPdvSellerRole),
         isActive: isActive !== undefined ? Boolean(isActive) : true,
+        cbo: cbo?.trim() || null,
       },
       include: {
         workSchedule: {

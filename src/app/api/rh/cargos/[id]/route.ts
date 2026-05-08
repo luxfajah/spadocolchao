@@ -55,6 +55,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       costCenterId,
       isPdvSellerRole,
       isActive,
+      cbo,
     } = body
 
     if (!name?.trim()) {
@@ -106,6 +107,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         workScheduleId: workScheduleId || null,
         isPdvSellerRole: Boolean(isPdvSellerRole),
         isActive: isActive !== undefined ? Boolean(isActive) : true,
+        cbo: cbo?.trim() || null,
       },
       include: {
         workSchedule: {

@@ -28,6 +28,7 @@ type JobTitleItem = {
   defaultSalary?: number | null
   workScheduleId?: string | null
   costCenterId?: string | null
+  cbo?: string | null
   isPdvSellerRole?: boolean
   workSchedule?: WorkScheduleSummary | null
   costCenter?: CostCenterSummary | null
@@ -46,6 +47,7 @@ const emptyForm = {
   workScheduleId: "",
   defaultSalary: "",
   description: "",
+  cbo: "",
   isPdvSellerRole: false,
   isActive: true,
 }
@@ -117,6 +119,7 @@ export default function CargosPage() {
           ? String(jobTitle.defaultSalary)
           : "",
       description: jobTitle.description || "",
+      cbo: jobTitle.cbo || "",
       isPdvSellerRole: Boolean(jobTitle.isPdvSellerRole),
       isActive: jobTitle.isActive,
     })
@@ -143,6 +146,7 @@ export default function CargosPage() {
         workScheduleId: form.workScheduleId,
         defaultSalary: form.defaultSalary,
         description: form.description,
+        cbo: form.cbo,
         isPdvSellerRole: form.isPdvSellerRole,
         isActive: form.isActive,
       }
@@ -247,6 +251,15 @@ export default function CargosPage() {
                 value={form.department}
                 onChange={e => setForm(prev => ({ ...prev, department: e.target.value }))}
                 placeholder="Ex: Produção"
+                className="h-14 rounded-full border-slate-100 bg-slate-50/60"
+              />
+            </div>
+            <div>
+              <label className="mb-2 ml-2 block text-[10px] font-black uppercase tracking-widest text-slate-400">CBO (Código Brasileiro de Ocupações)</label>
+              <Input
+                value={form.cbo}
+                onChange={e => setForm(prev => ({ ...prev, cbo: e.target.value }))}
+                placeholder="Ex: 7632-10"
                 className="h-14 rounded-full border-slate-100 bg-slate-50/60"
               />
             </div>
