@@ -377,6 +377,35 @@ function drawObservationBox(
   return boxHeight
 }
 
+function drawDivider(pdf: import("jspdf").jsPDF, y: number) {
+  pdf.setDrawColor(226, 232, 240)
+  pdf.setLineWidth(0.3)
+  pdf.line(10, y, 200, y)
+  pdf.setLineWidth(0.2)
+}
+
+function drawInfoCard(
+  pdf: import("jspdf").jsPDF,
+  x: number, y: number, width: number,
+  label: string, value: string,
+  accent?: { r: number; g: number; b: number }
+) {
+  pdf.setFillColor(248, 250, 252)
+  pdf.roundedRect(x, y, width, 13, 1.5, 1.5, "F")
+  if (accent) {
+    pdf.setFillColor(accent.r, accent.g, accent.b)
+    pdf.roundedRect(x, y, 2, 13, 0.5, 0.5, "F")
+  }
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(6)
+  pdf.setTextColor(148, 163, 184)
+  pdf.text(label.toUpperCase(), x + 4, y + 4.5)
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(8.5)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(fitSingleLineText(pdf, value, width - 6), x + 4, y + 10.5)
+}
+
 function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: string, companyCnpj: string) {
   const pdf = new jsPDF("p", "mm", "a4")
   const employee = payroll.employee
@@ -392,161 +421,201 @@ function buildPayrollPdfBuffer(payroll: any, mirror: any | null, companyName: st
   const earnings = buildEarnings(payroll, employee, mirror)
   const deductions = buildDeductions(payroll, employee)
   const grossWithAdditions = Number(payroll.grossSalary || 0) + Number(payroll.otherAdditions || 0)
-  const totalDeductions =
-    Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.otherDeductions || 0)
+  const totalDeductions = Number(payroll.inss || 0) + Number(payroll.irrf || 0) + Number(payroll.otherDeductions || 0)
   const paymentDueDate = payroll.accountsPayable?.[0]?.dueDate
   const taxPolicy = getPayrollTaxPolicySummary(payroll.referencePeriod)
 
+  // ── HEADER ─────────────────────────────────────────────────────────────────
+  // Dark gradient-style header
   pdf.setFillColor(15, 23, 42)
-  pdf.roundedRect(10, 10, 190, 20, 3, 3, "F")
+  pdf.rect(0, 0, 210, 32, "F")
+  // Left accent bar
+  pdf.setFillColor(16, 185, 129)
+  pdf.rect(0, 0, 3, 32, "F")
+
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(15)
+  pdf.setFontSize(16)
   pdf.setTextColor(255, 255, 255)
-  pdf.text(companyName, 14, 19)
-  pdf.setFontSize(9)
-  pdf.text("RECIBO DE PAGAMENTO / HOLERITE", 14, 25)
+  pdf.text(companyName.toUpperCase(), 8, 13)
 
   pdf.setFontSize(7.5)
-  pdf.text(companyCnpj, 142, 18)
-  pdf.text(`Emissão: ${formatDate(issueDate)}`, 142, 23)
-  pdf.text(`Competência: ${formatPeriodLabel(payroll.referencePeriod)}`, 142, 28)
+  pdf.setTextColor(100, 116, 139)
+  pdf.text("RECIBO DE PAGAMENTO DE SALÁRIO", 8, 20)
+  pdf.text(companyCnpj, 8, 26)
 
-  drawSectionTitle(pdf, 35, "Identificação")
-  drawField(pdf, 14, 49, 88, "Colaborador", primaryName)
-  drawField(pdf, 108, 49, 88, "Cargo", employee.jobTitle?.name || "Não informado")
-  drawField(pdf, 14, 60, 40, "CPF", formatCpf(employee.cpf))
-  drawField(pdf, 58, 60, 40, "PIS", formatDocumentValue(employee.pis))
-  drawField(pdf, 102, 60, 40, "Admissão", formatDate(employee.admissionDate))
-  drawField(
-    pdf,
-    146,
-    60,
-    50,
-    "Matrícula",
-    formatDocumentValue(employee.code || employee.serialId?.toString() || employee.pointMachineId)
-  )
-
-  drawField(
-    pdf,
-    14,
-    71,
-    88,
-    "Centro de custo",
-    allocationSnapshot.costCenterName || "Não informado"
-  )
-  drawField(
-    pdf,
-    108,
-    71,
-    88,
-    "Setor",
-    allocationSnapshot.sectorName || "Não informado"
-  )
-
-  if (legalName) {
-    drawField(pdf, 14, 82, 88, "Contrato", formatDocumentValue(employee.contractType))
-    drawField(pdf, 108, 82, 88, "Nome legal", legalName)
-  } else {
-    drawField(pdf, 14, 82, 182, "Contrato", formatDocumentValue(employee.contractType))
-  }
-
-  const tablesY = 95
-  const tablesStartY = tablesY + 12
-  const tablesHeight = Math.max(getRubricaTableHeight(earnings), getRubricaTableHeight(deductions))
-  drawSectionTitle(pdf, tablesY, "Demonstrativo financeiro")
-
-  drawRubricaTable(pdf, 10, tablesStartY, 92, "Proventos", earnings, { r: 16, g: 185, b: 129 })
-  drawRubricaTable(pdf, 108, tablesStartY, 92, "Descontos", deductions, { r: 37, g: 99, b: 235 })
-
-  const summaryY = tablesStartY + tablesHeight + 6
-  drawSectionTitle(pdf, summaryY, "Totais e recibo")
-
-  drawField(pdf, 14, summaryY + 13, 55, "Base bruta", formatCurrency(payroll.grossSalary || 0))
-  drawField(pdf, 75, summaryY + 13, 55, "Bruto com verbas", formatCurrency(grossWithAdditions))
-  drawField(pdf, 136, summaryY + 13, 60, "Descontos totais", formatCurrency(totalDeductions))
-
-  pdf.setFillColor(236, 253, 245)
-  pdf.setDrawColor(110, 231, 183)
-  pdf.roundedRect(14, summaryY + 27, 182, 15, 2, 2, "FD")
-  pdf.setFont("helvetica", "bold")
+  // Right info block
+  pdf.setFont("helvetica", "normal")
   pdf.setFontSize(7)
-  pdf.setTextColor(5, 150, 105)
-  pdf.text("LIQUIDO A RECEBER", 18, summaryY + 32.5)
-  pdf.setFontSize(16)
-  pdf.setTextColor(6, 95, 70)
-  pdf.text(formatCurrency(payroll.netSalary || 0), 18, summaryY + 39)
-
-  drawSectionTitle(pdf, summaryY + 47, "Informações complementares")
-  drawField(pdf, 14, summaryY + 59, 55, "FGTS do mês", formatCurrency(payroll.fgts || 0))
-  drawField(pdf, 75, summaryY + 59, 55, "Pagamento previsto", formatDate(paymentDueDate))
-  drawField(
-    pdf,
-    136,
-    summaryY + 59,
-    60,
-    "Banco / conta",
-    employee.bankName
-      ? `${employee.bankName}${employee.bankAccount ? ` - ${employee.bankAccount}` : ""}`
-      : "Não informado"
-  )
-
-  drawField(
-    pdf,
-    14,
-    summaryY + 70,
-    88,
-    "CPF",
-    formatCpf(employee.cpf)
-  )
-  drawField(
-    pdf,
-    108,
-    summaryY + 70,
-    88,
-    "Espelho vinculado",
-    mirror ? `${formatPeriodLabel(mirror.period)} - ${mirror.status}` : "Sem espelho vinculado"
-  )
-
-  const mirrorInfoY = summaryY + 80
-  const mirrorInfoHeight = drawObservationBox(
-    pdf,
-    14,
-    mirrorInfoY,
-    182,
-    "Referência do espelho e política fiscal",
-    mirror
-      ? `Horas trabalhadas: ${formatMinutes(mirror.workedMinutes)} | Horas extras: ${formatMinutes(mirror.overtimeMinutes)} | Débito: ${formatMinutes(mirror.deficitMinutes)}. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
-      : `Não há espelho aprovado vinculado a este holerite. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
-  )
-
-  const receiptY = mirrorInfoY + mirrorInfoHeight + 7
-  pdf.setFont("helvetica", "normal")
-  pdf.setFontSize(8)
-  pdf.setTextColor(51, 65, 85)
-  pdf.text(
-    "Declaro ter recebido as verbas discriminadas neste demonstrativo, conforme a competência indicada acima.",
-    14,
-    receiptY
-  )
-
-  const signatureLineY = receiptY + 12
-  const signatureLabelY = signatureLineY + 5
-  pdf.setDrawColor(203, 213, 225)
-  pdf.line(20, signatureLineY, 88, signatureLineY)
-  pdf.line(122, signatureLineY, 190, signatureLineY)
+  pdf.setTextColor(148, 163, 184)
+  pdf.text("EMISSÃO", 150, 11)
+  pdf.text("COMPETÊNCIA", 150, 20)
+  pdf.text("SITUAÇÃO", 150, 29)
   pdf.setFont("helvetica", "bold")
-  pdf.setFontSize(8)
-  pdf.text("Responsável pela empresa", 34, signatureLabelY)
-  pdf.text("Assinatura do colaborador", 135, signatureLabelY)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text(formatDate(issueDate), 178, 11)
+  pdf.text(formatPeriodLabel(payroll.referencePeriod), 178, 20)
+  pdf.setTextColor(16, 185, 129)
+  pdf.text("PROCESSADO", 178, 29)
 
+  // ── IDENTIFICATION ──────────────────────────────────────────────────────────
+  let y = 38
+
+  // Employee name — large prominent
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(13)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text(primaryName, 10, y + 6)
+  if (legalName) {
+    pdf.setFont("helvetica", "normal")
+    pdf.setFontSize(7.5)
+    pdf.setTextColor(100, 116, 139)
+    pdf.text(`Nome legal: ${legalName}`, 10, y + 12)
+    y += 4
+  }
   pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(8)
+  pdf.setTextColor(71, 85, 105)
+  pdf.text(employee.jobTitle?.name || "Cargo não informado", 10, y + 18)
+
+  y += 24
+  drawDivider(pdf, y)
+  y += 5
+
+  // Info cards row 1: CPF, Matrícula, Admissão, Contrato
+  const card1w = 44
+  drawInfoCard(pdf, 10, y, card1w, "CPF", formatCpf(employee.cpf), { r: 59, g: 130, b: 246 })
+  drawInfoCard(pdf, 57, y, card1w, "Matrícula", formatDocumentValue(employee.code || employee.serialId?.toString() || employee.pointMachineId), { r: 139, g: 92, b: 246 })
+  drawInfoCard(pdf, 104, y, card1w, "Admissão", formatDate(employee.admissionDate), { r: 249, g: 115, b: 22 })
+  drawInfoCard(pdf, 151, y, 49, "Contrato", formatDocumentValue(employee.contractType), { r: 20, g: 184, b: 166 })
+
+  y += 17
+  // Info cards row 2: Centro de custo, Setor, PIS
+  drawInfoCard(pdf, 10, y, 59, "Centro de custo", allocationSnapshot.costCenterName || "Não informado", { r: 16, g: 185, b: 129 })
+  drawInfoCard(pdf, 72, y, 81, "Setor / Função", allocationSnapshot.sectorName || "Não informado", { r: 16, g: 185, b: 129 })
+  drawInfoCard(pdf, 156, y, 44, "PIS / PASEP", formatDocumentValue(employee.pis), { r: 100, g: 116, b: 139 })
+
+  y += 20
+  drawDivider(pdf, y)
+  y += 4
+
+  // ── SECTION TITLE ──────────────────────────────────────────────────────────
+  pdf.setFillColor(15, 23, 42)
+  pdf.roundedRect(10, y, 190, 7, 1.5, 1.5, "F")
+  pdf.setFillColor(16, 185, 129)
+  pdf.roundedRect(10, y, 2.5, 7, 0.5, 0.5, "F")
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text("DEMONSTRATIVO FINANCEIRO", 15, y + 4.8)
+
+  y += 11
+
+  // ── EARNINGS TABLE ─────────────────────────────────────────────────────────
+  const tableW = 92
+  drawRubricaTable(pdf, 10, y, tableW, "Proventos", earnings, { r: 16, g: 185, b: 129 })
+  drawRubricaTable(pdf, 108, y, tableW, "Descontos", deductions, { r: 37, g: 99, b: 235 })
+
+  const tablesHeight = Math.max(getRubricaTableHeight(earnings), getRubricaTableHeight(deductions))
+  y += tablesHeight + 8
+
+  // ── LIQUID NET HIGHLIGHT ────────────────────────────────────────────────────
+  // Three totals side by side
+  drawInfoCard(pdf, 10, y, 57, "Base Bruta (Salário)", formatCurrency(payroll.grossSalary || 0), { r: 100, g: 116, b: 139 })
+  drawInfoCard(pdf, 70, y, 57, "Total Proventos", formatCurrency(grossWithAdditions), { r: 59, g: 130, b: 246 })
+  drawInfoCard(pdf, 130, y, 57, "Total Descontos", formatCurrency(totalDeductions), { r: 239, g: 68, b: 68 })
+
+  y += 17
+
+  // Net salary — big green box
+  pdf.setFillColor(16, 185, 129)
+  pdf.roundedRect(10, y, 190, 16, 2, 2, "F")
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(255, 255, 255)
+  pdf.text("LÍQUIDO A RECEBER", 15, y + 5.5)
+  pdf.setFontSize(15)
+  pdf.text(formatCurrency(payroll.netSalary || 0), 15, y + 13)
+  pdf.setFontSize(8)
+  pdf.text(`Pagamento previsto: ${formatDate(paymentDueDate)}`, 130, y + 9)
+
+  y += 22
+
+  // ── COMPLEMENTARY INFO ──────────────────────────────────────────────────────
+  drawDivider(pdf, y)
+  y += 4
+
+  pdf.setFillColor(241, 245, 249)
+  pdf.roundedRect(10, y, 190, 7, 1.5, 1.5, "F")
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(51, 65, 85)
+  pdf.text("INFORMAÇÕES COMPLEMENTARES", 14, y + 4.8)
+  y += 11
+
+  const card2w = 57
+  drawInfoCard(pdf, 10, y, card2w, "FGTS do mês", formatCurrency(payroll.fgts || 0), { r: 249, g: 115, b: 22 })
+  drawInfoCard(pdf, 70, y, card2w, "Banco / Conta",
+    employee.bankName ? `${employee.bankName}${employee.bankAccount ? ` - ${employee.bankAccount}` : ""}` : "Não informado",
+    { r: 100, g: 116, b: 139 }
+  )
+  drawInfoCard(pdf, 130, y, 70, "Espelho de ponto",
+    mirror ? `${formatPeriodLabel(mirror.period)} — ${formatMinutes(mirror.workedMinutes)} trab. / ${formatMinutes(mirror.overtimeMinutes)} extra` : "Sem espelho vinculado",
+    mirror ? { r: 16, g: 185, b: 129 } : { r: 239, g: 68, b: 68 }
+  )
+
+  y += 17
+
+  // ── FISCAL POLICY NOTE ─────────────────────────────────────────────────────
+  const noteText = mirror
+    ? `Espelho aprovado vinculado. Horas trabalhadas: ${formatMinutes(mirror.workedMinutes)} | Horas extras: ${formatMinutes(mirror.overtimeMinutes)} | Débito: ${formatMinutes(mirror.deficitMinutes)}. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
+    : `Sem espelho aprovado vinculado. ${taxPolicy.inssDescription} ${taxPolicy.irrfDescription}`
+
+  const noteLines = pdf.splitTextToSize(noteText, 178) as string[]
+  const noteH = Math.max(12, 6 + noteLines.length * 4.2)
+  pdf.setFillColor(248, 250, 252)
+  pdf.setDrawColor(226, 232, 240)
+  pdf.setLineWidth(0.3)
+  pdf.roundedRect(10, y, 190, noteH, 1.5, 1.5, "FD")
+  pdf.setFont("helvetica", "bold")
   pdf.setFontSize(6.5)
   pdf.setTextColor(100, 116, 139)
-  pdf.text(
-    "Documento digital emitido para conferência, download e arquivo funcional no prontuário do colaborador.",
-    14,
-    292
-  )
+  pdf.text("POLÍTICA FISCAL E REFERÊNCIA DE ESPELHO", 14, y + 4.5)
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(7)
+  pdf.setTextColor(51, 65, 85)
+  pdf.text(noteLines, 14, y + 9.5)
+  y += noteH + 8
+
+  // ── RECEIPT / SIGNATURE ────────────────────────────────────────────────────
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(7.5)
+  pdf.setTextColor(71, 85, 105)
+  pdf.text("Declaro ter recebido as verbas discriminadas neste demonstrativo, conforme a competência indicada acima.", 10, y)
+  y += 10
+
+  pdf.setDrawColor(15, 23, 42)
+  pdf.setLineWidth(0.4)
+  pdf.line(15, y + 6, 85, y + 6)
+  pdf.line(120, y + 6, 195, y + 6)
+  pdf.setFont("helvetica", "bold")
+  pdf.setFontSize(7)
+  pdf.setTextColor(15, 23, 42)
+  pdf.text("Responsável pela empresa", 35, y + 11)
+  pdf.text("Assinatura do colaborador", 138, y + 11)
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(6)
+  pdf.setTextColor(148, 163, 184)
+  pdf.text(companyName, 35, y + 15.5)
+  pdf.text(primaryName, 138, y + 15.5)
+
+  // ── FOOTER ──────────────────────────────────────────────────────────────────
+  pdf.setFillColor(241, 245, 249)
+  pdf.rect(0, 287, 210, 10, "F")
+  pdf.setFont("helvetica", "normal")
+  pdf.setFontSize(6)
+  pdf.setTextColor(148, 163, 184)
+  pdf.text("Documento digital emitido para conferência, download e arquivo no prontuário do colaborador.", 10, 292)
+  pdf.text(`${companyName} • ${companyCnpj} • Emitido em ${formatDate(issueDate)}`, 10, 295.5)
 
   return Buffer.from(pdf.output("arraybuffer"))
 }
@@ -576,29 +645,41 @@ export async function generateOfficialPayrollPdf(payrollId: string) {
     throw new Error("Processe o holerite antes de emitir o PDF oficial.")
   }
 
+  // Try direct mirror id first, then fallback to notes, then search by employee+period
   const mirrorId = extractAttendanceMirrorId(payroll)
-  const mirror = mirrorId
+  let mirror = mirrorId
     ? await (prisma as any).attendanceMirror.findUnique({
         where: { id: mirrorId },
         select: {
-          id: true,
-          period: true,
-          status: true,
-          workedMinutes: true,
-          overtimeMinutes: true,
-          deficitMinutes: true,
+          id: true, period: true, status: true,
+          workedMinutes: true, overtimeMinutes: true, deficitMinutes: true,
         },
       })
     : null
+
+  // Fallback: search for an approved mirror for this employee in this period
+  if (!mirror) {
+    mirror = await (prisma as any).attendanceMirror.findFirst({
+      where: {
+        employeeId: payroll.employeeId,
+        period: payroll.referencePeriod,
+        status: "APPROVED",
+      },
+      select: {
+        id: true, period: true, status: true,
+        workedMinutes: true, overtimeMinutes: true, deficitMinutes: true,
+      },
+    })
+  }
 
   const fileName = `${sanitizeFileNamePart(`holerite-${payroll.employeeId}-${payroll.referencePeriod}-${payroll.id}`)}.pdf`
   const storagePath = `employee-documents/${payroll.employeeId}/payrolls/${fileName}`
   const companyProfile = await prisma.companyProfile.findFirst()
   const companyName = companyProfile?.legalName || companyProfile?.tradeName || "SPA DO COLCHAO"
-  const companyCnpj = companyProfile?.cnpj ? `CNPJ: ${companyProfile.cnpj}` : "CNPJ NÃO INFORMADO NO SISTEMA"
+  const companyCnpj = companyProfile?.cnpj ? `CNPJ: ${companyProfile.cnpj}` : "CNPJ NÃO INFORMADO"
 
   const fileBuffer = buildPayrollPdfBuffer(payroll, mirror, companyName, companyCnpj)
-  
+
   const fileUrl = await uploadFile(storagePath, fileBuffer)
   const periodLabel = formatPeriodLabel(payroll.referencePeriod)
   const documentName = `Holerite - ${periodLabel}`
@@ -608,20 +689,14 @@ export async function generateOfficialPayrollPdf(payrollId: string) {
     where: {
       employeeId: payroll.employeeId,
       type: PAYROLL_DOCUMENT_TYPE,
-      description: {
-        contains: `PayrollId:${payroll.id}`,
-      },
+      description: { contains: `PayrollId:${payroll.id}` },
     },
   })
 
   const document = existingDocument
     ? await prisma.employeeDocument.update({
         where: { id: existingDocument.id },
-        data: {
-          name: documentName,
-          description,
-          fileUrl,
-        },
+        data: { name: documentName, description, fileUrl },
       })
     : await prisma.employeeDocument.create({
         data: {
@@ -642,3 +717,5 @@ export async function generateOfficialPayrollPdf(payrollId: string) {
     period: payroll.referencePeriod,
   }
 }
+
+
