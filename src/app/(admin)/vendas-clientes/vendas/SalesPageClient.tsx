@@ -59,6 +59,7 @@ interface SalesPageClientProps {
     topSellers: Array<{
       id: string
       name: string
+      photoUrl: string | null
       total: number
       count: number
       avgTicket: number
@@ -464,11 +465,22 @@ export function SalesPageClient({ initialSales, summary, dashboard }: SalesPageC
               <div key={seller.id} className="rounded-[1.8rem] border border-slate-100 bg-slate-50 p-4">
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-white font-black">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white font-black">
                       {index + 1}
                     </div>
+                    {seller.photoUrl ? (
+                      <img
+                        src={seller.photoUrl}
+                        alt={seller.name}
+                        className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow-sm border border-slate-200"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-100 text-sm font-black text-slate-500 uppercase">
+                        {seller.name.slice(0, 2)}
+                      </div>
+                    )}
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-black uppercase tracking-tight text-primary">
+                      <p className="truncate text-sm font-black uppercase tracking-tight text-slate-900">
                         {seller.name}
                       </p>
                       <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">

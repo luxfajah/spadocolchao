@@ -123,7 +123,7 @@ export default async function VendasPage() {
     sellerIds.length
       ? prisma.seller.findMany({
           where: { id: { in: sellerIds } },
-          select: { id: true, name: true },
+          select: { id: true, name: true, employee: { select: { photoUrl: true } } },
         })
       : Promise.resolve([]),
     leadSourceIds.length
@@ -134,7 +134,7 @@ export default async function VendasPage() {
       : Promise.resolve([]),
   ])
 
-  const sellerMap = new Map(sellerRecords.map(seller => [seller.id, seller.name]))
+  const sellerMap = new Map(sellerRecords.map(seller => [seller.id, { name: seller.name, photoUrl: seller.employee?.photoUrl }]))
   const leadSourceMap = new Map(leadSourceRecords.map(source => [source.id, source.name]))
 
   const orderPipelineMap = orderPipelineGroups.reduce<Record<string, number>>((accumulator, group) => {
@@ -152,14 +152,18 @@ export default async function VendasPage() {
       targetAmount: sellerGoalSummary._sum.targetAmount || 0,
       achievedAmount: sellerGoalSummary._sum.achievedAmount || 0,
     },
-    topSellers: topSellerGroups.map((group, index) => ({
-      id: group.sellerId || `sem-vendedor-${index}`,
-      name: group.sellerId ? sellerMap.get(group.sellerId) || "Sem nome" : "Sem vendedor",
-      total: group._sum.totalAmount || 0,
-      count: group._count._all,
-      avgTicket:
-        group._count._all > 0 ? (group._sum.totalAmount || 0) / group._count._all : 0,
-    })),
+    topSellers: topSellerGroups.map((group, index) => {
+      const sellerData = group.sellerId ? sellerMap.get(group.sellerId) : null;
+      return {
+        id: group.sellerId || `sem-vendedor-${index}`,
+        name: sellerData?.name || "Sem vendedor",
+        photoUrl: sellerData?.photoUrl || null,
+        total: group._sum.totalAmount || 0,
+        count: group._count._all,
+        avgTicket:
+          group._count._all > 0 ? (group._sum.totalAmount || 0) / group._count._all : 0,
+      }
+    }),
     topLeadSources: topLeadSourceGroups.map(group => ({
       id: group.leadSourceId,
       name: leadSourceMap.get(group.leadSourceId) || "Origem sem nome",

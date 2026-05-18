@@ -366,13 +366,16 @@ export default async function DashboardPage() {
       acc[sellerId] = { 
         nome: sellerName, 
         total: 0, 
-        meta: goalsBySeller[sellerId] || 30000 
+        meta: goalsBySeller[sellerId] || 30000,
+        quantidade: 0,
+        photoUrl: sale.seller?.employee?.photoUrl || null,
       }
     }
 
     acc[sellerId].total += sale.totalAmount
+    acc[sellerId].quantidade += 1
     return acc
-  }, {} as Record<string, { nome: string; total: number; meta: number }>)
+  }, {} as Record<string, { nome: string; total: number; meta: number; quantidade: number; photoUrl: string | null }>)
 
   const rankingOrdenado = Object.values(ranking)
     .sort((a, b) => b.total - a.total)
@@ -931,12 +934,28 @@ export default async function DashboardPage() {
                     <div key={`${vendedor.nome}-${index}`} className="group relative">
                       <div className="mb-3 flex items-end justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-2xl border border-blue-100 bg-blue-50 text-[11px] font-black text-blue-700 shadow-sm transition-all group-hover:border-blue-200 group-hover:bg-blue-100">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-[11px] font-black text-white shadow-sm transition-all group-hover:bg-slate-800">
                             {index + 1}
                           </div>
-                          <span className="text-sm font-black uppercase leading-none tracking-tight text-slate-950">
-                            {vendedor.nome}
-                          </span>
+                          {vendedor.photoUrl ? (
+                            <img
+                              src={vendedor.photoUrl}
+                              alt={vendedor.nome}
+                              className="h-10 w-10 shrink-0 rounded-2xl object-cover shadow-sm border border-slate-200"
+                            />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-tr from-slate-200 to-slate-100 text-sm font-black text-slate-500 uppercase">
+                              {vendedor.nome.slice(0, 2)}
+                            </div>
+                          )}
+                          <div className="flex flex-col gap-1.5 justify-center">
+                            <span className="text-sm font-black uppercase leading-none tracking-tight text-slate-950">
+                              {vendedor.nome}
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                              {vendedor.quantidade} vendas {vendedor.quantidade > 0 && `| TICKET ${formatCurrency(vendedor.total / vendedor.quantidade)}`}
+                            </span>
+                          </div>
                         </div>
                         <span className="text-sm font-black text-blue-700">
                           {formatCurrency(vendedor.total)}
