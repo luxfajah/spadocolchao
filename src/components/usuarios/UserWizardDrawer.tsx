@@ -99,7 +99,7 @@ export function UserWizardDrawer({
   const handleNext = () => setStep(s => Math.min(s + 1, STEPS.length))
   const handleBack = () => setStep(s => Math.max(s - 1, 1))
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: any) => {
     setFormData((prev: any) => ({ ...prev, [field]: value }))
   }
 
