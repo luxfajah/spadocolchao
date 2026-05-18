@@ -44,15 +44,15 @@ export function CashFlowList({ transactions }: { transactions: any[] }) {
               <div className="flex items-center gap-4">
                 <div className="bg-primary text-white w-14 h-14 rounded-2xl flex flex-col items-center justify-center shadow-lg shadow-primary/20">
                   <span className="text-xs font-black uppercase tracking-tighter leading-none opacity-70">
-                    {new Date(date).toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '')}
+                    {new Date(date + 'T12:00:00Z').toLocaleDateString('pt-BR', { month: 'short', timeZone: 'UTC' }).replace('.', '')}
                   </span>
                   <span className="text-xl font-black font-outfit italic leading-none">
-                    {new Date(date).getDate() + 1}
+                    {new Date(date + 'T12:00:00Z').getUTCDate()}
                   </span>
                 </div>
                 <div>
                   <h4 className="text-xl font-black text-slate-800 font-outfit italic uppercase tracking-tighter leading-none">
-                    {new Date(date).toLocaleDateString('pt-BR', { weekday: 'long' })}
+                    {new Date(date + 'T12:00:00Z').toLocaleDateString('pt-BR', { weekday: 'long', timeZone: 'UTC' })}
                   </h4>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                     {dayTransactions.length} Movimentações registradas
