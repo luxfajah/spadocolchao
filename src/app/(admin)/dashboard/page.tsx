@@ -717,11 +717,10 @@ export default async function DashboardPage() {
                   <div className="flex items-center gap-5">
                     {vendedorDestaqueMes.photoUrl ? (
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[1.25rem] border-2 border-white shadow-[0_8px_16px_-6px_rgba(37,99,235,0.2)]">
-                        <Image
+                        <img
                           src={vendedorDestaqueMes.photoUrl}
                           alt={vendedorDestaqueMes.nome}
-                          fill
-                          className="object-cover"
+                          className="h-full w-full object-cover"
                         />
                       </div>
                     ) : (
