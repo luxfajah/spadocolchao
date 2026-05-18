@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { 
   User, 
   Mail, 
@@ -95,6 +95,26 @@ export function UserWizardDrawer({
     status: "PENDING_ACTIVATION",
     avatarPreview: initialData?.avatarUrl || null,
   })
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep(1);
+      setFormData(initialData || {
+        name: "",
+        socialName: "",
+        email: "",
+        phone: "",
+        username: "",
+        jobTitle: "",
+        department: "",
+        employeeId: "",
+        primaryRoleId: "",
+        initialPassword: "",
+        status: "PENDING_ACTIVATION",
+        avatarPreview: null,
+      });
+    }
+  }, [isOpen, initialData]);
 
   const handleNext = () => setStep(s => Math.min(s + 1, STEPS.length))
   const handleBack = () => setStep(s => Math.max(s - 1, 1))
