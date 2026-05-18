@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { prisma } from "@/lib/prisma"
+import { uploadFile } from "@/lib/storage-service"
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -196,6 +197,16 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       finalWorkScheduleId = customSchedule.id
     }
 
+    let finalPhotoUrl = photoUrl;
+    if (photoUrl && photoUrl.startsWith("data:image")) {
+      const matches = photoUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const buffer = Buffer.from(matches[2], 'base64');
+        const ext = matches[1].split('/')[1] || 'png';
+        finalPhotoUrl = await uploadFile(`avatars/employee-${params.id}-${Date.now()}.${ext}`, buffer, matches[1]);
+      }
+    }
+
     const updated = await (prisma as any).employee.update({
       where: { id: params.id },
       data: {
@@ -232,7 +243,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         phone,
         whatsapp,
         email,
-        photoUrl,
+        photoUrl: finalPhotoUrl,
         isPCD: isPCD !== undefined ? Boolean(isPCD) : undefined,
         pcdDetails,
         hasHealthCondition: hasHealthCondition !== undefined ? Boolean(hasHealthCondition) : undefined,

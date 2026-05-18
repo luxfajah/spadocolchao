@@ -15,6 +15,7 @@ import { assertAreaAccess } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
 import { accessPresetDefinitions, assignableSystemRoleDefinitions, type AccessPresetKey } from "@/lib/role-presets"
 import { ensureSystemConfigurationData } from "@/lib/system-config"
+import { uploadFile } from "@/lib/storage-service"
 
 function readString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim()
@@ -250,6 +251,14 @@ export async function createUserAction(formData: FormData) {
 
   await ensureUniqueUserIdentity({ email, username })
 
+  const avatarFile = formData.get("avatar") as File | null;
+  let avatarUrl: string | undefined;
+
+  if (avatarFile && avatarFile.size > 0) {
+    const buffer = Buffer.from(await avatarFile.arrayBuffer());
+    avatarUrl = await uploadFile(`avatars/user-${Date.now()}-${avatarFile.name}`, buffer, avatarFile.type);
+  }
+
   const user = await prisma.user.create({
     data: {
       name: readString(formData, "name"),
@@ -265,6 +274,7 @@ export async function createUserAction(formData: FormData) {
       employeeId: readNullable(formData, "employeeId"),
       notes: readNullable(formData, "notes"),
       mustChangePassword: true,
+      avatarUrl,
     },
   })
 
@@ -310,6 +320,14 @@ export async function updateUserGeneralAction(formData: FormData) {
 
   await ensureUniqueUserIdentity({ email, username, ignoreUserId: userId })
 
+  const avatarFile = formData.get("avatar") as File | null;
+  let avatarUrl: string | undefined;
+
+  if (avatarFile && avatarFile.size > 0) {
+    const buffer = Buffer.from(await avatarFile.arrayBuffer());
+    avatarUrl = await uploadFile(`avatars/user-${userId}-${Date.now()}-${avatarFile.name}`, buffer, avatarFile.type);
+  }
+
   await prisma.user.update({
     where: { id: userId },
     data: {
@@ -323,6 +341,7 @@ export async function updateUserGeneralAction(formData: FormData) {
       employeeId: readNullable(formData, "employeeId"),
       notes: readNullable(formData, "notes"),
       status: readString(formData, "status") || "ACTIVE",
+      ...(avatarUrl ? { avatarUrl } : {}),
     },
   })
 

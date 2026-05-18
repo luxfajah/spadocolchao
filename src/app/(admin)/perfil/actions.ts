@@ -159,6 +159,7 @@ export async function updateOwnProfileAction(
   }
 
   let photoUpdated = false
+  let newAvatarUrl: string | null = null
 
   if (profilePhoto instanceof File && profilePhoto.size > 0) {
     const photoResult = await saveProfilePhoto(actor.id, profilePhoto)
@@ -170,18 +171,27 @@ export async function updateOwnProfileAction(
     }
 
     photoUpdated = Boolean(photoResult.avatarUrl)
+    if (photoUpdated) {
+      newAvatarUrl = photoResult.avatarUrl
+    }
+  }
+
+  const updateData: any = {
+    name,
+    socialName,
+    email,
+    phone,
+  }
+
+  if (photoUpdated && newAvatarUrl) {
+    updateData.avatarUrl = newAvatarUrl
   }
 
   await prisma.user.update({
     where: {
       id: actor.id,
     },
-    data: {
-      name,
-      socialName,
-      email,
-      phone,
-    },
+    data: updateData,
   })
 
   await createAuditEntry({

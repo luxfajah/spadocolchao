@@ -18,7 +18,9 @@ import {
   HelpCircle,
   MessageSquare,
   Lock,
-  Info
+  Info,
+  Camera,
+  Upload
 } from "lucide-react"
 import { 
   Drawer, 
@@ -90,7 +92,8 @@ export function UserWizardDrawer({
     employeeId: "",
     primaryRoleId: "",
     initialPassword: "",
-    status: "PENDING_ACTIVATION"
+    status: "PENDING_ACTIVATION",
+    avatarPreview: initialData?.avatarUrl || null,
   })
 
   const handleNext = () => setStep(s => Math.min(s + 1, STEPS.length))
@@ -148,6 +151,34 @@ export function UserWizardDrawer({
         <div className="flex-1 overflow-y-auto p-10 space-y-8 no-scrollbar">
           {step === 1 && (
             <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+              <div className="flex items-center gap-6 pb-2">
+                <div className="relative flex-shrink-0">
+                  <div className="h-24 w-24 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 overflow-hidden flex items-center justify-center">
+                    {formData.avatarPreview ? (
+                      <img src={formData.avatarPreview} alt="Foto" className="h-full w-full object-cover" />
+                    ) : (
+                      <Camera className="h-8 w-8 text-slate-300" />
+                    )}
+                  </div>
+                  <button type="button" onClick={() => document.getElementById("user-avatar-upload")?.click()}
+                    className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90">
+                    <Upload className="h-3.5 w-3.5" />
+                  </button>
+                  <input id="user-avatar-upload" type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden"
+                    onChange={e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        updateField("avatar", file);
+                        updateField("avatarPreview", URL.createObjectURL(file));
+                      }
+                    }} />
+                </div>
+                <div>
+                  <h2 className="font-black text-slate-800 uppercase tracking-tight text-lg font-outfit">Foto de Perfil</h2>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Adicione uma foto para o usuário</p>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Identidade do Colaborador</Label>
                 <div className="relative">

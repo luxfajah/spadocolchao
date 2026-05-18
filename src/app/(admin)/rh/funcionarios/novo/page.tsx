@@ -229,9 +229,19 @@ export default function NovoFuncionarioPage() {
   }
 
   function handlePhoto(file: File | null) {
-    if (!file) { setPhotoPreview(null); return }
+    if (!file) { 
+      setPhotoPreview(null); 
+      setForm((prev: any) => ({ ...prev, photoUrl: "" }));
+      return; 
+    }
     const url = URL.createObjectURL(file)
     setPhotoPreview(url)
+    
+    const reader = new FileReader()
+    reader.onload = () => {
+      setForm((prev: any) => ({ ...prev, photoUrl: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
   }
 
   function updateCustomSchedule(day: string, field: string, value: string) {

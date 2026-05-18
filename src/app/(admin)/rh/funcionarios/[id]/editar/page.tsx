@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { 
   ArrowLeft, Loader2, Users, Briefcase, MapPin, 
   CreditCard, Shield, Save, Heart, GraduationCap, 
-  DollarSign, Camera, Clock, CheckCircle2 
+  DollarSign, Camera, Clock, CheckCircle2, Upload 
 } from "lucide-react"
 import Link from "next/link"
 import { MaskedInput } from "@/components/ui/MaskedInput"
@@ -49,7 +49,25 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
   const [workSchedules, setWorkSchedules] = useState<any[]>([])
   const [jobTitles, setJobTitles] = useState<any[]>([])
   const [costCenters, setCostCenters] = useState<any[]>([])
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const photoRef = useRef<HTMLInputElement>(null)
   const isFetched = useRef(false)
+
+  function handlePhoto(file: File | null) {
+    if (!file) { 
+      setPhotoPreview(null); 
+      setForm((prev: any) => ({ ...prev, photoUrl: "" }));
+      return; 
+    }
+    const url = URL.createObjectURL(file)
+    setPhotoPreview(url)
+    
+    const reader = new FileReader()
+    reader.onload = () => {
+      setForm((prev: any) => ({ ...prev, photoUrl: reader.result as string }))
+    }
+    reader.readAsDataURL(file)
+  }
 
   const [form, setForm] = useState<any>({
     fullName: "", socialName: "", cpf: "", rg: "", rgExpeditor: "",
@@ -150,6 +168,7 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
         fgtsOptionDate: emp.fgtsOptionDate?.slice(0, 10) || "",
         fgtsRectificationDate: emp.fgtsRectificationDate?.slice(0, 10) || "",
       }))
+      if (emp.photoUrl) setPhotoPreview(emp.photoUrl)
       setLoading(false)
     }
 
@@ -314,6 +333,29 @@ export default function EditarFuncionarioPage({ params }: { params: { id: string
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="bg-white rounded-[2.5rem] shadow-lahomes border border-slate-50 p-8 space-y-6">
           <Section icon={<Users className="h-5 w-5 text-primary" />} title="Identificação & Pessoal" subtitle="Dados básicos e documentos" />
+          
+          {/* Upload de Foto */}
+          <div className="flex items-center gap-6 pb-6 border-b border-slate-50">
+            <div className="relative flex-shrink-0">
+              <div className="h-24 w-24 rounded-3xl bg-slate-100 border-2 border-dashed border-slate-300 overflow-hidden flex items-center justify-center">
+                {photoPreview
+                  ? <img src={photoPreview} alt="Foto" className="h-full w-full object-cover" />
+                  : <Camera className="h-8 w-8 text-slate-300" />
+                }
+              </div>
+              <button type="button" onClick={() => photoRef.current?.click()}
+                className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary/90">
+                <Upload className="h-3.5 w-3.5" />
+              </button>
+              <input ref={photoRef} type="file" accept=".jpg,.jpeg,.png,.webp" className="hidden"
+                onChange={e => handlePhoto(e.target.files?.[0] || null)} />
+            </div>
+            <div>
+              <h2 className="font-black text-slate-800 uppercase tracking-tight text-lg font-outfit">Foto do Colaborador</h2>
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-0.5">Clique no ícone para alterar a foto do colaborador</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
              <div className="md:col-span-2">
                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2 mb-1 block">Nome Completo *</label>

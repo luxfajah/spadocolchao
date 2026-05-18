@@ -22,6 +22,7 @@ export default async function UsuariosPage({ searchParams }: UsuariosPageProps) 
       jobTitle: u.jobTitle,
       department: u.department,
       lastLoginAt: u.lastLoginAt,
+      avatarUrl: (u as any).avatarUrl,
       primaryRole: u.primaryRole ? { name: u.primaryRole.name } : undefined
     })),
     roles: data.roles.map(r => ({
