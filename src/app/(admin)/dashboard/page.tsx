@@ -130,6 +130,11 @@ export default async function DashboardPage() {
           select: {
             id: true,
             name: true,
+            employee: {
+              select: {
+                photoUrl: true,
+              },
+            },
           },
         },
         leadSource: {
@@ -283,7 +288,7 @@ export default async function DashboardPage() {
   const marketingRoas = marketingSpend > 0 ? marketingSalesTotal / marketingSpend : null
   const marketingShareOfSales = totalAlcancado > 0 ? (marketingSalesTotal / totalAlcancado) * 100 : null
 
-  const previousSellerRanking = vendasMesAnterior.reduce((acc, sale) => {
+  const currentSellerRanking = vendasMes.reduce((acc, sale) => {
     if (!sale.seller) {
       return acc
     }
@@ -293,16 +298,17 @@ export default async function DashboardPage() {
         nome: sale.seller.name,
         total: 0,
         quantidade: 0,
+        photoUrl: sale.seller.employee?.photoUrl || null,
       }
     }
 
     acc[sale.seller.id].total += sale.totalAmount
     acc[sale.seller.id].quantidade += 1
     return acc
-  }, {} as Record<string, { nome: string; total: number; quantidade: number }>)
+  }, {} as Record<string, { nome: string; total: number; quantidade: number; photoUrl: string | null }>)
 
-  const vendedorDestaqueMesAnterior =
-    Object.values(previousSellerRanking).sort(
+  const vendedorDestaqueMes =
+    Object.values(currentSellerRanking).sort(
       (a, b) => b.total - a.total || b.quantidade - a.quantidade || a.nome.localeCompare(b.nome, "pt-BR")
     )[0] || null
 
@@ -702,19 +708,35 @@ export default async function DashboardPage() {
                 Vendedor destaque
               </CardTitle>
               <CardDescription className={dashboardDescriptionClass}>
-                Melhor resultado comercial de {previousPeriodLabel}
+                Melhor resultado comercial de {currentPeriodLabel}
               </CardDescription>
             </CardHeader>
             <CardContent className="p-8 pt-0">
-              {vendedorDestaqueMesAnterior ? (
+              {vendedorDestaqueMes ? (
                 <div className="space-y-6">
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700">
-                      Volume confirmado
-                    </p>
-                    <p className="mt-3 text-2xl font-black uppercase tracking-tight text-slate-950">
-                      {vendedorDestaqueMesAnterior.nome}
-                    </p>
+                  <div className="flex items-center gap-5">
+                    {vendedorDestaqueMes.photoUrl ? (
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[1.25rem] border-2 border-white shadow-[0_8px_16px_-6px_rgba(37,99,235,0.2)]">
+                        <Image
+                          src={vendedorDestaqueMes.photoUrl}
+                          alt={vendedorDestaqueMes.nome}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white text-2xl font-black text-blue-700 shadow-[0_8px_16px_-6px_rgba(37,99,235,0.15)]">
+                        {vendedorDestaqueMes.nome.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-[0.24em] text-blue-700">
+                        Volume confirmado
+                      </p>
+                      <p className="mt-2 text-2xl font-black uppercase tracking-tight text-slate-950">
+                        {vendedorDestaqueMes.nome}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -723,7 +745,7 @@ export default async function DashboardPage() {
                         Total vendido
                       </p>
                       <p className="mt-3 font-heading text-3xl font-black italic text-slate-950">
-                        {formatCurrency(vendedorDestaqueMesAnterior.total)}
+                        {formatCurrency(vendedorDestaqueMes.total)}
                       </p>
                     </div>
 
@@ -732,7 +754,7 @@ export default async function DashboardPage() {
                         Vendas fechadas
                       </p>
                       <p className="mt-3 font-heading text-3xl font-black italic text-slate-950">
-                        {vendedorDestaqueMesAnterior.quantidade}
+                        {vendedorDestaqueMes.quantidade}
                       </p>
                     </div>
                   </div>
@@ -740,10 +762,10 @@ export default async function DashboardPage() {
               ) : (
                 <div className="rounded-[2rem] border border-slate-200 bg-slate-50/85 p-6">
                   <p className="text-lg font-black uppercase tracking-tight text-slate-950">
-                    Sem vendas confirmadas em {previousPeriodLabel}.
+                    Sem vendas confirmadas em {currentPeriodLabel}.
                   </p>
                   <p className="mt-3 text-sm leading-6 text-slate-600">
-                    Assim que houver faturamento fechado no mês anterior, o vendedor destaque entra nesta área.
+                    Assim que houver faturamento fechado no mês atual, o vendedor destaque entra nesta área.
                   </p>
                 </div>
               )}
