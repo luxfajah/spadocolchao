@@ -1,6 +1,8 @@
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
 
+import sharp from "sharp";
+
 /**
  * BUCKET CONFIGURATION:
  * Ensure you have a bucket named 'documents' in your Supabase project
@@ -20,9 +22,20 @@ export async function uploadFile(
     console.error("ERRO DE CONFIGURAÇÃO: NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY não definidos.");
   }
 
+  let finalBuffer = buffer;
+  if (path.startsWith('avatars/') && contentType.startsWith('image/')) {
+    try {
+      finalBuffer = await sharp(buffer)
+        .resize(320, 320, { fit: 'cover', position: 'center' })
+        .toBuffer();
+    } catch (err) {
+      console.error("Error cropping image:", err);
+    }
+  }
+
   const { data, error } = await supabase.storage
     .from(DEFAULT_BUCKET)
-    .upload(path, buffer, {
+    .upload(path, finalBuffer, {
       contentType,
       upsert: true,
     });
