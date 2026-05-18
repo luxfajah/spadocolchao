@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { randomUUID } from "node:crypto"
 import { generateMaterialRequirementsForReform } from "@/lib/services/technical-sheet"
+import { generateSaleNumber, generateSlipNumber } from "@/lib/sale-number"
 import { calculateCommissions } from "@/lib/commission-engine"
 import { getPdvSellerOptions } from "@/lib/pdv-sellers"
 import { getAuthenticatedUser } from "@/lib/auth"
@@ -78,9 +79,10 @@ export async function finalizeSale(payload: any) {
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create the base Sale
+      const saleNumber = await generateSaleNumber()
       const sale = await tx.sale.create({
         data: {
-          number: 'VEND-' + Math.floor(100000 + Math.random() * 900000).toString(),
+          number: saleNumber,
           customerId,
           sellerId: sellerId || null,
           leadSourceId,
@@ -354,10 +356,11 @@ export async function finalizeSale(payload: any) {
       })
 
       // 4.5 Generate Production Slip (Ficha de Produção)
+      const slipNumber = await generateSlipNumber()
       const productionSlip = await tx.orderProductionSlip.create({
         data: {
           orderId: order.id,
-          number: 'FP-' + Math.floor(100000 + Math.random() * 900000).toString(),
+          number: slipNumber,
           status: "ISSUED",
           createdById: actor.id,
           notes: "Gerado automaticamente na finalização do PDV"
