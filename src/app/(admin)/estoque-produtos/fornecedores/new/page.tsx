@@ -41,7 +41,7 @@ export default function NewSupplierPage() {
     
     if (cleanDoc.length === 14) {
       try {
-        const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanDoc}`)
+        const res = await fetch(`https://minhareceita.org/${cleanDoc}`)
         if (res.ok) {
           const resData = await res.json()
           setData(p => ({
