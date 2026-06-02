@@ -12,6 +12,7 @@ import {
 import { getUserAccessProfile } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 
 export async function login(prevState: any, formData: FormData) {
   const identifier = String(formData.get("identifier") ?? "").trim()
@@ -88,11 +89,16 @@ export async function login(prevState: any, formData: FormData) {
     include: authenticatedUserInclude,
   })
 
+  const userAgent = headers().get("user-agent") || ""
+  const isMobileApp = userAgent.includes("SpaDoColchaoApp")
+
   if (!authenticatedUser) {
-    redirect(redirectTo || "/dashboard")
+    redirect(isMobileApp ? "/app-vendedor/pdv" : (redirectTo || "/dashboard"))
   }
 
-  if (redirectTo && redirectTo.startsWith("/")) {
+  if (isMobileApp) {
+    redirect("/app-vendedor/pdv")
+  } else if (redirectTo && redirectTo.startsWith("/")) {
     redirect(redirectTo)
   } else {
     const accessProfile = await getUserAccessProfile(authenticatedUser)

@@ -7,7 +7,8 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://spadocolchao.vercel.app/app-vendedor/pdv',
     cleartext: true
-  }
+  },
+  appendUserAgent: 'SpaDoColchaoApp/1.0'
 };
 
 export default config;

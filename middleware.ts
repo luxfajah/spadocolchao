@@ -6,6 +6,13 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
 
+  const userAgent = request.headers.get("user-agent") || ""
+  const isMobileApp = userAgent.includes("SpaDoColchaoApp")
+
+  if (isMobileApp && !request.nextUrl.pathname.startsWith("/app-vendedor") && request.nextUrl.pathname !== "/login") {
+    return NextResponse.redirect(new URL("/app-vendedor/pdv", request.url))
+  }
+
   if (request.nextUrl.pathname === "/login") {
     return NextResponse.next({
       request: {
