@@ -124,14 +124,14 @@ export function PosFloatingActions() {
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 z-50 flex w-[95%] -translate-x-1/2 items-center gap-4 lg:bottom-10 lg:w-[calc(82%-4rem)] lg:left-[56.5%]">
+      <div className="fixed bottom-20 lg:bottom-10 left-1/2 z-50 flex w-[95%] -translate-x-1/2 items-center gap-2 lg:gap-4 lg:w-[calc(82%-4rem)] lg:left-[56.5%]">
         
         {/* Botão Voltar (aparece a partir do passo 2) */}
         {currentStep > 1 && (
           <Button
             onClick={handleBack}
             variant="ghost"
-            className="h-16 shrink-0 rounded-[1.8rem] bg-white/80 px-8 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 shadow-xl backdrop-blur-md border border-white/50 hover:bg-white"
+            className="h-12 lg:h-16 shrink-0 rounded-2xl lg:rounded-[1.8rem] bg-white/80 px-5 lg:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 shadow-xl backdrop-blur-md border border-white/50 hover:bg-white"
           >
             Voltar
           </Button>
@@ -162,9 +162,9 @@ export function PosFloatingActions() {
               <Button
                 onClick={handleNext}
                 disabled={!canGoNext()}
-                className="h-16 rounded-[1.8rem] bg-sky-500 px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(14,165,233,0.5)] hover:bg-sky-600 border border-white/20 disabled:opacity-50"
+                className="h-12 lg:h-16 rounded-2xl lg:rounded-[1.8rem] bg-sky-500 px-5 lg:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(14,165,233,0.5)] hover:bg-sky-600 border border-white/20 disabled:opacity-50"
               >
-                {currentStep === 1 ? "Próximo: Produtos" : "Próximo: Pagamento"}
+                {currentStep === 1 ? "Próximo" : "Pagamento"}
               </Button>
             ) : (
               <div className="flex flex-col gap-2">
@@ -181,9 +181,9 @@ export function PosFloatingActions() {
                 <Button
                     onClick={handleFinalize}
                     disabled={isSubmitting || (remaining > 0.05 && items.length > 0)}
-                    className="h-16 rounded-[1.8rem] bg-[#02213f] px-8 text-[11px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] hover:bg-slate-900 border border-white/10"
+                    className="h-12 lg:h-16 rounded-2xl lg:rounded-[1.8rem] bg-[#02213f] px-5 lg:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] hover:bg-slate-900 border border-white/10"
                 >
-                    {isSubmitting ? "Processando..." : "Finalizar pedido"}
+                    {isSubmitting ? "Processando..." : "Finalizar"}
                 </Button>
               </div>
             )}

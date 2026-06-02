@@ -107,13 +107,13 @@ export function PosCatalog() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4">
             {filteredProducts.map((product: any) => (
               <button
                 type="button"
                 key={product.id}
                 onClick={() => setSelectedProduct(product)}
-                className="group relative flex min-h-[220px] flex-col justify-between overflow-hidden rounded-[1.9rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-5 text-left shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_60px_-30px_rgba(0,34,66,0.35)]"
+                className="group relative flex min-h-[160px] lg:min-h-[220px] flex-col justify-between overflow-hidden rounded-2xl lg:rounded-[1.9rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 text-left shadow-[0_8px_25px_-15px_rgba(15,23,42,0.3)] lg:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_60px_-30px_rgba(0,34,66,0.35)]"
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_35%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
