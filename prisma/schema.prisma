@@ -611,6 +611,7 @@ model Customer {
   sales              Sale[]
   orders             Order[]
   accountsReceivable AccountReceivable[]
+  visits             SellerVisit[]
 
   @@index([fullName])
   @@index([document])
@@ -2452,19 +2453,22 @@ model CompanyHoliday {
 }
 
 model SellerVisit {
-  id           String   @id @default(cuid())
-  sellerId     String
-  clientName   String
-  clientPhone  String?
+  id            String   @id @default(cuid())
+  sellerId      String
+  customerId    String?
+  clientName    String
+  clientPhone   String?
   clientAddress String?
-  visitDate    DateTime
-  status       String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
-  notes        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  visitDate     DateTime
+  status        String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  seller       Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  seller        Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
 
   @@index([sellerId])
+  @@index([customerId])
 }
 

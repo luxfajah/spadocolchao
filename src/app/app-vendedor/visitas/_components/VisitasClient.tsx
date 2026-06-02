@@ -6,6 +6,7 @@ import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XC
 
 type Visit = {
   id: string
+  customerId: string | null
   clientName: string
   clientPhone: string | null
   clientAddress: string | null
@@ -23,6 +24,12 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [saving, setSaving] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null)
+
+  // Link to existing customer in visit creation
+  const [visitCustomerId, setVisitCustomerId] = useState<string | null>(null)
+  const [searchedCustomers, setSearchedCustomers] = useState<any[]>([])
+  const [searchingCustomers, setSearchingCustomers] = useState(false)
+  const [showCustResults, setShowCustResults] = useState(false)
 
   // Customer registration form state
   const [regName, setRegName] = useState("")
@@ -102,6 +109,74 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
 
   useEffect(() => { fetchVisits() }, [])
 
+  // Dynamic customer search for visits
+  useEffect(() => {
+    if (modalMode !== "create" || visitCustomerId) {
+      setSearchedCustomers([])
+      return
+    }
+    if (clientName.trim().length < 2) {
+      setSearchedCustomers([])
+      return
+    }
+
+    const delayDebounce = setTimeout(async () => {
+      setSearchingCustomers(true)
+      try {
+        const res = await fetch(`/api/clientes?q=${encodeURIComponent(clientName)}`)
+        if (res.ok) {
+          const data = await res.json()
+          setSearchedCustomers(data)
+        }
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setSearchingCustomers(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(delayDebounce)
+  }, [clientName, modalMode, visitCustomerId])
+
+  const handleSelectCustomerForVisit = (cust: any) => {
+    setVisitCustomerId(cust.id)
+    setClientName(cust.fullName)
+    setClientPhone(cust.phone || "")
+    
+    // Check if there is an address
+    const mainAddr = cust.addresses?.[0]
+    if (mainAddr) {
+      setCep(mainAddr.zipCode || "")
+      setStreet(mainAddr.street || "")
+      setNumber(mainAddr.number || "")
+      setNeighborhood(mainAddr.neighborhood || "")
+      setCity(mainAddr.city || "")
+      setState(mainAddr.state || "")
+    } else {
+      setCep("")
+      setStreet("")
+      setNumber("")
+      setNeighborhood("")
+      setCity("")
+      setState("")
+    }
+    
+    setSearchedCustomers([])
+    setShowCustResults(false)
+  }
+
+  const handleUnlinkCustomer = () => {
+    setVisitCustomerId(null)
+    setClientName("")
+    setClientPhone("")
+    setCep("")
+    setStreet("")
+    setNumber("")
+    setNeighborhood("")
+    setCity("")
+    setState("")
+  }
+
   const resetForm = () => {
     setClientName("")
     setClientPhone("")
@@ -117,6 +192,10 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
     setNotes("")
     setResultNotes("")
     setSelectedVisit(null)
+    setVisitCustomerId(null)
+    setSearchedCustomers([])
+    setSearchingCustomers(false)
+    setShowCustResults(false)
   }
 
   const openCreate = () => {
@@ -148,6 +227,7 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
           clientAddress: buildFullAddress() || null,
           visitDate: dateTime.toISOString(),
           notes: notes.trim() || null,
+          customerId: visitCustomerId || null,
         }),
       })
       if (res.ok) {
@@ -178,21 +258,26 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
       if (res.ok) {
         await fetchVisits()
         if (status === "COMPLETED") {
-          // Pre-fill customer registration from visit data
-          setRegName(selectedVisit.clientName || "")
-          setRegPhone(selectedVisit.clientPhone || "")
-          setRegDocument("")
-          // Parse address if available
-          if (selectedVisit.clientAddress) {
-            const parts = selectedVisit.clientAddress.split(', ')
-            setRegStreet(parts[0] || "")
-            const numMatch = parts[1]?.match(/nº\s*(.*)/)
-            setRegNumber(numMatch ? numMatch[1] : parts[1] || "")
-            setRegNeighborhood(parts[2] || "")
-            setRegCity(parts[3] || "")
-            setRegState(parts[4] || "")
+          if (selectedVisit.customerId) {
+            // Already registered! Redirect to PDV directly
+            router.push(`/app-vendedor/pdv?customerId=${selectedVisit.customerId}&customerName=${encodeURIComponent(selectedVisit.clientName)}`)
+          } else {
+            // Pre-fill customer registration from visit data
+            setRegName(selectedVisit.clientName || "")
+            setRegPhone(selectedVisit.clientPhone || "")
+            setRegDocument("")
+            // Parse address if available
+            if (selectedVisit.clientAddress) {
+              const parts = selectedVisit.clientAddress.split(', ')
+              setRegStreet(parts[0] || "")
+              const numMatch = parts[1]?.match(/nº\s*(.*)/)
+              setRegNumber(numMatch ? numMatch[1] : parts[1] || "")
+              setRegNeighborhood(parts[2] || "")
+              setRegCity(parts[3] || "")
+              setRegState(parts[4] || "")
+            }
+            setModalMode("register_client")
           }
-          setModalMode("register_client")
         } else {
           setModalMode(null)
           resetForm()
@@ -388,13 +473,54 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
                 <User size={12} className="text-blue-500" /> Nome do Cliente *
               </label>
-              <input
-                type="text"
-                value={clientName}
-                onChange={e => setClientName(e.target.value)}
-                placeholder="Ex: João da Silva"
-                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
-              />
+              {visitCustomerId ? (
+                <div className="flex items-center justify-between rounded-xl border border-emerald-100 bg-emerald-50 px-3 py-2.5">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600/70">Cliente Cadastrado</p>
+                    <p className="text-sm font-black text-emerald-800 truncate">{clientName}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleUnlinkCustomer}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-rose-500 hover:bg-rose-500 hover:text-white transition-all ml-2 animate-in fade-in zoom-in-95 duration-200"
+                  >
+                    <XCircle size={16} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <input
+                    type="text"
+                    value={clientName}
+                    onChange={e => { setClientName(e.target.value); setShowCustResults(true) }}
+                    onFocus={() => setShowCustResults(true)}
+                    placeholder="Ex: João da Silva ou CPF"
+                    className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                  />
+                  {showCustResults && searchedCustomers.length > 0 && (
+                    <div className="relative">
+                      <div className="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-xl border border-slate-100 bg-white shadow-xl">
+                        {searchedCustomers.map((c: any) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => handleSelectCustomerForVisit(c)}
+                            className="flex w-full items-center gap-3 border-b border-slate-50 px-4 py-3 text-left transition-colors last:border-0 hover:bg-slate-50 active:bg-slate-100"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-black text-blue-600">
+                              {c.fullName.substring(0, 2).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-800 truncate">{c.fullName}</p>
+                              <p className="text-xs text-slate-400 truncate">{c.document || "Sem CPF/CNPJ"}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Telefone */}

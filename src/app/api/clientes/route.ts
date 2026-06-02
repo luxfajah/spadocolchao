@@ -2,6 +2,45 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getUser } from '@/app/login/actions'
 
+// GET: busca clientes por nome ou documento
+export async function GET(req: NextRequest) {
+  const user = await getUser()
+  if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+
+  const url = new URL(req.url)
+  const query = url.searchParams.get('q') || ''
+
+  const customers = await prisma.customer.findMany({
+    where: {
+      isActive: true,
+      OR: [
+        { fullName: { contains: query, mode: 'insensitive' } },
+        { document: { contains: query } }
+      ]
+    },
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      document: true,
+      addresses: {
+        where: { isMain: true },
+        select: {
+          zipCode: true,
+          street: true,
+          number: true,
+          neighborhood: true,
+          city: true,
+          state: true
+        }
+      }
+    },
+    take: 15
+  })
+
+  return NextResponse.json(customers)
+}
+
 // POST: cria um cliente rápido (retorna JSON ao invés de redirect)
 export async function POST(req: NextRequest) {
   const user = await getUser()

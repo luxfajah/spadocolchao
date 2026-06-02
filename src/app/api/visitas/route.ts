@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
   if (!seller) return NextResponse.json({ error: 'Vendedor não vinculado' }, { status: 404 })
 
   const body = await req.json()
-  const { clientName, clientPhone, clientAddress, visitDate, notes } = body
+  const { clientName, clientPhone, clientAddress, visitDate, notes, customerId } = body
 
   if (!clientName || !visitDate) {
     return NextResponse.json({ error: 'Nome do cliente e data são obrigatórios' }, { status: 400 })
@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
   const visit = await prisma.sellerVisit.create({
     data: {
       sellerId: seller.id,
+      customerId: customerId || null,
       clientName,
       clientPhone: clientPhone || null,
       clientAddress: clientAddress || null,
