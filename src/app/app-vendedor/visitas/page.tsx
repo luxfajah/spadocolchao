@@ -12,7 +12,7 @@ export default async function AppVendedorVisitasPage() {
   
   const sellerId = sellerScope?.sellerId
 
-  let visits = []
+  let visits: Awaited<ReturnType<typeof prisma.sellerVisit.findMany>> = []
   if (sellerId) {
     visits = await prisma.sellerVisit.findMany({
       where: { sellerId: sellerId },
