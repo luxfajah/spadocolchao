@@ -6,6 +6,7 @@ import { Check, MapPin, Search, Trash2, UserPlus, Users, X } from "lucide-react"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { usePos } from "./PosContext";
+import { RegisterCustomerModal } from "@/app/app-vendedor/_components/RegisterCustomerModal";
 
 export function PosCustomer() {
   const {
@@ -55,9 +56,15 @@ export function PosCustomer() {
     );
   }, [initialData, searchTerm]);
 
+  const [showAddCustomerModal, setShowAddCustomerModal] = useState(false);
+
   const goToNewCustomer = () => {
-    localStorage.setItem("pdv_draft", JSON.stringify({ items, sellerId, leadSourceId, globalDiscount }));
-    window.location.href = "/vendas-clientes/clientes/new?from=pdv";
+    if (typeof window !== "undefined" && window.location.pathname.includes('/app-vendedor')) {
+      setShowAddCustomerModal(true);
+    } else {
+      localStorage.setItem("pdv_draft", JSON.stringify({ items, sellerId, leadSourceId, globalDiscount }));
+      window.location.href = "/vendas-clientes/clientes/new?from=pdv";
+    }
   };
 
   const bothReady = !!customer && !!leadSourceId;
@@ -218,6 +225,16 @@ export function PosCustomer() {
           </select>
         </div>
       )}
+
+      <RegisterCustomerModal
+        isOpen={showAddCustomerModal}
+        onClose={() => setShowAddCustomerModal(false)}
+        sellerId={sellerId}
+        onSuccess={(cust) => {
+          setCustomer({ id: cust.id, fullName: cust.fullName });
+          setShowAddCustomerModal(false);
+        }}
+      />
     </div>
   );
 }
