@@ -15,7 +15,7 @@ function PosContent() {
   const [mobileTab, setMobileTab] = useState<"catalog" | "cart">("catalog");
 
   return (
-    <div className="relative flex min-h-screen w-full flex-col gap-3 overflow-hidden rounded-none lg:rounded-[2.75rem] border-0 lg:border lg:border-white/70 bg-[linear-gradient(180deg,#f9fbff_0%,#eef4fb_55%,#f8fafc_100%)] p-2 pt-3 pb-28 lg:p-6 lg:pb-32 shadow-none lg:shadow-[0_35px_80px_-35px_rgba(0,34,66,0.35)]">
+    <div className="relative flex min-h-screen w-full flex-col gap-3 overflow-hidden rounded-none lg:rounded-[2.75rem] border-0 lg:border lg:border-white/70 bg-[linear-gradient(180deg,#f9fbff_0%,#eef4fb_55%,#f8fafc_100%)] p-2 pt-3 pb-44 lg:p-6 lg:pb-32 shadow-none lg:shadow-[0_35px_80px_-35px_rgba(0,34,66,0.35)]">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-52 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_42%),radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_36%)]" />
 
       <div className="relative flex min-h-0 flex-1 flex-col gap-0">
@@ -23,7 +23,7 @@ function PosContent() {
           <PosHeader />
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-1 pb-4">
+        <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar px-1 pb-16">
           {/* ETAPA 1: CLIENTE E CONTEXTO */}
           {currentStep === 1 && (
             <div className="mx-auto max-w-5xl h-full animate-in fade-in slide-in-from-bottom-4 duration-500">
