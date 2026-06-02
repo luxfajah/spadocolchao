@@ -126,7 +126,7 @@ export function BoxReformForm({ product, onAdd, onCancel }: { product: any, onAd
   return (
     <div className="flex flex-col h-full max-h-[85vh]">
       {/* Steps Header */}
-      <div className="flex items-center justify-between mb-8 px-2 overflow-x-auto pb-2 gap-4">
+      <div className="flex items-center mb-6 px-2 overflow-x-auto pb-2 gap-4 scrollbar-none custom-scrollbar">
         {steps.map((s) => (
           <div key={s.id} className="flex flex-col items-center min-w-[70px] relative">
             <div className={cn(
@@ -190,8 +190,8 @@ export function BoxReformForm({ product, onAdd, onCancel }: { product: any, onAd
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 bg-muted/20 p-6 rounded-2xl border">
-              <div className="col-span-3 pb-2"><h4 className="text-sm font-bold flex items-center gap-2"><Maximize size={16} className="text-brand-900" /> Dimensões Reais (cm)</h4></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/20 p-4 sm:p-6 rounded-2xl border">
+              <div className="col-span-1 sm:col-span-3 pb-2"><h4 className="text-sm font-bold flex items-center gap-2"><Maximize size={16} className="text-brand-900" /> Dimensões Reais (cm)</h4></div>
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase">Largura</label>
                 <Input type="number" name="actualWidth" value={data.actualWidth} onChange={handleChange} className="h-12 text-lg font-bold" required />

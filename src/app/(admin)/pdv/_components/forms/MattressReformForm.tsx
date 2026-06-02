@@ -176,7 +176,7 @@ export function MattressReformForm({ product, onAdd, onCancel }: { product: any,
   return (
     <div className="flex flex-col h-full max-h-[85vh]">
       {/* Steps Header */}
-      <div className="flex items-center justify-between mb-8 px-2 overflow-x-auto pb-2 gap-4">
+      <div className="flex items-center mb-6 px-2 overflow-x-auto pb-2 gap-4 scrollbar-none custom-scrollbar">
         {steps.map((s) => (
           <div key={s.id} className="flex flex-col items-center min-w-[70px] relative">
             <div className={cn(
@@ -240,8 +240,8 @@ export function MattressReformForm({ product, onAdd, onCancel }: { product: any,
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 bg-muted/20 p-6 rounded-2xl border">
-              <div className="col-span-3 pb-2"><h4 className="text-sm font-bold flex items-center gap-2"><Maximize size={16} className="text-brand-900" /> Dimensões Reais do Cliente (cm)</h4></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-muted/20 p-4 sm:p-6 rounded-2xl border">
+              <div className="col-span-1 sm:col-span-3 pb-2"><h4 className="text-sm font-bold flex items-center gap-2"><Maximize size={16} className="text-brand-900" /> Dimensões Reais do Cliente (cm)</h4></div>
               <div className="space-y-1">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase">Largura</label>
                 <Input type="number" name="actualWidth" value={data.actualWidth} onChange={handleChange} className="h-12 text-lg font-bold" required />
@@ -409,32 +409,7 @@ export function MattressReformForm({ product, onAdd, onCancel }: { product: any,
                 <Settings2 size={24} /> Engenharia de Conforto
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-4">
-                  <label className="text-sm font-bold text-orange-800 dark:text-orange-300 block uppercase">Configuração de Espuma</label>
-                  <select name="foamServiceType" value={data.foamServiceType} onChange={handleChange} className="flex h-12 w-full rounded-xl border-2 border-orange-200 bg-white px-4 text-sm font-bold shadow-sm focus:ring-orange-500">
-                    <option value="NENHUM">Manter Espuma Original</option>
-                    <option value="CALCO">Adicionar Calço de Nivelamento</option>
-                    <option value="TROCA_PARCIAL">Nova Camada de Densidade</option>
-                    <option value="TROCA_TOTAL">Troca Total do Miolo (Nova Densidade)</option>
-                  </select>
-
-                  {data.foamServiceType !== 'NENHUM' && (
-                    <div className="space-y-4 animate-in zoom-in-95 duration-200">
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-orange-700 uppercase">Matéria-Prima Escolhida</label>
-                        <select name="foamSupplyItemId" value={data.foamSupplyItemId} onChange={handleChange} className="flex h-10 w-full rounded-lg border bg-white px-3 text-xs">
-                          <option value="">Selecione a Densidade...</option>
-                          {foams.map((f: any) => <option key={f.id} value={f.id}>{f.name}</option>)}
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-orange-700 uppercase">Espessura da Nova Camada (cm)</label>
-                        <Input type="number" step="0.5" name="addedFoamHeight" value={data.addedFoamHeight} onChange={handleChange} className="h-10 bg-white" placeholder="Ex: 3cm ou 5cm" />
-                      </div>
-                    </div>
-                  )}
-                </div>
+              <div className="grid grid-cols-1 gap-8">
 
                 <div className="space-y-4">
                   <label className="text-sm font-bold text-orange-800 dark:text-orange-300 block uppercase">Adicionais de Conforto</label>
