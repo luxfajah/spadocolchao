@@ -83,7 +83,7 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
             <span className="text-[10px] uppercase text-brand-900 sm:text-muted-foreground font-black tracking-widest">{product.category}</span>
           </div>
         </DialogHeader>
-        <div className="flex-1 min-h-0 text-foreground overflow-y-auto scrollbar-none custom-scrollbar p-2 sm:p-0 bg-slate-50 sm:bg-transparent">
+        <div className="flex-1 min-h-0 text-foreground overflow-y-auto scrollbar-none custom-scrollbar p-2 pt-6 sm:p-0 bg-slate-50 sm:bg-transparent">
           {renderForm()}
         </div>
       </DialogContent>
