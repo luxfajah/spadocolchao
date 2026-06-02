@@ -68,11 +68,35 @@ export async function GET() {
       });
     }
 
-    const addresses = [
-      { street: 'Av colibri', number: '77', cep: '86705-000' },
-      { street: 'Av beija flor', number: '247', cep: '86706-000' },
-      { street: 'Rua bentevi', number: '12', cep: '86707-000' },
-      { street: 'Rua azulão', number: '48', cep: '86707-290' },
+    // Get 4 unique real addresses from the database
+    const realOrders = await prisma.order.findMany({
+      where: {
+        street: { not: null },
+        zipCode: { not: null },
+        NOT: { code: { startsWith: 'TEST' } }
+      },
+      select: { street: true, number: true, zipCode: true, neighborhood: true, city: true, state: true },
+      take: 20
+    });
+
+    const uniqueAddresses: any[] = [];
+    const seen = new Set();
+    for (const ro of realOrders) {
+      if (!ro.street || !ro.number || !ro.zipCode) continue;
+      const key = `${ro.street}-${ro.number}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        uniqueAddresses.push(ro);
+        if (uniqueAddresses.length === 4) break;
+      }
+    }
+
+    // Fallback if no real addresses exist
+    const addresses = uniqueAddresses.length >= 4 ? uniqueAddresses : [
+      { street: 'Av colibri', number: '77', zipCode: '86705-000', neighborhood: 'Jardim dos Pássaros', city: 'Arapongas', state: 'PR' },
+      { street: 'Av beija flor', number: '247', zipCode: '86706-000', neighborhood: 'Jardim dos Pássaros', city: 'Arapongas', state: 'PR' },
+      { street: 'Rua bentevi', number: '12', zipCode: '86707-000', neighborhood: 'Jardim dos Pássaros', city: 'Arapongas', state: 'PR' },
+      { street: 'Rua azulão', number: '48', zipCode: '86707-290', neighborhood: 'Jardim dos Pássaros', city: 'Arapongas', state: 'PR' },
     ];
 
     const createdOrders = [];
@@ -103,10 +127,10 @@ export async function GET() {
           deliveryDate: new Date(),
           street: addr.street,
           number: addr.number,
-          zipCode: addr.cep,
-          neighborhood: 'Jardim dos Pássaros',
-          city: 'Arapongas',
-          state: 'PR',
+          zipCode: addr.zipCode,
+          neighborhood: addr.neighborhood || 'Bairro Padrão',
+          city: addr.city || 'Cidade Padrão',
+          state: addr.state || 'PR',
           recipientName: 'Recebedor ' + (i + 1),
           code: 'TEST-' + Math.floor(Math.random() * 10000)
         }
