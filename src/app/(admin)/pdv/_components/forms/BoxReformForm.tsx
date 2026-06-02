@@ -126,7 +126,7 @@ export function BoxReformForm({ product, onAdd, onCancel }: { product: any, onAd
   return (
     <div className="flex flex-col h-full">
       {/* Steps Header */}
-      <div className="flex items-center mb-4 px-1 overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none custom-scrollbar">
+      <div className="flex items-center justify-center sm:justify-start mb-4 px-1 overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none custom-scrollbar w-full">
         {steps.map((s) => (
           <div key={s.id} className="flex flex-col items-center min-w-[54px] sm:min-w-[70px] relative">
             <div className={cn(
