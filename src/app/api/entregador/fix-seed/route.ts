@@ -7,8 +7,7 @@ export async function GET() {
   try {
     const realAddresses = await prisma.customerAddress.findMany({
       where: {
-        street: { not: null, notIn: [''] },
-        zipCode: { not: null, notIn: [''] }
+        street: { not: null, notIn: [''] }
       },
       select: {
         street: true,
@@ -25,7 +24,7 @@ export async function GET() {
     const seen = new Set();
     
     for (const addr of realAddresses) {
-      if (!addr.street || !addr.number || !addr.zipCode) continue;
+      if (!addr.street || !addr.number) continue;
       
       const key = `${addr.street}-${addr.number}`;
       if (!seen.has(key)) {

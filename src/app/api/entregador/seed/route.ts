@@ -71,8 +71,7 @@ export async function GET() {
     // Get 4 unique real addresses from the database
     const realAddresses = await prisma.customerAddress.findMany({
       where: {
-        street: { not: null, notIn: [''] },
-        zipCode: { not: null, notIn: [''] }
+        street: { not: null, notIn: [''] }
       },
       select: { street: true, number: true, zipCode: true, neighborhood: true, city: true, state: true },
       take: 20
@@ -81,7 +80,7 @@ export async function GET() {
     const uniqueAddresses: any[] = [];
     const seen = new Set();
     for (const addr of realAddresses) {
-      if (!addr.street || !addr.number || !addr.zipCode) continue;
+      if (!addr.street || !addr.number) continue;
       const key = `${addr.street}-${addr.number}`;
       if (!seen.has(key)) {
         seen.add(key);
