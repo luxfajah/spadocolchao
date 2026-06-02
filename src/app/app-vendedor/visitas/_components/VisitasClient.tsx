@@ -1,0 +1,491 @@
+"use client"
+
+import { useState, useEffect } from "react"
+import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XCircle, Loader2, MessageSquare } from "lucide-react"
+import Link from "next/link"
+
+type Visit = {
+  id: string
+  clientName: string
+  clientPhone: string | null
+  clientAddress: string | null
+  visitDate: string
+  status: string
+  notes: string | null
+}
+
+type ModalMode = "create" | "result" | null
+
+export function VisitasClient({ sellerId }: { sellerId: string | null }) {
+  const [visits, setVisits] = useState<Visit[]>([])
+  const [loading, setLoading] = useState(true)
+  const [modalMode, setModalMode] = useState<ModalMode>(null)
+  const [saving, setSaving] = useState(false)
+  const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null)
+
+  // Form state
+  const [clientName, setClientName] = useState("")
+  const [clientPhone, setClientPhone] = useState("")
+  const [clientAddress, setClientAddress] = useState("")
+  const [visitDate, setVisitDate] = useState("")
+  const [visitTime, setVisitTime] = useState("")
+  const [notes, setNotes] = useState("")
+  const [resultNotes, setResultNotes] = useState("")
+
+  const fetchVisits = async () => {
+    try {
+      const res = await fetch("/api/visitas")
+      if (res.ok) {
+        const data = await res.json()
+        setVisits(data)
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchVisits() }, [])
+
+  const resetForm = () => {
+    setClientName("")
+    setClientPhone("")
+    setClientAddress("")
+    setVisitDate("")
+    setVisitTime("")
+    setNotes("")
+    setResultNotes("")
+    setSelectedVisit(null)
+  }
+
+  const openCreate = () => {
+    resetForm()
+    // Default date to today
+    const today = new Date()
+    setVisitDate(today.toISOString().split('T')[0])
+    setVisitTime("10:00")
+    setModalMode("create")
+  }
+
+  const openResult = (visit: Visit) => {
+    setSelectedVisit(visit)
+    setResultNotes(visit.notes || "")
+    setModalMode("result")
+  }
+
+  const handleCreate = async () => {
+    if (!clientName.trim() || !visitDate || !visitTime) return
+    setSaving(true)
+    try {
+      const dateTime = new Date(`${visitDate}T${visitTime}:00`)
+      const res = await fetch("/api/visitas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clientName: clientName.trim(),
+          clientPhone: clientPhone.trim() || null,
+          clientAddress: clientAddress.trim() || null,
+          visitDate: dateTime.toISOString(),
+          notes: notes.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        await fetchVisits()
+        setModalMode(null)
+        resetForm()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleUpdateStatus = async (status: "COMPLETED" | "LOST") => {
+    if (!selectedVisit) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/visitas", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          visitId: selectedVisit.id,
+          status,
+          notes: resultNotes.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        await fetchVisits()
+        setModalMode(null)
+        resetForm()
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const scheduled = visits.filter(v => v.status === "SCHEDULED")
+  const completed = visits.filter(v => v.status === "COMPLETED")
+  const lost = visits.filter(v => v.status === "LOST" || v.status === "CANCELLED")
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    SCHEDULED: { label: "Agendado", color: "text-blue-600", bg: "bg-blue-50 border-blue-100" },
+    COMPLETED: { label: "Sucesso", color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-100" },
+    LOST: { label: "Perda", color: "text-rose-600", bg: "bg-rose-50 border-rose-100" },
+    CANCELLED: { label: "Cancelado", color: "text-slate-500", bg: "bg-slate-50 border-slate-100" },
+  }
+
+  if (!sellerId) {
+    return (
+      <div className="p-6">
+        <div className="bg-amber-50 text-amber-800 p-4 rounded-2xl text-sm border border-amber-200">
+          ⚠ Seu usuário não está vinculado a um vendedor ainda.
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      {/* Main Page */}
+      <div className="flex flex-col h-full bg-slate-50">
+        {/* Header */}
+        <div className="shrink-0 bg-white border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-black uppercase tracking-tight text-slate-900">Agendamentos</h1>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                {scheduled.length} pendente{scheduled.length !== 1 ? "s" : ""} • {completed.length} sucesso{completed.length !== 1 ? "s" : ""}
+              </p>
+            </div>
+            <button
+              onClick={openCreate}
+              className="flex items-center gap-2 bg-blue-600 text-white text-xs px-4 py-2.5 rounded-xl font-bold shadow-sm shadow-blue-600/20 active:scale-95 transition-transform"
+            >
+              <Plus size={16} />
+              Nova Visita
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 pb-24">
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 animate-spin text-slate-300" />
+            </div>
+          ) : visits.length === 0 ? (
+            <div className="text-center py-16">
+              <Calendar className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+              <p className="text-sm font-bold text-slate-400">Nenhum agendamento</p>
+              <p className="text-xs text-slate-300 mt-1">Toque em "Nova Visita" para começar</p>
+            </div>
+          ) : (
+            <>
+              {/* Scheduled */}
+              {scheduled.length > 0 && (
+                <div>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-blue-600 mb-3 px-1">
+                    📅 Agendados ({scheduled.length})
+                  </h2>
+                  <div className="space-y-3">
+                    {scheduled.map(visit => (
+                      <VisitCard key={visit.id} visit={visit} config={statusConfig} onAction={() => openResult(visit)} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Completed */}
+              {completed.length > 0 && (
+                <div>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-emerald-600 mb-3 px-1">
+                    ✅ Sucesso ({completed.length})
+                  </h2>
+                  <div className="space-y-3">
+                    {completed.map(visit => (
+                      <VisitCard key={visit.id} visit={visit} config={statusConfig} />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Lost */}
+              {lost.length > 0 && (
+                <div>
+                  <h2 className="text-[10px] font-black uppercase tracking-widest text-rose-500 mb-3 px-1">
+                    ❌ Perdas ({lost.length})
+                  </h2>
+                  <div className="space-y-3">
+                    {lost.map(visit => (
+                      <VisitCard key={visit.id} visit={visit} config={statusConfig} />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* ======================== MODAL: NOVA VISITA ======================== */}
+      {modalMode === "create" && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          {/* Modal Header */}
+          <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100">
+            <button onClick={() => { setModalMode(null); resetForm() }} className="p-2 -ml-2 text-slate-500 active:bg-slate-100 rounded-full transition-colors">
+              <ArrowLeft size={22} />
+            </button>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-slate-900">Nova Visita</h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Agendar visita ao cliente</p>
+            </div>
+          </div>
+
+          {/* Modal Body */}
+          <div className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-5 bg-slate-50">
+            {/* Nome */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <User size={12} className="text-blue-500" /> Nome do Cliente *
+              </label>
+              <input
+                type="text"
+                value={clientName}
+                onChange={e => setClientName(e.target.value)}
+                placeholder="Ex: João da Silva"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* Telefone */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <Phone size={12} className="text-blue-500" /> Telefone
+              </label>
+              <input
+                type="tel"
+                value={clientPhone}
+                onChange={e => setClientPhone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* Endereço */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <MapPin size={12} className="text-blue-500" /> Endereço
+              </label>
+              <input
+                type="text"
+                value={clientAddress}
+                onChange={e => setClientAddress(e.target.value)}
+                placeholder="Rua, número, bairro..."
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* Data e Hora */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                  <Calendar size={12} className="text-blue-500" /> Data *
+                </label>
+                <input
+                  type="date"
+                  value={visitDate}
+                  onChange={e => setVisitDate(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                  <Clock size={12} className="text-blue-500" /> Hora *
+                </label>
+                <input
+                  type="time"
+                  value={visitTime}
+                  onChange={e => setVisitTime(e.target.value)}
+                  className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Observações */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <MessageSquare size={12} className="text-blue-500" /> Observações
+              </label>
+              <textarea
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+                placeholder="Detalhes sobre a visita..."
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer */}
+          <div className="shrink-0 p-4 bg-white border-t border-slate-100">
+            <button
+              onClick={handleCreate}
+              disabled={saving || !clientName.trim() || !visitDate || !visitTime}
+              className="w-full h-12 bg-blue-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar size={16} />}
+              {saving ? "Salvando..." : "Agendar Visita"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================== MODAL: RESULTADO ======================== */}
+      {modalMode === "result" && selectedVisit && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          {/* Modal Header */}
+          <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100">
+            <button onClick={() => { setModalMode(null); resetForm() }} className="p-2 -ml-2 text-slate-500 active:bg-slate-100 rounded-full transition-colors">
+              <ArrowLeft size={22} />
+            </button>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-slate-900">Resultado da Visita</h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Registrar sucesso ou perda</p>
+            </div>
+          </div>
+
+          {/* Modal Body */}
+          <div className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-5 bg-slate-50">
+            {/* Visit Info Card */}
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-black text-blue-600">
+                  {selectedVisit.clientName.charAt(0)}
+                </div>
+                <div>
+                  <p className="font-bold text-slate-800">{selectedVisit.clientName}</p>
+                  <p className="text-[10px] text-slate-400 font-bold">
+                    {new Date(selectedVisit.visitDate).toLocaleDateString('pt-BR')} às{" "}
+                    {new Date(selectedVisit.visitDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              </div>
+              {selectedVisit.clientPhone && (
+                <p className="text-xs text-slate-500 flex items-center gap-2">
+                  <Phone size={12} className="text-slate-300" /> {selectedVisit.clientPhone}
+                </p>
+              )}
+              {selectedVisit.clientAddress && (
+                <p className="text-xs text-slate-500 flex items-center gap-2">
+                  <MapPin size={12} className="text-slate-300" /> {selectedVisit.clientAddress}
+                </p>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <MessageSquare size={12} className="text-blue-500" /> Observações do resultado
+              </label>
+              <textarea
+                value={resultNotes}
+                onChange={e => setResultNotes(e.target.value)}
+                placeholder="O que aconteceu na visita? O cliente fechou? Qual produto?"
+                rows={4}
+                className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Modal Footer - Two buttons */}
+          <div className="shrink-0 p-4 bg-white border-t border-slate-100 space-y-3">
+            <button
+              onClick={() => handleUpdateStatus("COMPLETED")}
+              disabled={saving}
+              className="w-full h-12 bg-emerald-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg shadow-emerald-600/20 active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 size={16} />}
+              Sucesso — Venda Fechada
+            </button>
+            <button
+              onClick={() => handleUpdateStatus("LOST")}
+              disabled={saving}
+              className="w-full h-12 bg-rose-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg shadow-rose-600/20 active:scale-[0.98] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle size={16} />}
+              Perda — Não Fechou
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/* ======================== VISIT CARD COMPONENT ======================== */
+function VisitCard({
+  visit,
+  config,
+  onAction,
+}: {
+  visit: Visit
+  config: Record<string, { label: string; color: string; bg: string }>
+  onAction?: () => void
+}) {
+  const cfg = config[visit.status] || config.SCHEDULED
+  const date = new Date(visit.visitDate)
+
+  return (
+    <div className={`bg-white rounded-2xl border shadow-sm overflow-hidden ${onAction ? 'active:scale-[0.98] transition-transform' : ''}`}>
+      <div className="p-4 space-y-2.5" onClick={onAction}>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-sm font-black text-slate-600">
+              {visit.clientName.charAt(0)}
+            </div>
+            <div>
+              <p className="font-bold text-slate-800 text-sm">{visit.clientName}</p>
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold mt-0.5">
+                <Calendar size={10} />
+                {date.toLocaleDateString('pt-BR')} às {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+          </div>
+          <span className={`text-[9px] uppercase font-black px-2.5 py-1 rounded-full border ${cfg.bg} ${cfg.color}`}>
+            {cfg.label}
+          </span>
+        </div>
+
+        {visit.clientAddress && (
+          <p className="text-[11px] text-slate-400 flex items-center gap-1.5 pl-[52px]">
+            <MapPin size={10} className="shrink-0" /> {visit.clientAddress}
+          </p>
+        )}
+
+        {visit.clientPhone && (
+          <p className="text-[11px] text-slate-400 flex items-center gap-1.5 pl-[52px]">
+            <Phone size={10} className="shrink-0" /> {visit.clientPhone}
+          </p>
+        )}
+
+        {visit.notes && (
+          <p className="text-[11px] text-slate-400 italic pl-[52px] border-t border-slate-50 pt-2">
+            "{visit.notes}"
+          </p>
+        )}
+
+        {onAction && visit.status === "SCHEDULED" && (
+          <div className="pl-[52px] pt-1">
+            <span className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">
+              Toque para registrar resultado →
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
