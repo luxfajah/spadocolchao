@@ -1,5 +1,4 @@
 import { getUser } from "@/app/login/actions"
-import { getUserAccessProfile, getUserSellerScopeContext } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 
@@ -7,15 +6,23 @@ export default async function AppVendedorVisitasPage() {
   const user = await getUser()
   if (!user) redirect('/login')
 
-  const accessProfile = await getUserAccessProfile(user)
-  const sellerScope = await getUserSellerScopeContext(user, accessProfile)
-  
-  const sellerId = sellerScope?.sellerId
+  // Buscar o seller vinculado ao usuário por employeeId ou email (cobre admin/gerente também)
+  const seller = await prisma.seller.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        ...(user.employeeId ? [{ employeeId: user.employeeId }] : []),
+        ...(user.email ? [{ email: user.email }] : []),
+      ],
+    },
+  })
+
+  const sellerId = seller?.id ?? null
 
   let visits: Awaited<ReturnType<typeof prisma.sellerVisit.findMany>> = []
   if (sellerId) {
     visits = await prisma.sellerVisit.findMany({
-      where: { sellerId: sellerId },
+      where: { sellerId },
       orderBy: { visitDate: 'desc' }
     })
   }
@@ -28,10 +35,12 @@ export default async function AppVendedorVisitasPage() {
           + Nova
         </button>
       </div>
-      
+
       {!sellerId && (
         <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200 mb-4">
-          Seu usuário não está vinculado a um vendedor. Você não pode cadastrar visitas avulsas.
+          Seu usuário não está vinculado a um vendedor ainda. Acesse{' '}
+          <a href="/api/setup-lux" className="underline font-bold">esse link</a>{' '}
+          para configurar automaticamente.
         </div>
       )}
 
@@ -59,7 +68,7 @@ export default async function AppVendedorVisitasPage() {
                   {visit.status === 'SCHEDULED' ? 'Agendado' : visit.status === 'COMPLETED' ? 'Concluída' : 'Cancelada'}
                 </span>
               </div>
-              
+
               {visit.clientPhone && (
                 <div className="text-sm text-slate-600 mt-2">
                   <strong>Tel:</strong> {visit.clientPhone}
@@ -71,7 +80,7 @@ export default async function AppVendedorVisitasPage() {
                 </div>
               )}
               {visit.notes && (
-                <div className="text-sm text-slate-500 mt-2 italic border-t pt-2 mt-2">
+                <div className="text-sm text-slate-500 mt-2 italic border-t pt-2">
                   "{visit.notes}"
                 </div>
               )}

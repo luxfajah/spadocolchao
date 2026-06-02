@@ -1,25 +1,12 @@
-import { getUser } from "@/app/login/actions"
-import { getUserAccessProfile, getUserSellerScopeContext } from "@/lib/access-control"
 import { getSalesSummary } from "@/lib/services/sales"
 
 export default async function AppVendedorSaldoPage() {
-  const user = await getUser()
-  const accessProfile = user ? await getUserAccessProfile(user) : null
-  const sellerScope = user && accessProfile ? await getUserSellerScopeContext(user, accessProfile) : null
-  
-  // Como `getSalesSummary` não aceita sellerId por enquanto no lib, faremos uma abstração simples 
-  // Na vida real você atualizaria o `getSalesSummary` para filtrar por vendedor
-  const summary = await getSalesSummary() 
+  const summary = await getSalesSummary()
 
   return (
     <div className="p-4 flex flex-col gap-4">
       <h1 className="text-xl font-bold text-slate-800">Meu Saldo</h1>
       
-      {sellerScope?.restrictToOwnPortfolio && !sellerScope.sellerLinked && (
-         <div className="bg-yellow-50 text-yellow-800 p-3 rounded-md text-sm border border-yellow-200">
-           Seu usuário não está vinculado a um vendedor. Os valores abaixo refletem a loja inteira.
-         </div>
-      )}
 
       <div className="bg-white rounded-xl shadow-sm border p-4 flex flex-col items-center justify-center py-8">
         <span className="text-slate-500 font-medium mb-2">Vendas no Mês</span>

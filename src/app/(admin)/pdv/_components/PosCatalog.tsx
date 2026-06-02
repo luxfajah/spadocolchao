@@ -57,15 +57,14 @@ export function PosCatalog() {
           </div>
         </div>
 
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar produto..."
-              className="h-10 rounded-xl border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-semibold text-primary shadow-inner focus-visible:ring-primary/15"
-            />
-          </div>
+        <div className="relative mt-3">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Buscar produto..."
+            className="h-10 rounded-xl border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-semibold text-primary shadow-inner focus-visible:ring-primary/15"
+          />
         </div>
       </div>
 
