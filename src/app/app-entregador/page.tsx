@@ -30,11 +30,45 @@ export default function EntregadorPage() {
     return <div className="p-6 flex justify-center"><span className="text-slate-500">Carregando rotas...</span></div>
   }
 
+  const handleTraceFullRoute = () => {
+    if (orders.length === 0) return;
+    
+    // Address of the store (Origin)
+    const origin = encodeURIComponent("SPA do Colchão, Arapongas - PR"); // Fallback to current location if needed
+    
+    // Last order address (Destination)
+    const lastOrder = orders[orders.length - 1];
+    const destination = encodeURIComponent(`${lastOrder.street}, ${lastOrder.number} - ${lastOrder.city}, ${lastOrder.state}`);
+    
+    // All other orders in between (Waypoints)
+    const waypointsArr = orders.slice(0, -1).map(o => 
+      `${o.street}, ${o.number} - ${o.city}, ${o.state}`
+    );
+    
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+    
+    if (waypointsArr.length > 0) {
+      url += `&waypoints=${encodeURIComponent(waypointsArr.join('|'))}`;
+    }
+    
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="p-4 flex flex-col gap-4">
       <div className="bg-sky-600 text-white p-6 rounded-2xl shadow-lg shadow-sky-600/20 mb-2">
         <h1 className="text-2xl font-bold">Entregas de Hoje</h1>
         <p className="opacity-80 text-sm mt-1">{orders.length} pedidos aguardando entrega</p>
+        
+        {orders.length > 0 && (
+          <button 
+            onClick={handleTraceFullRoute}
+            className="mt-4 w-full bg-white text-sky-700 hover:bg-sky-50 font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm"
+          >
+            <Navigation className="w-5 h-5" />
+            Iniciar Rota Única no Maps
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col gap-4">
