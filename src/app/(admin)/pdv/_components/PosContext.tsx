@@ -80,7 +80,24 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
         console.error("Erro ao recuperar rascunho do PDV");
       }
     }
-  }, []);
+
+    // CHECK FOR CUSTOMER REDIRECTED FROM VISITS
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlCustomerId = urlParams.get("customerId");
+      const urlCustomerName = urlParams.get("customerName");
+      if (urlCustomerId && urlCustomerName) {
+        setCustomer({
+          id: urlCustomerId,
+          fullName: decodeURIComponent(urlCustomerName)
+        });
+        
+        // Clean URL params from history
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, newUrl);
+      }
+    }
+  }, [initialData]);
 
 
   const addItem = (item: SaleItemType) => setItems((prev) => [...prev, item]);

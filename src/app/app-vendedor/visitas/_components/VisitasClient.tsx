@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XCircle, Loader2, MessageSquare, Search } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XCircle, Loader2, MessageSquare, Search, FileText, UserPlus, ShoppingCart } from "lucide-react"
 
 type Visit = {
   id: string
@@ -13,14 +14,28 @@ type Visit = {
   notes: string | null
 }
 
-type ModalMode = "create" | "result" | null
+type ModalMode = "create" | "result" | "register_client" | null
 
 export function VisitasClient({ sellerId }: { sellerId: string | null }) {
+  const router = useRouter()
   const [visits, setVisits] = useState<Visit[]>([])
   const [loading, setLoading] = useState(true)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [saving, setSaving] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState<Visit | null>(null)
+
+  // Customer registration form state
+  const [regName, setRegName] = useState("")
+  const [regPhone, setRegPhone] = useState("")
+  const [regDocument, setRegDocument] = useState("")
+  const [regCep, setRegCep] = useState("")
+  const [regStreet, setRegStreet] = useState("")
+  const [regNumber, setRegNumber] = useState("")
+  const [regNeighborhood, setRegNeighborhood] = useState("")
+  const [regCity, setRegCity] = useState("")
+  const [regState, setRegState] = useState("")
+  const [regCepLoading, setRegCepLoading] = useState(false)
+  const [regCepError, setRegCepError] = useState("")
 
   // Form state
   const [clientName, setClientName] = useState("")
@@ -162,8 +177,84 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
       })
       if (res.ok) {
         await fetchVisits()
-        setModalMode(null)
-        resetForm()
+        if (status === "COMPLETED") {
+          // Pre-fill customer registration from visit data
+          setRegName(selectedVisit.clientName || "")
+          setRegPhone(selectedVisit.clientPhone || "")
+          setRegDocument("")
+          // Parse address if available
+          if (selectedVisit.clientAddress) {
+            const parts = selectedVisit.clientAddress.split(', ')
+            setRegStreet(parts[0] || "")
+            const numMatch = parts[1]?.match(/nº\s*(.*)/)
+            setRegNumber(numMatch ? numMatch[1] : parts[1] || "")
+            setRegNeighborhood(parts[2] || "")
+            setRegCity(parts[3] || "")
+            setRegState(parts[4] || "")
+          }
+          setModalMode("register_client")
+        } else {
+          setModalMode(null)
+          resetForm()
+        }
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRegCepChange = async (value: string) => {
+    const cleanCep = value.replace(/\D/g, '')
+    const formatted = cleanCep.length > 5 ? cleanCep.slice(0, 5) + '-' + cleanCep.slice(5, 8) : cleanCep
+    setRegCep(formatted)
+    setRegCepError("")
+    if (cleanCep.length === 8) {
+      setRegCepLoading(true)
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setRegStreet(data.logradouro || "")
+          setRegNeighborhood(data.bairro || "")
+          setRegCity(data.localidade || "")
+          setRegState(data.uf || "")
+        } else {
+          setRegCepError("CEP não encontrado")
+        }
+      } catch {
+        setRegCepError("Erro ao buscar CEP")
+      } finally {
+        setRegCepLoading(false)
+      }
+    }
+  }
+
+  const handleCreateCustomer = async () => {
+    if (!regName.trim()) return
+    setSaving(true)
+    try {
+      const res = await fetch("/api/clientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: regName.trim(),
+          phone: regPhone.trim() || null,
+          document: regDocument.trim() || null,
+          sellerId: sellerId || null,
+          zipCode: regCep.replace(/\D/g, '') || null,
+          street: regStreet || null,
+          number: regNumber || null,
+          neighborhood: regNeighborhood || null,
+          city: regCity || null,
+          state: regState || null,
+        }),
+      })
+      if (res.ok) {
+        const customer = await res.json()
+        // Redirect to PDV with customer pre-selected
+        router.push(`/app-vendedor/pdv?customerId=${customer.id}&customerName=${encodeURIComponent(customer.fullName)}`)
       }
     } catch (e) {
       console.error(e)
@@ -524,6 +615,154 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle size={16} />}
               Perda — Não Fechou
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ======================== MODAL: CADASTRAR CLIENTE ======================== */}
+      {modalMode === "register_client" && (
+        <div className="fixed inset-0 z-[100] bg-white flex flex-col">
+          {/* Modal Header */}
+          <div className="shrink-0 flex items-center gap-3 px-4 py-3 bg-white border-b border-slate-100">
+            <button onClick={() => { setModalMode(null); resetForm() }} className="p-2 -ml-2 text-slate-500 active:bg-slate-100 rounded-full transition-colors">
+              <ArrowLeft size={22} />
+            </button>
+            <div>
+              <h2 className="text-base font-black uppercase tracking-tight text-slate-900">Cadastrar Cliente</h2>
+              <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Finalizar cadastro antes do PDV</p>
+            </div>
+          </div>
+
+          {/* Modal Body */}
+          <div className="flex-1 overflow-y-auto scrollbar-none p-4 space-y-5 bg-slate-50">
+            {/* Nome */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <User size={12} className="text-blue-500" /> Nome Completo *
+              </label>
+              <input
+                type="text"
+                value={regName}
+                onChange={e => setRegName(e.target.value)}
+                placeholder="Ex: João da Silva"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* Telefone */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <Phone size={12} className="text-blue-500" /> Telefone
+              </label>
+              <input
+                type="tel"
+                value={regPhone}
+                onChange={e => setRegPhone(e.target.value)}
+                placeholder="(00) 00000-0000"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* CPF / CNPJ */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <FileText size={12} className="text-blue-500" /> CPF ou CNPJ
+              </label>
+              <input
+                type="text"
+                value={regDocument}
+                onChange={e => setRegDocument(e.target.value)}
+                placeholder="000.000.000-00"
+                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+              />
+            </div>
+
+            {/* Endereço via CEP */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
+                <MapPin size={12} className="text-blue-500" /> CEP
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={regCep}
+                  onChange={e => handleRegCepChange(e.target.value)}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="w-full h-12 px-4 pr-10 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+                {regCepLoading && <Loader2 className="absolute right-3 top-3.5 w-5 h-5 animate-spin text-blue-400" />}
+                {!regCepLoading && regCep.length >= 9 && !regCepError && regStreet && <Search className="absolute right-3 top-3.5 w-5 h-5 text-emerald-400" />}
+              </div>
+              {regCepError && <p className="text-[10px] text-rose-500 font-bold px-1">{regCepError}</p>}
+            </div>
+
+            {regStreet && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Rua</label>
+                  <input
+                    type="text"
+                    value={regStreet}
+                    onChange={e => setRegStreet(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Número</label>
+                    <input
+                      type="text"
+                      value={regNumber}
+                      onChange={e => setRegNumber(e.target.value)}
+                      placeholder="Nº"
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Bairro</label>
+                    <input
+                      type="text"
+                      value={regNeighborhood}
+                      onChange={e => setRegNeighborhood(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Cidade</label>
+                    <input
+                      type="text"
+                      value={regCity}
+                      readOnly
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">UF</label>
+                    <input
+                      type="text"
+                      value={regState}
+                      readOnly
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-600 text-center"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="shrink-0 p-4 bg-white border-t border-slate-100">
+            <button
+              onClick={handleCreateCustomer}
+              disabled={saving || !regName.trim()}
+              className="w-full h-12 bg-blue-600 text-white font-black uppercase text-xs tracking-widest rounded-xl shadow-lg shadow-blue-600/20 active:scale-[0.98] transition-transform disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart size={16} />}
+              {saving ? "Salvando..." : "Finalizar e ir ao PDV"}
             </button>
           </div>
         </div>
