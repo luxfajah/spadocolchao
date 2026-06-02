@@ -187,7 +187,7 @@ export const accessPresetDefinitions: Record<AccessPresetKey, AccessPresetDefini
     priority: 70,
     areas: ["dashboard", "pdv", "customers", "orders", "kanban"],
     dashboardVariant: "sales",
-    defaultRoute: "/dashboard",
+    defaultRoute: "/app-vendedor/pdv",
     orderFlowRole: "VENDEDOR",
     sellerScope: "self",
     kanbanMode: "full",
