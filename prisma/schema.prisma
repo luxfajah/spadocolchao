@@ -747,6 +747,7 @@ model Seller {
   commissionBatches CommissionBatch[]
   goals             SellerGoal[]
   customers         Customer[]
+  visits            SellerVisit[]
 
   @@index([name])
   @@index([employeeId])
