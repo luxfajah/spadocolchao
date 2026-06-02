@@ -1,8 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XCircle, Loader2, MessageSquare } from "lucide-react"
-import Link from "next/link"
+import { ArrowLeft, Plus, MapPin, Phone, Calendar, Clock, User, CheckCircle2, XCircle, Loader2, MessageSquare, Search } from "lucide-react"
 
 type Visit = {
   id: string
@@ -26,11 +25,51 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
   // Form state
   const [clientName, setClientName] = useState("")
   const [clientPhone, setClientPhone] = useState("")
-  const [clientAddress, setClientAddress] = useState("")
+  const [cep, setCep] = useState("")
+  const [street, setStreet] = useState("")
+  const [number, setNumber] = useState("")
+  const [neighborhood, setNeighborhood] = useState("")
+  const [city, setCity] = useState("")
+  const [state, setState] = useState("")
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepError, setCepError] = useState("")
   const [visitDate, setVisitDate] = useState("")
   const [visitTime, setVisitTime] = useState("")
   const [notes, setNotes] = useState("")
   const [resultNotes, setResultNotes] = useState("")
+
+  const handleCepChange = async (value: string) => {
+    const cleanCep = value.replace(/\D/g, '')
+    // Format CEP as 00000-000
+    const formatted = cleanCep.length > 5 ? cleanCep.slice(0, 5) + '-' + cleanCep.slice(5, 8) : cleanCep
+    setCep(formatted)
+    setCepError("")
+
+    if (cleanCep.length === 8) {
+      setCepLoading(true)
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`)
+        const data = await res.json()
+        if (!data.erro) {
+          setStreet(data.logradouro || "")
+          setNeighborhood(data.bairro || "")
+          setCity(data.localidade || "")
+          setState(data.uf || "")
+        } else {
+          setCepError("CEP não encontrado")
+        }
+      } catch {
+        setCepError("Erro ao buscar CEP")
+      } finally {
+        setCepLoading(false)
+      }
+    }
+  }
+
+  const buildFullAddress = () => {
+    const parts = [street, number ? `nº ${number}` : '', neighborhood, city, state].filter(Boolean)
+    return parts.length > 0 ? parts.join(', ') : ''
+  }
 
   const fetchVisits = async () => {
     try {
@@ -51,7 +90,13 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
   const resetForm = () => {
     setClientName("")
     setClientPhone("")
-    setClientAddress("")
+    setCep("")
+    setStreet("")
+    setNumber("")
+    setNeighborhood("")
+    setCity("")
+    setState("")
+    setCepError("")
     setVisitDate("")
     setVisitTime("")
     setNotes("")
@@ -85,7 +130,7 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
         body: JSON.stringify({
           clientName: clientName.trim(),
           clientPhone: clientPhone.trim() || null,
-          clientAddress: clientAddress.trim() || null,
+          clientAddress: buildFullAddress() || null,
           visitDate: dateTime.toISOString(),
           notes: notes.trim() || null,
         }),
@@ -275,19 +320,80 @@ export function VisitasClient({ sellerId }: { sellerId: string | null }) {
               />
             </div>
 
-            {/* Endereço */}
+            {/* Endereço via CEP */}
             <div className="space-y-1.5">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-1.5 px-1">
-                <MapPin size={12} className="text-blue-500" /> Endereço
+                <MapPin size={12} className="text-blue-500" /> CEP
               </label>
-              <input
-                type="text"
-                value={clientAddress}
-                onChange={e => setClientAddress(e.target.value)}
-                placeholder="Rua, número, bairro..."
-                className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={cep}
+                  onChange={e => handleCepChange(e.target.value)}
+                  placeholder="00000-000"
+                  maxLength={9}
+                  className="w-full h-12 px-4 pr-10 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                />
+                {cepLoading && <Loader2 className="absolute right-3 top-3.5 w-5 h-5 animate-spin text-blue-400" />}
+                {!cepLoading && cep.length >= 9 && !cepError && street && <Search className="absolute right-3 top-3.5 w-5 h-5 text-emerald-400" />}
+              </div>
+              {cepError && <p className="text-[10px] text-rose-500 font-bold px-1">{cepError}</p>}
             </div>
+
+            {street && (
+              <>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Rua</label>
+                  <input
+                    type="text"
+                    value={street}
+                    onChange={e => setStreet(e.target.value)}
+                    className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Número</label>
+                    <input
+                      type="text"
+                      value={number}
+                      onChange={e => setNumber(e.target.value)}
+                      placeholder="Nº"
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Bairro</label>
+                    <input
+                      type="text"
+                      value={neighborhood}
+                      onChange={e => setNeighborhood(e.target.value)}
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-white text-sm font-semibold focus:border-blue-500 focus:ring-0 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="col-span-2 space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">Cidade</label>
+                    <input
+                      type="text"
+                      value={city}
+                      readOnly
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-600"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 px-1">UF</label>
+                    <input
+                      type="text"
+                      value={state}
+                      readOnly
+                      className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 bg-slate-50 text-sm font-semibold text-slate-600 text-center"
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Data e Hora */}
             <div className="grid grid-cols-2 gap-3">
