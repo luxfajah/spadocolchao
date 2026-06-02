@@ -124,19 +124,19 @@ export function NewBoxForm({ product, onAdd, onCancel }: { product: any, onAdd: 
   return (
     <div className="flex flex-col h-full">
       {/* Steps Header */}
-      <div className="flex items-center mb-6 px-2 overflow-x-auto pb-2 gap-4 scrollbar-none custom-scrollbar">
+      <div className="flex items-center mb-4 px-1 overflow-x-auto pb-1 gap-2 sm:gap-4 scrollbar-none custom-scrollbar">
         {steps.map((s) => (
-          <div key={s.id} className="flex flex-col items-center min-w-[70px] relative">
+          <div key={s.id} className="flex flex-col items-center min-w-[54px] sm:min-w-[70px] relative">
             <div className={cn(
-              "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
-              step === s.id ? "bg-brand-900 border-brand-900 text-white scale-110 shadow-lg" : 
+              "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
+              step === s.id ? "bg-brand-900 border-brand-900 text-white scale-110 shadow-md" : 
               step > s.id ? "bg-green-500 border-green-500 text-white" : 
               "bg-background border-muted-foreground/30 text-muted-foreground"
             )}>
-              {step > s.id ? <Check size={18} /> : <s.icon size={18} />}
+              {step > s.id ? <Check size={14} className="sm:w-[18px]" /> : <s.icon size={14} className="sm:w-[18px]" />}
             </div>
             <span className={cn(
-              "text-[10px] mt-2 font-bold uppercase tracking-tight text-center whitespace-nowrap",
+              "text-[8px] sm:text-[10px] mt-1 sm:mt-2 font-bold uppercase tracking-tight text-center whitespace-nowrap",
               step === s.id ? "text-brand-900" : "text-muted-foreground"
             )}>{s.title}</span>
           </div>
