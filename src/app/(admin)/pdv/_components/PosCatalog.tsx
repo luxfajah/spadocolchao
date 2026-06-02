@@ -107,33 +107,33 @@ export function PosCatalog() {
                 type="button"
                 key={product.id}
                 onClick={() => setSelectedProduct(product)}
-                className="group relative flex min-h-[160px] lg:min-h-[220px] flex-col justify-between overflow-hidden rounded-2xl lg:rounded-[1.9rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 text-left shadow-[0_8px_25px_-15px_rgba(15,23,42,0.3)] lg:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_60px_-30px_rgba(0,34,66,0.35)]"
+                className="group relative flex min-h-[140px] lg:min-h-[220px] flex-col justify-between overflow-hidden rounded-2xl lg:rounded-[1.9rem] border border-slate-200/80 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-3 lg:p-4 text-left shadow-sm lg:shadow-[0_18px_45px_-30px_rgba(15,23,42,0.45)] transition-all duration-300 hover:-translate-y-1 hover:border-primary/20 hover:shadow-[0_28px_60px_-30px_rgba(0,34,66,0.35)]"
               >
                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(14,165,233,0.14),transparent_35%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-                <div className="relative flex items-start justify-between gap-3">
-                  <div className="rounded-full bg-primary/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-primary">
+                <div className="relative flex w-full items-start justify-between gap-1">
+                  <div className="rounded-full bg-primary/5 px-2 py-1 lg:px-3 lg:py-1.5 text-[8px] lg:text-[10px] font-black uppercase tracking-widest lg:tracking-[0.2em] text-primary truncate max-w-full">
                     {product.category}
                   </div>
-                  <ArrowUpRight className="h-5 w-5 text-slate-300 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary" />
+                  <ArrowUpRight className="hidden lg:block h-5 w-5 text-slate-300 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-primary shrink-0" />
                 </div>
 
-                <div className="relative my-6 flex-1">
-                  <p className="text-xl font-black leading-tight tracking-tight text-primary">{product.name}</p>
-                  <p className="mt-3 max-w-[18rem] text-sm text-slate-500">
+                <div className="relative my-3 lg:my-6 flex-1 flex flex-col justify-center">
+                  <p className="text-sm lg:text-xl font-black leading-tight tracking-tight text-primary line-clamp-3">{product.name}</p>
+                  <p className="hidden lg:block mt-3 max-w-[18rem] text-sm text-slate-500">
                     Toque para configurar valores, medidas e detalhes do item antes de adicionar ao
                     carrinho.
                   </p>
                 </div>
 
-                <div className="relative flex items-end justify-between gap-4">
+                <div className="relative flex w-full items-end justify-between gap-2 border-t border-slate-100 lg:border-none pt-2 lg:pt-0">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preco base</p>
-                    <p className="mt-1 font-outfit text-2xl font-black tracking-tight text-primary">
+                    <p className="text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preço base</p>
+                    <p className="mt-0.5 lg:mt-1 font-outfit text-base lg:text-2xl font-black tracking-tight text-primary">
                       {formatBRL(product.price)}
                     </p>
                   </div>
-                  <div className="rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors group-hover:border-primary/20 group-hover:text-primary">
+                  <div className="hidden lg:block rounded-full border border-slate-200 bg-white px-3 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 transition-colors group-hover:border-primary/20 group-hover:text-primary">
                     Abrir item
                   </div>
                 </div>
