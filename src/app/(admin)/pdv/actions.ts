@@ -8,7 +8,7 @@ import { generateSaleNumber, generateSlipNumber } from "@/lib/sale-number"
 import { calculateCommissions } from "@/lib/commission-engine"
 import { getPdvSellerOptions } from "@/lib/pdv-sellers"
 import { getAuthenticatedUser } from "@/lib/auth"
-import { assertAreaAccess, getUserAccessProfile, getUserSellerScopeContext } from "@/lib/access-control"
+import { assertAreaAccess } from "@/lib/access-control"
 
 async function requirePdvActor() {
   const actor = await getAuthenticatedUser()
@@ -58,11 +58,19 @@ export async function getInitialPdvData() {
     })
   }
 
-  // Encontrar o seller vinculado ao usuário logado
-  const accessProfile = await getUserAccessProfile(actor)
-  const sellerScope = await getUserSellerScopeContext(actor, accessProfile)
+  // Buscar o seller vinculado ao usuário logado (por employeeId ou email)
+  const currentSeller = await prisma.seller.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        ...(actor.employeeId ? [{ employeeId: actor.employeeId }] : []),
+        ...(actor.email ? [{ email: actor.email }] : []),
+      ],
+    },
+    select: { id: true }
+  })
 
-  return { customers, sellers, leadSources, paymentMethods, products, session, supplyItems, currentSellerId: sellerScope.sellerId }
+  return { customers, sellers, leadSources, paymentMethods, products, session, supplyItems, currentSellerId: currentSeller?.id ?? null }
 }
 
 // 2. Finalization process

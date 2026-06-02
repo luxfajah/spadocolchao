@@ -43,7 +43,7 @@ export function PosFloatingActions() {
   const remaining = Math.max(total - totalPaid, 0);
 
   const canGoNext = () => {
-    if (currentStep === 1) return !!customer?.id && !!sellerId;
+    if (currentStep === 1) return !!customer?.id && (!!sellerId || !!initialData?.currentSellerId);
     if (currentStep === 2) return items.length > 0;
     return true;
   };
@@ -51,7 +51,6 @@ export function PosFloatingActions() {
   const handleNext = () => {
     if (currentStep === 1) {
       if (!customer?.id) return alert("Por favor, selecione um cliente.");
-      if (!sellerId) return alert("Por favor, selecione um vendedor.");
       setCurrentStep(2);
     } else if (currentStep === 2) {
       if (items.length === 0) return alert("O carrinho está vazio.");
