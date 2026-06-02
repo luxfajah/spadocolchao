@@ -2449,3 +2449,21 @@ model CompanyHoliday {
   @@index([date])
   @@index([type])
 }
+
+model SellerVisit {
+  id           String   @id @default(cuid())
+  sellerId     String
+  clientName   String
+  clientPhone  String?
+  clientAddress String?
+  visitDate    DateTime
+  status       String   @default("SCHEDULED") // SCHEDULED, COMPLETED, CANCELLED
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  seller       Seller   @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId])
+}
+
