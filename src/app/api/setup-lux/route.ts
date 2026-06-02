@@ -60,6 +60,7 @@ export async function GET() {
           phone: user.phone ?? null,
           status: "ACTIVE",
           isActive: true,
+          contractType: "CLT",
           jobTitleId: jobTitle.id,
         },
       })

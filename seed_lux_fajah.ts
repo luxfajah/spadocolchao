@@ -70,9 +70,10 @@ async function main() {
         fullName: user.name,
         socialName: user.name,
         email: user.email,
-        phone: user.phone,
+        phone: user.phone ?? null,
         status: "ACTIVE",
         isActive: true,
+        contractType: "CLT",
         jobTitleId: jobTitle.id,
       },
     })
