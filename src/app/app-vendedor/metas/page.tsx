@@ -33,7 +33,7 @@ export default async function AppVendedorMetasPage() {
           </div>
         ) : (
           goals.map(goal => {
-            const progress = (goal.currentAmount / goal.targetAmount) * 100
+            const progress = (goal.achievedAmount / goal.targetAmount) * 100
             const isCompleted = progress >= 100
 
             return (
@@ -67,7 +67,7 @@ export default async function AppVendedorMetasPage() {
                     ></div>
                   </div>
                   <p className="text-xs text-slate-500 mt-2">
-                    Atingido: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.currentAmount)}
+                    Atingido: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.achievedAmount)}
                   </p>
                 </div>
               </div>
