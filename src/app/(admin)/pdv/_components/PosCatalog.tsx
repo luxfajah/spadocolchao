@@ -38,53 +38,48 @@ export function PosCatalog() {
   });
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-lahomes backdrop-blur-sm">
-      <div className="border-b border-slate-100/80 p-5 sm:p-6">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-primary text-white shadow-lg shadow-primary/15">
-                <Package2 className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Catalogo</p>
-                <h3 className="text-2xl font-black tracking-tight text-primary">Escolha um produto ou servico</h3>
-              </div>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl lg:rounded-[2rem] border border-white/70 bg-white/85 shadow-sm backdrop-blur-sm">
+      <div className="border-b border-slate-100/80 p-3 sm:p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/15">
+              <Package2 className="h-4 w-4" />
             </div>
-
-            <div className="flex flex-wrap gap-2">
-              <div className="rounded-full bg-slate-100 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-500">
-                {dbProducts.length} itens ativos
-              </div>
-              <div className="rounded-full bg-primary/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-primary">
-                {Math.max(categories.length - 1, 0)} categorias
-              </div>
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-slate-400">Catálogo</p>
+              <h3 className="text-base font-black tracking-tight text-primary">Produtos</h3>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-slate-500">
+              {dbProducts.length} itens
+            </div>
+          </div>
+        </div>
 
           <div className="relative w-full max-w-md">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Buscar por nome ou categoria"
-              className="h-12 rounded-[1.2rem] border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-semibold text-primary shadow-inner focus-visible:ring-primary/15"
+              placeholder="Buscar produto..."
+              className="h-10 rounded-xl border-slate-200 bg-slate-50 pl-10 pr-4 text-sm font-semibold text-primary shadow-inner focus-visible:ring-primary/15"
             />
           </div>
         </div>
       </div>
 
-      <div className="border-b border-slate-100/70 px-5 py-4 sm:px-6">
-        <div className="flex flex-wrap gap-2">
+      <div className="border-b border-slate-100/70 px-3 py-2.5 sm:px-5">
+        <div className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
           {categories.map((category) => (
             <Button
               key={category}
               type="button"
               variant={category === activeCategory ? "default" : "ghost"}
               onClick={() => setActiveCategory(category)}
-              className={`h-10 rounded-full px-4 text-[10px] font-black uppercase tracking-[0.18em] ${
+              className={`h-8 shrink-0 rounded-full px-3 text-[9px] font-black uppercase tracking-[0.18em] ${
                 category === activeCategory
-                  ? "bg-primary text-white shadow-lg shadow-primary/20"
+                  ? "bg-primary text-white shadow-md shadow-primary/20"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-primary"
               }`}
             >

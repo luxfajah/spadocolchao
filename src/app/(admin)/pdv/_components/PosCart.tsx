@@ -11,23 +11,23 @@ export function PosCart() {
   const { items, removeItem, subtotal } = usePos();
 
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[2rem] border border-white/70 bg-white/85 shadow-lahomes backdrop-blur-sm">
-      <div className="flex items-center justify-between gap-4 border-b border-slate-100/80 p-5 sm:p-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-primary text-white shadow-lg shadow-primary/15">
-            <ShoppingBag className="h-5 w-5" />
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl lg:rounded-[2rem] border border-white/70 bg-white/85 shadow-sm backdrop-blur-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-slate-100/80 p-3 sm:p-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-white shadow-md shadow-primary/15">
+            <ShoppingBag className="h-4 w-4" />
           </div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">Carrinho</p>
-            <h3 className="text-2xl font-black tracking-tight text-primary">Itens selecionados</h3>
+            <p className="text-[9px] font-black uppercase tracking-[0.24em] text-slate-400">Carrinho</p>
+            <h3 className="text-base font-black tracking-tight text-primary">Itens</h3>
           </div>
         </div>
 
         <div className="text-right">
-          <div className="rounded-full bg-primary/5 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-primary">
-            {items.length} itens
+          <div className="rounded-full bg-primary/5 px-2.5 py-1 text-[9px] font-black uppercase tracking-widest text-primary">
+            {items.length} {items.length === 1 ? 'item' : 'itens'}
           </div>
-          <p className="mt-2 text-xs font-semibold text-slate-500">Subtotal atual {formatBRL(subtotal)}</p>
+          <p className="mt-1 text-xs font-semibold text-slate-500">{formatBRL(subtotal)}</p>
         </div>
       </div>
 
