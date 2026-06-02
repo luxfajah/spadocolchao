@@ -1,16 +1,24 @@
 import { getUser } from "@/app/login/actions"
 import { getUserAccessProfile, getUserSellerScopeContext } from "@/lib/access-control"
 import { getSales } from "@/lib/services/sales"
+import { prisma } from "@/lib/prisma"
 
 export default async function AppVendedorHistoricoPage() {
   const user = await getUser()
-  const accessProfile = user ? await getUserAccessProfile(user) : null
-  const sellerScope = user && accessProfile ? await getUserSellerScopeContext(user, accessProfile) : null
   
-  const sellerId = sellerScope?.restrictToOwnPortfolio ? sellerScope.sellerId || "__UNLINKED__" : undefined
+  // Resolve the seller linked to the logged in user
+  const seller = await prisma.seller.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        ...(user?.employeeId ? [{ employeeId: user.employeeId }] : []),
+        ...(user?.email ? [{ email: user.email }] : []),
+      ],
+    },
+  })
   
   const sales = await getSales({
-    sellerId: sellerId,
+    sellerId: seller ? seller.id : "__NONE__",
   })
 
   return (

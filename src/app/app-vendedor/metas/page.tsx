@@ -1,26 +1,28 @@
+import { redirect } from "next/navigation"
 import { getUser } from "@/app/login/actions"
-import { getUserAccessProfile, getUserSellerScopeContext } from "@/lib/access-control"
 import { prisma } from "@/lib/prisma"
 
 export default async function AppVendedorMetasPage() {
   const user = await getUser()
-  const accessProfile = user ? await getUserAccessProfile(user) : null
-  const sellerScope = user && accessProfile ? await getUserSellerScopeContext(user, accessProfile) : null
-  
-  const sellerId = sellerScope?.restrictToOwnPortfolio ? sellerScope.sellerId : undefined
+  if (!user) redirect('/login')
 
-  let goals = []
-  if (sellerId) {
-    goals = await prisma.sellerGoal.findMany({
-      where: { sellerId: sellerId },
-      orderBy: { endDate: 'desc' }
-    })
-  } else {
-    goals = await prisma.sellerGoal.findMany({
-      orderBy: { endDate: 'desc' },
-      take: 10
-    })
-  }
+  // Resolve the seller linked to the logged in user
+  const seller = await prisma.seller.findFirst({
+    where: {
+      isActive: true,
+      OR: [
+        ...(user.employeeId ? [{ employeeId: user.employeeId }] : []),
+        ...(user.email ? [{ email: user.email }] : []),
+      ],
+    },
+  })
+
+  const goals = seller
+    ? await prisma.sellerGoal.findMany({
+        where: { sellerId: seller.id },
+        orderBy: { endDate: 'desc' }
+      })
+    : []
 
   return (
     <div className="p-4">
