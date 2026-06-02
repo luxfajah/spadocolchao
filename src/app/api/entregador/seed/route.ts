@@ -71,9 +71,11 @@ export async function GET() {
     // Get 4 unique real addresses from the database
     const realOrders = await prisma.order.findMany({
       where: {
-        street: { not: null },
-        zipCode: { not: null },
-        NOT: { code: { startsWith: 'TEST' } }
+        street: { not: null, notIn: [''] },
+        OR: [
+          { code: null },
+          { NOT: { code: { startsWith: 'TEST' } } }
+        ]
       },
       select: { street: true, number: true, zipCode: true, neighborhood: true, city: true, state: true },
       take: 20

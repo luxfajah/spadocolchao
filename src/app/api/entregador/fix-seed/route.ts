@@ -7,11 +7,11 @@ export async function GET() {
   try {
     const orders = await prisma.order.findMany({
       where: {
-        street: { not: null },
-        zipCode: { not: null },
-        NOT: {
-          code: { startsWith: 'TEST' }
-        }
+        street: { not: null, notIn: [''] },
+        OR: [
+          { code: null },
+          { NOT: { code: { startsWith: 'TEST' } } }
+        ]
       },
       select: {
         street: true,
