@@ -6,6 +6,7 @@ import { NewMattressForm } from "./NewMattressForm";
 import { NewBoxForm } from "./NewBoxForm";
 import { UpholsteryCleaningForm } from "./UpholsteryCleaningForm";
 import { usePos } from "../PosContext";
+import { ArrowLeft } from "lucide-react";
 
 interface ProductDialogProps {
   product: any | null;
@@ -70,14 +71,19 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
 
   return (
     <Dialog open={!!product} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] max-w-3xl rounded-2xl md:rounded-3xl p-4 md:p-6 max-h-[95vh] flex flex-col overflow-hidden gap-0">
-        <DialogHeader className="text-left shrink-0 mb-4">
-          <DialogTitle className="text-xl font-bold flex flex-col gap-1">
-            <span>{product.name}</span>
-            <span className="text-xs uppercase text-muted-foreground font-semibold">{product.category}</span>
-          </DialogTitle>
+      <DialogContent className="w-screen h-[100dvh] max-w-none m-0 sm:m-auto sm:w-[95vw] sm:max-w-3xl rounded-none sm:rounded-3xl p-0 sm:p-6 sm:max-h-[95vh] flex flex-col overflow-hidden gap-0 border-none sm:border-solid bg-slate-50 sm:bg-background [&>button]:hidden sm:[&>button]:flex">
+        <DialogHeader className="flex flex-row items-center gap-3 p-4 sm:p-0 bg-white sm:bg-transparent border-b sm:border-none shrink-0 mb-0 sm:mb-4">
+          <button onClick={onClose} className="sm:hidden p-2 -ml-2 text-slate-500 active:bg-slate-100 rounded-full transition-colors">
+            <ArrowLeft size={24} />
+          </button>
+          <div className="flex flex-col gap-0.5 flex-1 text-left">
+            <DialogTitle className="text-lg sm:text-xl font-bold leading-tight text-slate-900 sm:text-foreground">
+              {product.name}
+            </DialogTitle>
+            <span className="text-[10px] uppercase text-brand-900 sm:text-muted-foreground font-black tracking-widest">{product.category}</span>
+          </div>
         </DialogHeader>
-        <div className="flex-1 min-h-0 text-foreground overflow-y-auto scrollbar-none custom-scrollbar">
+        <div className="flex-1 min-h-0 text-foreground overflow-y-auto scrollbar-none custom-scrollbar p-2 sm:p-0 bg-slate-50 sm:bg-transparent">
           {renderForm()}
         </div>
       </DialogContent>
