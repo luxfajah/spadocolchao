@@ -42,16 +42,28 @@ export async function GET() {
           }
         });
       }
+      
+      let leadSource = await prisma.leadSource.findFirst();
+      if (!leadSource) {
+        leadSource = await prisma.leadSource.create({
+          data: {
+            code: 'TESTE',
+            name: 'Origem Teste',
+            category: 'OUTRO'
+          }
+        });
+      }
 
       sale = await prisma.sale.create({
         data: {
           customerId: customer.id,
           sellerId: seller.id,
-          sessionId: session.id,
+          cashRegisterSessionId: session.id,
+          leadSourceId: leadSource.id,
           status: 'SOLD',
           subtotalAmount: 1000,
           totalAmount: 1000,
-          paymentStatus: 'PENDING'
+          financialStatus: 'PENDING'
         }
       });
     }
@@ -73,11 +85,12 @@ export async function GET() {
           data: {
             customerId: customer.id,
             sellerId: sale.sellerId,
-            sessionId: sale.sessionId,
+            cashRegisterSessionId: sale.cashRegisterSessionId,
+            leadSourceId: sale.leadSourceId,
             status: 'SOLD',
             subtotalAmount: 1000,
             totalAmount: 1000,
-            paymentStatus: 'PENDING'
+            financialStatus: 'PENDING'
           }
         });
       }
