@@ -50,7 +50,9 @@ const PosContext = createContext<PosContextType | undefined>(undefined);
 
 export function PosProvider({ children, initialData }: { children: ReactNode, initialData: any }) {
   const [customer, setCustomer] = useState<CustomerType>(null);
-  const [sellerId, setSellerId] = useState<string | null>(null);
+  const [sellerId, setSellerId] = useState<string | null>(
+    initialData?.currentSellerId || null
+  );
   const [leadSourceId, setLeadSourceId] = useState<string | null>(null);
   const [leadSourceDetail, setLeadSourceDetail] = useState("");
   const [campaignName, setCampaignName] = useState("");
@@ -68,17 +70,18 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
       try {
         const { items: savedItems, sellerId: savedSeller, leadSourceId: savedSource, globalDiscount: savedDiscount } = JSON.parse(draft);
         if (savedItems) setItems(savedItems);
-        if (savedSeller) setSellerId(savedSeller);
+        // Só sobrepõe o seller do rascunho se não houver seller do usuário logado
+        if (savedSeller && !initialData?.currentSellerId) setSellerId(savedSeller);
         if (savedSource) setLeadSourceId(savedSource);
         if (savedDiscount) setGlobalDiscount(savedDiscount);
         
-        // Se houver um novo cliente cadastrado vindo da URL, ele será priorizado no PosCustomer
         localStorage.removeItem('pdv_draft'); 
       } catch (e) {
         console.error("Erro ao recuperar rascunho do PDV");
       }
     }
   }, []);
+
 
   const addItem = (item: SaleItemType) => setItems((prev) => [...prev, item]);
   const removeItem = (id: string) => setItems((prev) => prev.filter((i: SaleItemType) => i.id !== id));
