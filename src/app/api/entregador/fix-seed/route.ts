@@ -5,13 +5,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const orders = await prisma.order.findMany({
+    const realAddresses = await prisma.customerAddress.findMany({
       where: {
         street: { not: null, notIn: [''] },
-        OR: [
-          { code: null },
-          { NOT: { code: { startsWith: 'TEST' } } }
-        ]
+        zipCode: { not: null, notIn: [''] }
       },
       select: {
         street: true,
@@ -27,13 +24,13 @@ export async function GET() {
     const uniqueAddresses: any[] = [];
     const seen = new Set();
     
-    for (const order of orders) {
-      if (!order.street || !order.number || !order.zipCode) continue;
+    for (const addr of realAddresses) {
+      if (!addr.street || !addr.number || !addr.zipCode) continue;
       
-      const key = `${order.street}-${order.number}`;
+      const key = `${addr.street}-${addr.number}`;
       if (!seen.has(key)) {
         seen.add(key);
-        uniqueAddresses.push(order);
+        uniqueAddresses.push(addr);
         if (uniqueAddresses.length === 4) break;
       }
     }
