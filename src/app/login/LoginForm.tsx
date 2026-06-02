@@ -22,7 +22,7 @@ function SubmitButton() {
   )
 }
 
-export function LoginForm() {
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   // @ts-ignore
   const [state, formAction] = useFormState(login, null)
 
@@ -47,6 +47,7 @@ export function LoginForm() {
           </div>
 
           <form action={formAction} className="space-y-6">
+            <input type="hidden" name="redirectTo" value={redirectTo || ""} />
             {state?.error && (
               <div className="p-4 text-sm rounded-xl bg-red-50 text-red-600 border border-red-100 animate-in fade-in slide-in-from-top-2">
                 {state.error}

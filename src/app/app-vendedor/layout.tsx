@@ -1,9 +1,12 @@
-import { requireAuthenticatedUser } from "@/lib/auth"
+import { getAuthenticatedUser } from "@/lib/auth"
+import { redirect } from "next/navigation"
 import { AppVendedorNav } from "./_components/AppVendedorNav"
 
 export default async function AppVendedorLayout({ children }: { children: React.ReactNode }) {
-  // Garantimos a autenticação, mas não precisamos das infos de avatar pro top header
-  await requireAuthenticatedUser()
+  const user = await getAuthenticatedUser()
+  if (!user) {
+    redirect("/login?redirect=/app-vendedor/pdv")
+  }
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">

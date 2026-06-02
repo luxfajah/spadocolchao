@@ -80,6 +80,8 @@ export async function login(prevState: any, formData: FormData) {
     },
   })
 
+  const redirectTo = formData.get("redirectTo") as string | null
+
   await createSession(user.id)
   const authenticatedUser = await prisma.user.findUnique({
     where: { id: user.id },
@@ -87,11 +89,15 @@ export async function login(prevState: any, formData: FormData) {
   })
 
   if (!authenticatedUser) {
-    redirect("/dashboard")
+    redirect(redirectTo || "/dashboard")
   }
 
-  const accessProfile = await getUserAccessProfile(authenticatedUser)
-  redirect(accessProfile.defaultRoute)
+  if (redirectTo && redirectTo.startsWith("/")) {
+    redirect(redirectTo)
+  } else {
+    const accessProfile = await getUserAccessProfile(authenticatedUser)
+    redirect(accessProfile.defaultRoute)
+  }
 }
 
 export async function logout() {

@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.spadocolchao.erp',
-  appName: 'Spa do Colchao',
+  appName: 'Vendas - SPA',
   webDir: 'public',
   server: {
     url: 'https://spadocolchao.vercel.app/app-vendedor/pdv',
