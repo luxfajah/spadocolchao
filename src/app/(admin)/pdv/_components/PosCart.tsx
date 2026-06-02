@@ -47,13 +47,19 @@ export function PosCart() {
             {items.map((item, index) => (
               <div
                 key={`${item.id}-${index}`}
-                className="group flex items-center gap-4 rounded-[1.6rem] border border-slate-100 bg-slate-50/70 px-4 py-4 transition-all hover:border-slate-200 hover:bg-white"
+                className="group flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 rounded-[1.6rem] border border-slate-100 bg-slate-50/70 p-3 sm:px-4 sm:py-4 transition-all hover:border-slate-200 hover:bg-white"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[1rem] bg-white text-sm font-black text-primary shadow-sm">
-                  {String(index + 1).padStart(2, "0")}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="flex h-8 w-8 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-[1rem] bg-white text-xs sm:text-sm font-black text-primary shadow-sm">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+
+                  <div className="min-w-0 flex-1 sm:hidden">
+                    <p className="text-sm font-black leading-tight text-primary line-clamp-1">{item.name}</p>
+                  </div>
                 </div>
 
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 hidden sm:block">
                   <p className="text-base font-black leading-tight text-primary">{item.name}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                     <span className="rounded-full bg-white px-2.5 py-1 text-primary/80">{item.type}</span>
@@ -63,7 +69,29 @@ export function PosCart() {
                   </div>
                 </div>
 
-                <div className="flex shrink-0 flex-col items-end gap-3">
+                {/* Elementos mobile: badge de tipo, qtde, total e acoes */}
+                <div className="flex sm:hidden flex-col gap-2 w-full mt-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                      <span className="rounded-full bg-white px-2 py-1 text-primary/80 shadow-sm">{item.type}</span>
+                      <span>{item.quantity} un x {formatBRL(item.unitPrice)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between border-t border-slate-200/50 pt-2 mt-1">
+                    <p className="font-outfit text-sm font-black text-primary">{formatBRL(item.totalAmount)}</p>
+                    <div className="flex items-center gap-1">
+                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400 hover:bg-slate-100 hover:text-primary">
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button type="button" variant="ghost" size="icon" onClick={() => removeItem(item.id)} className="h-8 w-8 rounded-full text-rose-500 hover:bg-rose-500 hover:text-white">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="hidden sm:flex shrink-0 flex-col items-end gap-3">
                   <p className="font-outfit text-lg font-black text-primary">{formatBRL(item.totalAmount)}</p>
                   <div className="flex items-center gap-1">
                     <Button
