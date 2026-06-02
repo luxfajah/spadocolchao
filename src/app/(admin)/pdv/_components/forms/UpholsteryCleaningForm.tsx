@@ -42,7 +42,7 @@ export function UpholsteryCleaningForm({ product, onAdd, onCancel }: { product: 
   const options = ["Sofá de 2 lugares", "Sofá de 3 lugares", "Sofá retrátil", "Poltrona", "Cadeira estofada", "Colchão casal"];
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh]">
+    <div className="flex flex-col h-full">
       <div className="mb-6 flex items-center justify-between bg-slate-50 p-4 rounded-2xl border">
         <div className="flex items-center gap-3 text-brand-900">
           <Sparkles size={24} className="animate-pulse" />
@@ -53,7 +53,7 @@ export function UpholsteryCleaningForm({ product, onAdd, onCancel }: { product: 
         </Button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-1 space-y-6">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto scrollbar-none px-1 space-y-6 pb-4">
         <div className="space-y-4">
           <div className="space-y-3">
             {rows.map((row) => (

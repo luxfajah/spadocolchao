@@ -143,9 +143,9 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
   ];
 
   return (
-    <div className="flex flex-col h-full max-h-[85vh]">
+    <div className="flex flex-col h-full">
       {/* Steps Header */}
-      <div className="flex items-center justify-between mb-8 px-2 overflow-x-auto pb-2 gap-4">
+      <div className="flex items-center mb-6 px-2 overflow-x-auto pb-2 gap-4 scrollbar-none custom-scrollbar">
         {steps.map((s) => (
           <div key={s.id} className="flex flex-col items-center min-w-[70px] relative">
             <div className={cn(
@@ -164,7 +164,7 @@ export function NewMattressForm({ product, onAdd, onCancel }: { product: any, on
         ))}
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-1 space-y-6">
+      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto scrollbar-none px-1 space-y-6 pb-4">
         
         {/* STEP 1: IDENTIFICAÇÃO */}
         {step === 1 && (

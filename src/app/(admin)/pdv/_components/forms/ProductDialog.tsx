@@ -70,14 +70,14 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
 
   return (
     <Dialog open={!!product} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="w-[95vw] max-w-3xl rounded-2xl md:rounded-3xl p-4 md:p-6 max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="text-left">
+      <DialogContent className="w-[95vw] max-w-3xl rounded-2xl md:rounded-3xl p-4 md:p-6 max-h-[95vh] flex flex-col overflow-hidden gap-0">
+        <DialogHeader className="text-left shrink-0 mb-4">
           <DialogTitle className="text-xl font-bold flex flex-col gap-1">
             <span>{product.name}</span>
             <span className="text-xs uppercase text-muted-foreground font-semibold">{product.category}</span>
           </DialogTitle>
         </DialogHeader>
-        <div className="mt-2 text-foreground">
+        <div className="flex-1 min-h-0 text-foreground overflow-y-auto scrollbar-none custom-scrollbar">
           {renderForm()}
         </div>
       </DialogContent>
