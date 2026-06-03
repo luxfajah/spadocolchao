@@ -40,9 +40,13 @@ export function useBackgroundGeolocation(userId: string | null) {
               const isIdle = speedKmH < 2.0; // Menos de 2 km/h é considerado parado ou andando devagar.
 
               // Upsert na tabela UserLocation (Posição em Tempo Real)
-              const { data: existingLoc } = await supabase.from('UserLocation').select('id').eq('userId', userId).single();
+              const { data: existingLoc, error: selErr } = await supabase.from('UserLocation').select('id').eq('userId', userId).single();
+              if (selErr && selErr.code !== 'PGRST116') {
+                 console.error("Select Error:", JSON.stringify(selErr));
+              }
+
               if (existingLoc) {
-                await supabase.from('UserLocation').update({
+                const { error: updErr } = await supabase.from('UserLocation').update({
                   latitude: location.latitude,
                   longitude: location.longitude,
                   speed: speedKmH,
@@ -50,8 +54,9 @@ export function useBackgroundGeolocation(userId: string | null) {
                   accuracy: location.accuracy,
                   updatedAt: new Date().toISOString()
                 }).eq('userId', userId);
+                if (updErr) console.error("Update Error:", JSON.stringify(updErr));
               } else {
-                await supabase.from('UserLocation').insert({
+                const { error: insErr } = await supabase.from('UserLocation').insert({
                   id: crypto.randomUUID(),
                   userId,
                   latitude: location.latitude,
@@ -61,10 +66,11 @@ export function useBackgroundGeolocation(userId: string | null) {
                   accuracy: location.accuracy,
                   updatedAt: new Date().toISOString()
                 });
+                if (insErr) console.error("Insert Error:", JSON.stringify(insErr));
               }
 
               // Insert na tabela UserLocationHistory (Histórico para cálculo de quilometragem e ociosidade)
-              await supabase.from('UserLocationHistory').insert({
+              const { error: histErr } = await supabase.from('UserLocationHistory').insert({
                 id: crypto.randomUUID(),
                 userId,
                 latitude: location.latitude,
@@ -75,6 +81,7 @@ export function useBackgroundGeolocation(userId: string | null) {
                 isIdle,
                 createdAt: new Date().toISOString()
               });
+              if (histErr) console.error("History Insert Error:", JSON.stringify(histErr));
             }
           }
         );
