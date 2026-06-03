@@ -54,6 +54,13 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
   const [cachedPunches, setCachedPunches] = useState<any[]>([])
   const [showLocalHistory, setShowLocalHistory] = useState(false)
 
+  // Sync selectedRawType when the recommended punch changes from the server
+  useEffect(() => {
+    if (initialData.recommendedNextPunch?.rawType) {
+      setSelectedRawType(initialData.recommendedNextPunch.rawType)
+    }
+  }, [initialData.recommendedNextPunch?.rawType])
+
   // Load cache on mount
   useEffect(() => {
     if (typeof window !== "undefined") {
