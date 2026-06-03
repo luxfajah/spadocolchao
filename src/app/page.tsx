@@ -5,14 +5,18 @@ import { headers } from "next/headers"
 
 export default async function Home() {
   const headersList = await headers()
-  const userAgent = headersList.get('user-agent') || ''
+  const userAgent = (headersList.get('user-agent') || '').toLowerCase()
 
-  if (userAgent.includes('CapacitorVendedor')) {
+  if (userAgent.includes('capacitorvendedor')) {
     redirect('/app-vendedor/pdv')
   }
   
-  if (userAgent.includes('CapacitorEntregador')) {
+  if (userAgent.includes('capacitorentregador') || userAgent.includes('spadocolchaoentregadorapp')) {
     redirect('/app-entregador')
+  }
+
+  if (userAgent.includes('capacitorponto')) {
+    redirect('/app-ponto')
   }
 
   const user = await getAuthenticatedUser()

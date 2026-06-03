@@ -6,9 +6,10 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
 
-  const userAgent = request.headers.get("user-agent") || ""
-  const isVendedorApp = userAgent.includes("CapacitorVendedor")
-  const isEntregadorApp = userAgent.includes("CapacitorEntregador")
+  const userAgent = (request.headers.get("user-agent") || "").toLowerCase()
+  const isVendedorApp = userAgent.includes("capacitorvendedor")
+  const isEntregadorApp = userAgent.includes("capacitorentregador") || userAgent.includes("spadocolchaoentregadorapp")
+  const isPontoApp = userAgent.includes("capacitorponto")
 
   if (isVendedorApp && !request.nextUrl.pathname.startsWith("/app-vendedor") && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/app-vendedor/pdv", request.url))
@@ -16,6 +17,10 @@ export function middleware(request: NextRequest) {
 
   if (isEntregadorApp && !request.nextUrl.pathname.startsWith("/app-entregador") && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/app-entregador", request.url))
+  }
+
+  if (isPontoApp && !request.nextUrl.pathname.startsWith("/app-ponto") && request.nextUrl.pathname !== "/login") {
+    return NextResponse.redirect(new URL("/app-ponto", request.url))
   }
 
   if (request.nextUrl.pathname === "/login") {
