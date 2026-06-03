@@ -92,15 +92,18 @@ export async function login(prevState: any, formData: FormData) {
   const userAgent = headers().get("user-agent") || ""
   const isVendedorApp = userAgent.includes("CapacitorVendedor")
   const isEntregadorApp = userAgent.includes("CapacitorEntregador")
+  const isPontoApp = userAgent.includes("CapacitorPonto")
 
   if (!authenticatedUser) {
-    redirect(isVendedorApp ? "/app-vendedor/pdv" : isEntregadorApp ? "/app-entregador" : (redirectTo || "/dashboard"))
+    redirect(isVendedorApp ? "/app-vendedor/pdv" : isEntregadorApp ? "/app-entregador" : isPontoApp ? "/app-ponto" : (redirectTo || "/dashboard"))
   }
 
   if (isVendedorApp) {
     redirect("/app-vendedor/pdv")
   } else if (isEntregadorApp) {
     redirect("/app-entregador")
+  } else if (isPontoApp) {
+    redirect("/app-ponto")
   } else if (redirectTo && redirectTo.startsWith("/")) {
     redirect(redirectTo)
   } else {

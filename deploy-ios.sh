@@ -60,12 +60,32 @@ cd ../..
 echo "✅ Entregador pronto! Abrindo no Xcode..."
 npx cap open ios
 
+# 5. ---- PONTO ----
+echo ""
+echo "=========================================="
+echo "  ⏰ App Ponto - Spa do Colchão"
+echo "=========================================="
+cd ../mobile-ponto
+npm install
+
+echo "🔄 Sincronizando Capacitor..."
+npx cap copy ios
+npx cap sync ios
+
+echo "📲 Instalando CocoaPods..."
+cd ios/App
+pod install
+cd ../..
+
+echo "✅ Ponto pronto! Abrindo no Xcode..."
+npx cap open ios
+
 echo ""
 echo "=========================================="
 echo "  ✅ TUDO PRONTO!"
 echo "=========================================="
 echo ""
-echo "Os dois projetos já estão abertos no Xcode."
+echo "Os três projetos já estão abertos no Xcode."
 echo ""
 echo "Para cada um, faça:"
 echo "  1. Selecione seu Team (Apple Developer Account)"

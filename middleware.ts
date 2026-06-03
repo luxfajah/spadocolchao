@@ -7,10 +7,20 @@ export function middleware(request: NextRequest) {
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
 
   const userAgent = request.headers.get("user-agent") || ""
-  const isMobileApp = userAgent.includes("SpaDoColchaoApp")
+  const isVendedorApp = userAgent.includes("CapacitorVendedor")
+  const isEntregadorApp = userAgent.includes("CapacitorEntregador")
+  const isPontoApp = userAgent.includes("CapacitorPonto")
 
-  if (isMobileApp && !request.nextUrl.pathname.startsWith("/app-vendedor") && request.nextUrl.pathname !== "/login") {
+  if (isVendedorApp && !request.nextUrl.pathname.startsWith("/app-vendedor") && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/app-vendedor/pdv", request.url))
+  }
+
+  if (isEntregadorApp && !request.nextUrl.pathname.startsWith("/app-entregador") && request.nextUrl.pathname !== "/login") {
+    return NextResponse.redirect(new URL("/app-entregador", request.url))
+  }
+
+  if (isPontoApp && !request.nextUrl.pathname.startsWith("/app-ponto") && request.nextUrl.pathname !== "/login") {
+    return NextResponse.redirect(new URL("/app-ponto", request.url))
   }
 
   if (request.nextUrl.pathname === "/login") {
