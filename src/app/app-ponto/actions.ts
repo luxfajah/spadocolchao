@@ -8,15 +8,7 @@ import {
   getBusinessDayBounds,
 } from "@/lib/attendance/business-time"
 import { recalculateEmployeeMonth } from "@/lib/attendance/service"
-import { PunchType } from "@/lib/attendance/types"
-
-// Mapeamento interno das batidas suportadas pelo app
-export const APP_PUNCH_TYPES = [
-  { label: "Entrada", rawType: "S", type: PunchType.CLOCK_IN },
-  { label: "Saída Almoço", rawType: "E", type: PunchType.CLOCK_OUT },
-  { label: "Retorno Almoço", rawType: "A", type: PunchType.JOB_IN },
-  { label: "Saída Final", rawType: "F", type: PunchType.JOB_OUT },
-]
+import { APP_PUNCH_TYPES } from "./constants"
 
 export async function getEmployeePunchStatus() {
   try {

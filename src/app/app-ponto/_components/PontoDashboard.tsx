@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { CheckCircle2, AlertTriangle, MapPin, Loader2, Sparkles } from "lucide-react"
-import { registerPunchAction, APP_PUNCH_TYPES } from "../actions"
+import { registerPunchAction } from "../actions"
+import { APP_PUNCH_TYPES } from "../constants"
 
 interface PontoDashboardProps {
   initialData: {
