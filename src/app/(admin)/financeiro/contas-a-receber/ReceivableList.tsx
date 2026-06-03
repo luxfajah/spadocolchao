@@ -51,7 +51,9 @@ export function ReceivableList({ receivables, onEdit, onRefresh }: ReceivableLis
   }
 
   return (
-    <div className="bg-white rounded-[2.5rem] shadow-lahomes overflow-hidden">
+    <>
+    {/* Desktop Table */}
+    <div className="bg-white rounded-[2.5rem] shadow-lahomes overflow-hidden hidden md:block">
       <Table>
         <TableHeader className="bg-slate-50 border-none">
           <TableRow className="hover:bg-transparent border-none">
@@ -149,12 +151,98 @@ export function ReceivableList({ receivables, onEdit, onRefresh }: ReceivableLis
           })}
         </TableBody>
       </Table>
+    </div>
+
+    {/* Mobile Cards */}
+    <div className="flex flex-col gap-4 md:hidden mb-4">
+      {receivables.map((title) => {
+        const openBalance = title.amount - title.paidAmount
+        const isOverdue = new Date(title.dueDate) < new Date() && title.status === 'PENDING'
+
+        return (
+          <DropdownMenu key={title.id}>
+            <DropdownMenuTrigger asChild>
+              <div className="bg-white p-5 rounded-[2rem] shadow-lahomes border border-slate-50 flex flex-col gap-3 active:scale-[0.98] transition-transform">
+                <div className="flex justify-between items-start">
+                  <div className="flex flex-col gap-1 pr-4">
+                    <span className="font-bold text-sm text-slate-800 uppercase tracking-tight">{title.description}</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                      {title.customer?.fullName || 'Cliente não informado'} 
+                      {title.sale?.number && ` • Venda #${title.sale.number}`}
+                    </span>
+                  </div>
+                  <Badge className={cn(
+                    "rounded-full px-2 py-0.5 font-black text-[9px] uppercase tracking-[0.1em] border-none shadow-sm shadow-black/5 whitespace-nowrap",
+                    isOverdue ? statusColors.OVERDUE : statusColors[title.status || 'PENDING']
+                  )}>
+                    {isOverdue ? statusLabels.OVERDUE : (statusLabels[title.status] || title.status)}
+                  </Badge>
+                </div>
+
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  {formatDate(title.dueDate)}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-2 bg-slate-50 p-3 rounded-2xl">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Valor Original</span>
+                    <span className="text-sm font-black text-slate-800 font-outfit mt-1">
+                      {formatCurrency(title.amount)}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end text-right">
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Saldo Aberto</span>
+                    <span className={cn(
+                      "text-sm font-black font-outfit mt-1",
+                      openBalance > 0 ? "text-primary" : "text-emerald-500"
+                    )}>
+                      {formatCurrency(openBalance)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[85vw] max-w-[300px] rounded-2xl p-2 shadow-2xl border-none">
+              {openBalance > 0 && title.status !== 'CANCELLED' && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setSelectedTitle(title)
+                    setShowReceiptDialog(true)
+                  }}
+                  className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-emerald-600 cursor-pointer focus:bg-emerald-50"
+                >
+                  <Receipt className="w-4 h-4 text-emerald-500" /> Realizar Recebimento
+                </DropdownMenuItem>
+              )}
+              
+              <DropdownMenuItem className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-slate-600 cursor-pointer focus:bg-slate-50">
+                <FileText className="w-4 h-4 text-slate-400" /> Ver Detalhes
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem
+                onClick={() => onEdit(title)}
+                className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-emerald-600 cursor-pointer focus:bg-emerald-50"
+              >
+                <FileText className="w-4 h-4 text-emerald-500" /> Editar Lançamento
+              </DropdownMenuItem>
+
+              {title.status !== 'CANCELLED' && (
+                <DropdownMenuItem className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-rose-500 cursor-pointer focus:bg-rose-50">
+                  <Trash2 className="w-4 h-4 text-rose-500" /> Cancelar Título
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )
+      })}
+    </div>
 
       <ReceiptDialog 
         open={showReceiptDialog} 
         onOpenChange={setShowReceiptDialog} 
         title={selectedTitle}
       />
-    </div>
+    </>
   )
 }

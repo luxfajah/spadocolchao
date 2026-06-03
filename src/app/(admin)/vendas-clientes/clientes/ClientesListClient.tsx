@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge"
 import { ClickableRow } from "@/components/ui/ClickableRow"
 import { formatDocument } from "@/lib/utils"
 import Link from "next/link"
-import {
   Search,
   Edit,
   Eye,
@@ -26,7 +25,10 @@ import {
   ChevronRight,
   X,
   Loader2,
+  MapPin,
+  MoreVertical,
 } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 type CustomerRow = {
   id: string
@@ -193,8 +195,8 @@ export function ClientesListClient({
         )}
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-[2.5rem] shadow-lahomes border border-slate-50 overflow-hidden">
+      {/* Table (Desktop) */}
+      <div className="bg-white rounded-[2.5rem] shadow-lahomes border border-slate-50 overflow-hidden hidden md:block">
         <div className="overflow-x-auto no-scrollbar">
           <Table className="min-w-[1100px]">
             <TableHeader className="bg-slate-50/50">
@@ -310,6 +312,83 @@ export function ClientesListClient({
             </TableBody>
           </Table>
         </div>
+      </div>
+
+      {/* Cards (Mobile) */}
+      <div className="flex flex-col gap-4 md:hidden">
+        {initialCustomers.length === 0 ? (
+          <div className="bg-white p-8 rounded-3xl shadow-sm text-center">
+            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">
+              {query
+                ? `Nenhum cliente encontrado para "${query}".`
+                : "Nenhum cliente cadastrado ainda."}
+            </p>
+          </div>
+        ) : (
+          initialCustomers.map((c) => {
+            const mainAddress = c.addresses[0]
+            return (
+              <DropdownMenu key={c.id}>
+                <DropdownMenuTrigger asChild>
+                  <div className="bg-white p-5 rounded-[2rem] shadow-lahomes border border-slate-50 flex flex-col gap-3 active:scale-[0.98] transition-transform">
+                    <div className="flex justify-between items-start">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-black text-primary uppercase tracking-tight text-sm font-outfit">
+                          {c.fullName}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">
+                          {formatDocument(c.document) || "SEM DOCUMENTO"}
+                        </span>
+                      </div>
+                      <Badge
+                        className={`border-none font-black text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full ${c.isActive ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20" : "bg-rose-100 text-rose-500"}`}
+                      >
+                        {c.isActive ? "Ativo" : "Bloqueado"}
+                      </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-2 text-slate-500 font-bold text-[11px] uppercase tracking-tight">
+                      <MapPin className="w-3.5 h-3.5 text-slate-300" />
+                      {mainAddress ? `${mainAddress.city} - ${mainAddress.state}` : "Localização não informada"}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 mt-2 bg-slate-50 p-3 rounded-2xl">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Limite de Crédito</span>
+                        <span className="text-sm font-black text-primary font-outfit italic">
+                          {c.creditLimit?.toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          }) || "R$ 0,00"}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end text-right">
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Última Compra</span>
+                        <span className="text-xs font-bold text-slate-600 mt-1">
+                          {c.lastPurchaseDate
+                            ? new Date(c.lastPurchaseDate).toLocaleDateString("pt-BR")
+                            : "Nunca Comprou"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[85vw] max-w-[300px] rounded-2xl p-2 shadow-2xl border-none">
+                  <DropdownMenuItem asChild>
+                    <Link href={`/vendas-clientes/clientes/${c.id}`} className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-slate-600 cursor-pointer focus:bg-slate-50">
+                      <Eye className="w-4 h-4 text-slate-400" /> Ver Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href={`/vendas-clientes/clientes/${c.id}/editar`} className="rounded-xl flex items-center gap-3 p-3 font-bold text-xs uppercase tracking-widest text-primary cursor-pointer focus:bg-slate-50">
+                      <Edit className="w-4 h-4 text-primary" /> Editar Cliente
+                    </Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          })
+        )}
       </div>
 
       {/* Pagination */}
