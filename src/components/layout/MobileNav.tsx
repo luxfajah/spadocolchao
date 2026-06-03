@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   Briefcase,
@@ -102,6 +103,7 @@ function canAccessArea(allowedAreas: AppArea[], area?: AppArea | string) {
 
 export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[]; homeHref: string }) {
   const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false)
   const isPDV = pathname.startsWith("/pdv")
   const quickLinks = QUICK_LINKS.filter((item) => canAccessArea(allowedAreas, item.area)).slice(0, 4)
   const leftLinks = quickLinks.slice(0, 2)
@@ -172,7 +174,7 @@ export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[];
               </Link>
             ))}
 
-            <Drawer>
+            <Drawer open={isOpen} onOpenChange={setIsOpen}>
               <DrawerTrigger asChild>
                 <button className="flex w-12 flex-col items-center justify-center text-slate-600 transition-all active:scale-90">
                   <MoreHorizontal className="mb-1 h-5 w-5" />
@@ -188,7 +190,7 @@ export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[];
                   <div className="mt-6 space-y-10">
                     {canAccessArea(allowedAreas, "pdv") ? (
                       <div>
-                        <Link href="/pdv" className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] bg-primary p-5 text-white shadow-xl shadow-primary/20">
+                        <Link href="/pdv" onClick={() => setIsOpen(false)} className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] bg-primary p-5 text-white shadow-xl shadow-primary/20">
                           <div className="absolute top-[-10px] right-[-10px] opacity-10 transition-transform group-hover:scale-110">
                             <Store className="h-24 w-24" />
                           </div>
@@ -217,6 +219,7 @@ export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[];
                             <Link
                               key={item.href}
                               href={item.href}
+                              onClick={() => setIsOpen(false)}
                               className={cn(
                                 "group/btn flex items-center gap-4 rounded-3xl p-4 transition-all duration-300",
                                 pathname === item.href ? "bg-primary text-white shadow-lg" : "bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95",

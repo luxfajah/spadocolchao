@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 import { Topbar } from "@/components/layout/Topbar"
 import { MobileNav } from "@/components/layout/MobileNav"
 import type { AppArea } from "@/lib/role-presets"
+import { cn } from "@/lib/utils"
 
 type AdminShellProps = {
   children: React.ReactNode
@@ -40,7 +41,28 @@ export function AdminShell({ children, user, access, hideNavigation = false }: A
 
   return (
     <div className="flex min-h-screen bg-background relative">
-      {isMobileSidebarOpen && <div className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"></div>}
+      {/* Mobile Drawer Sidebar */}
+      <div
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-72 transform bg-white transition-transform duration-300 ease-in-out lg:hidden shadow-2xl",
+          isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        <Sidebar
+          isMobile={true}
+          allowedAreas={access.allowedAreas}
+          homeHref={access.homeHref}
+          onNavClick={toggleMobileSidebar}
+        />
+      </div>
+
+      {/* Backdrop */}
+      {isMobileSidebarOpen && (
+        <div
+          onClick={toggleMobileSidebar}
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden transition-opacity duration-300"
+        />
+      )}
 
       <div className="hidden lg:flex flex-1 justify-center items-start gap-3 pt-0 px-4">
         <div className="w-[15%] shrink-0 relative">

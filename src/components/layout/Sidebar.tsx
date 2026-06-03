@@ -98,11 +98,13 @@ export function Sidebar({
   onNavClick,
   allowedAreas,
   homeHref,
+  isMobile = false,
 }: {
   className?: string
   onNavClick?: () => void
   allowedAreas: AppArea[]
   homeHref: string
+  isMobile?: boolean
 }) {
   const pathname = usePathname()
   const [openGroup, setOpenGroup] = useState<string | null>(null)
@@ -129,8 +131,8 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "fixed left-6 z-50 flex flex-col bg-white border border-slate-100 transition-all duration-500 ease-in-out shadow-2xl rounded-[2.5rem] overflow-hidden",
-        "top-1/2 -translate-y-1/2 h-fit max-h-[90vh] w-72",
+        "flex flex-col bg-white border-r border-slate-100 transition-all duration-500 ease-in-out overflow-hidden h-full w-full",
+        !isMobile && "fixed left-6 top-1/2 -translate-y-1/2 z-50 border shadow-2xl rounded-[2.5rem] max-h-[90vh] w-72",
         className,
       )}
     >
