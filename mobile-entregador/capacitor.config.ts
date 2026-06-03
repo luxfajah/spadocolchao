@@ -5,9 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Entregador Colchão',
   webDir: '../out',
   server: {
-    url: 'https://spadocolchao.vercel.app/app-entregador',
+    url: 'https://spadocolchao.vercel.app',
     cleartext: true
-  }
+  },
+  appendUserAgent: 'CapacitorEntregador'
 };
 
 export default config;

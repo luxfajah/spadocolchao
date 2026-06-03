@@ -5,9 +5,10 @@ const config: CapacitorConfig = {
   appName: 'Vendedor Colchão',
   webDir: '../out',
   server: {
-    url: 'https://spadocolchao.vercel.app/app-vendedor',
+    url: 'https://spadocolchao.vercel.app',
     cleartext: true
-  }
+  },
+  appendUserAgent: 'CapacitorVendedor'
 };
 
 export default config;
