@@ -104,20 +104,19 @@ function canAccessArea(allowedAreas: AppArea[], area?: AppArea | string) {
 export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[]; homeHref: string }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const quickLinks = QUICK_LINKS.filter((item) => canAccessArea(allowedAreas, item.area)).slice(0, 3)
   const visibleSessions = MORE_SESSIONS.map((session) => ({
     ...session,
     items: session.items.filter((item) => canAccessArea(allowedAreas, item.requiredArea)),
   })).filter((session) => session.items.length > 0)
 
-  const navItems = [
-    { href: homeHref, icon: Home, label: "Início" },
-    ...quickLinks.map((link) => ({
-      href: link.href,
-      icon: link.icon,
-      label: link.shortLabel,
-    })),
+  const rawItems = [
+    { href: "/vendas-clientes/vendas", icon: Tags, label: "Vendas", area: "sales" as AppArea },
+    { href: "/financeiro/dashboard", icon: Wallet, label: "Financeiro", area: "financial" as AppArea },
+    { href: homeHref, icon: Home, label: "Início", area: undefined },
+    { href: "/pdv", icon: Store, label: "PDV", area: "pdv" as AppArea },
   ]
+
+  const navItems = rawItems.filter((item) => !item.area || canAccessArea(allowedAreas, item.area))
 
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 flex items-center justify-around px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
