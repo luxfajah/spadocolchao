@@ -230,7 +230,7 @@ export async function registerPunchAction(
   }
 }
 
-export async function getEmployeeAttendanceHistory() {
+export async function getEmployeeHistoryData(selectedPeriod?: string) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
@@ -243,12 +243,27 @@ export async function getEmployeeAttendanceHistory() {
 
     const currentYear = new Date().getFullYear()
     const currentMonth = new Date().getMonth() + 1
-    const periodKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`
+    const currentPeriodKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`
+    const targetPeriod = selectedPeriod || currentPeriodKey
 
+    // 1. Buscar todos os espelhos do colaborador para montar a lista de meses disponíveis
+    const allMirrors = await (prisma as any).attendanceMirror.findMany({
+      where: { employeeId: user.employeeId },
+      select: {
+        id: true,
+        period: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+      },
+      orderBy: { period: "desc" },
+    })
+
+    // 2. Buscar o espelho do período selecionado (com os dias detalhados)
     const mirror = await (prisma as any).attendanceMirror.findFirst({
       where: {
         employeeId: user.employeeId,
-        period: periodKey,
+        period: targetPeriod,
       },
       include: {
         days: {
@@ -257,9 +272,23 @@ export async function getEmployeeAttendanceHistory() {
       },
     })
 
+    // 3. Buscar todos os holerites publicados (PAID ou GENERATED) do colaborador
+    const payrolls = await (prisma as any).payroll.findMany({
+      where: {
+        employeeId: user.employeeId,
+        status: { in: ["GENERATED", "PAID"] },
+      },
+      orderBy: { referencePeriod: "desc" },
+    })
+
     return {
       success: true,
-      mirror: mirror
+      periods: allMirrors.map((m: any) => ({
+        period: m.period,
+        startDate: m.startDate,
+        endDate: m.endDate,
+      })),
+      activeMirror: mirror
         ? {
             id: mirror.id,
             period: mirror.period,
@@ -286,9 +315,56 @@ export async function getEmployeeAttendanceHistory() {
             })),
           }
         : null,
+      payrolls: payrolls.map((p: any) => ({
+        id: p.id,
+        referencePeriod: p.referencePeriod,
+        netSalary: p.netSalary,
+        grossSalary: p.grossSalary,
+        status: p.status,
+        createdAt: p.createdAt,
+      })),
+      targetPeriod,
     }
   } catch (error: any) {
-    console.error("Erro ao buscar histórico de ponto:", error)
+    console.error("Erro ao buscar dados de histórico:", error)
+    return { error: "Erro interno no servidor: " + error.message }
+  }
+}
+
+export async function downloadPayrollPdfAction(payrollId: string) {
+  try {
+    const user = await getAuthenticatedUser()
+    if (!user) {
+      return { error: "Não autenticado" }
+    }
+
+    if (!user.employeeId) {
+      return { error: "Usuário não possui colaborador vinculado" }
+    }
+
+    // Garantir que o holerite pertence ao colaborador logado para evitar vazamento de dados
+    const payroll = await (prisma as any).payroll.findFirst({
+      where: {
+        id: payrollId,
+        employeeId: user.employeeId,
+        status: { in: ["GENERATED", "PAID"] },
+      },
+    })
+
+    if (!payroll) {
+      return { error: "Holerite não encontrado ou indisponível para este colaborador" }
+    }
+
+    const { generateOfficialPayrollPdf } = await import("@/lib/payroll/official-payroll-pdf")
+    const result = await generateOfficialPayrollPdf(payrollId)
+
+    return {
+      success: true,
+      fileUrl: result.fileUrl,
+      documentName: result.documentName,
+    }
+  } catch (error: any) {
+    console.error("Erro ao gerar PDF de holerite:", error)
     return { error: "Erro interno no servidor: " + error.message }
   }
 }
