@@ -30,6 +30,14 @@ interface PontoDashboardProps {
   }
 }
 
+interface CachedDaySummary {
+  dateStr: string
+  punches: any[]
+  workedMinutes: number
+  expectedMinutes: number
+  balanceMinutes: number
+}
+
 export function PontoDashboard({ initialData }: PontoDashboardProps) {
   const router = useRouter()
   const [time, setTime] = useState<Date | null>(null)
@@ -43,14 +51,57 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
     coords?: { latitude: number; longitude: number; accuracy: number }
   }>({ status: "idle", message: "Aguardando ação" })
 
-  // Atualizar relógio em tempo real
+  const [cachedPunches, setCachedPunches] = useState<any[]>([])
+  const [showLocalHistory, setShowLocalHistory] = useState(false)
+
+  // Load cache on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("app_ponto_cached_punches")
+      if (stored) {
+        try {
+          setCachedPunches(JSON.parse(stored))
+        } catch (e) {
+          console.error("Erro ao ler cache de ponto:", e)
+        }
+      }
+    }
+  }, [])
+
+  // Sync server punches for today into the local cache
+  useEffect(() => {
+    if (typeof window !== "undefined" && initialData.punches && initialData.punches.length > 0) {
+      const stored = localStorage.getItem("app_ponto_cached_punches")
+      let cached = stored ? JSON.parse(stored) : []
+      let updated = false
+
+      initialData.punches.forEach((serverPunch) => {
+        if (!cached.find((p: any) => p.id === serverPunch.id)) {
+          cached.push({
+            id: serverPunch.id,
+            punchDateTime: serverPunch.punchDateTime,
+            type: serverPunch.type,
+            rawType: serverPunch.rawType,
+          })
+          updated = true
+        }
+      })
+
+      if (updated) {
+        localStorage.setItem("app_ponto_cached_punches", JSON.stringify(cached))
+        setCachedPunches(cached)
+      }
+    }
+  }, [initialData.punches])
+
+  // Update clock in real-time
   useEffect(() => {
     setTime(new Date())
     const interval = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(interval)
   }, [])
 
-  // Buscar localização
+  // Get GPS coords
   const getCoordinates = (): Promise<{ latitude: number; longitude: number; accuracy: number }> => {
     return new Promise((resolve, reject) => {
       if (typeof window === "undefined" || !navigator.geolocation) {
@@ -85,14 +136,13 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
     })
   }
 
-  // Registrar batida
+  // Register punch
   const handleRegisterPunch = async () => {
     if (loading) return
     setLoading(true)
     setGpsStatus({ status: "getting", message: "Obtendo localização..." })
 
     try {
-      // 1. Coleta o GPS
       const coords = await getCoordinates()
       setGpsStatus({
         status: "success",
@@ -100,7 +150,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
         coords,
       })
 
-      // 2. Registra na tabela via Server Action
       const res = await registerPunchAction(
         selectedRawType,
         coords.latitude,
@@ -111,18 +160,31 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
       if (res.error) {
         alert("Erro ao registrar ponto: " + res.error)
         setGpsStatus({ status: "error", message: res.error })
-      } else {
-        // Sucesso
+      } else if (res.success && res.punch) {
         setGpsStatus({
           status: "success",
           message: "Ponto batido com sucesso às " + new Date().toLocaleTimeString("pt-BR"),
           coords,
         })
+
+        // Save new punch to cache
+        if (typeof window !== "undefined") {
+          const stored = localStorage.getItem("app_ponto_cached_punches")
+          const cached = stored ? JSON.parse(stored) : []
+          if (!cached.find((p: any) => p.id === res.punch.id)) {
+            const updated = [...cached, {
+              id: res.punch.id,
+              punchDateTime: res.punch.punchDateTime,
+              type: res.punch.type,
+              rawType: res.punch.rawType
+            }]
+            localStorage.setItem("app_ponto_cached_punches", JSON.stringify(updated))
+            setCachedPunches(updated)
+          }
+        }
         
-        // Recarregar a rota para atualizar a lista
         router.refresh()
         
-        // Exibir alerta rápido e ajustar seleção recomendado se possível
         setTimeout(() => {
           alert(`Ponto registrado com sucesso!`)
         }, 100)
@@ -135,7 +197,66 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
     }
   }
 
-  // Formatar tempo
+  // Calculate local hour stats from cache
+  const getCachedBalanceStats = (punches: any[]) => {
+    const groups: Record<string, any[]> = {}
+    
+    punches.forEach((p) => {
+      const date = new Date(p.punchDateTime)
+      const dateStr = date.toLocaleDateString("pt-BR")
+      if (!groups[dateStr]) {
+        groups[dateStr] = []
+      }
+      groups[dateStr].push(p)
+    })
+
+    let totalWorkedMinutes = 0
+    let totalExpectedMinutes = 0
+    const daySummaries: CachedDaySummary[] = []
+
+    Object.entries(groups).forEach(([dateStr, dayPunches]) => {
+      const sorted = [...dayPunches].sort(
+        (a, b) => new Date(a.punchDateTime).getTime() - new Date(b.punchDateTime).getTime()
+      )
+
+      let workedMs = 0
+      for (let i = 0; i < sorted.length - 1; i += 2) {
+        const start = new Date(sorted[i].punchDateTime).getTime()
+        const end = new Date(sorted[i + 1].punchDateTime).getTime()
+        workedMs += (end - start)
+      }
+      const workedMinutes = Math.floor(workedMs / 1000 / 60)
+      const expectedMinutes = 480 // 8 hours expected per active day
+      const balanceMinutes = workedMinutes - expectedMinutes
+
+      totalWorkedMinutes += workedMinutes
+      totalExpectedMinutes += expectedMinutes
+
+      daySummaries.push({
+        dateStr,
+        punches: sorted,
+        workedMinutes,
+        expectedMinutes,
+        balanceMinutes,
+      })
+    })
+
+    daySummaries.sort((a, b) => {
+      const [dayA, monthA, yearA] = a.dateStr.split("/").map(Number)
+      const [dayB, monthB, yearB] = b.dateStr.split("/").map(Number)
+      return new Date(yearB, monthB - 1, dayB).getTime() - new Date(yearA, monthA - 1, dayA).getTime()
+    })
+
+    const balanceMinutes = totalWorkedMinutes - totalExpectedMinutes
+
+    return {
+      totalWorkedMinutes,
+      totalExpectedMinutes,
+      balanceMinutes,
+      daySummaries,
+    }
+  }
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString("pt-BR", {
       hour: "2-digit",
@@ -145,7 +266,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
     })
   }
 
-  // Formatar data por extenso
   const formatDate = (date: Date) => {
     const formatted = date.toLocaleDateString("pt-BR", {
       weekday: "long",
@@ -153,8 +273,21 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
       month: "long",
       year: "numeric",
     })
-    // Capitalizar primeira letra
     return formatted.charAt(0).toUpperCase() + formatted.slice(1)
+  }
+
+  const formatHours = (minutes: number) => {
+    const isNegative = minutes < 0
+    const absMinutes = Math.abs(minutes)
+    const hours = Math.floor(absMinutes / 60)
+    const mins = absMinutes % 60
+    return `${isNegative ? "-" : "+"}${hours}h${String(mins).padStart(2, "0")}`
+  }
+
+  const formatHoursNoSign = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h${String(mins).padStart(2, "0")}`
   }
 
   if (initialData.error) {
@@ -178,9 +311,12 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
   const employeeName =
     initialData.employee?.socialName || initialData.employee?.fullName || "Colaborador"
   const registeredPunches = initialData.punches || []
+  const stats = getCachedBalanceStats(cachedPunches)
+  const balanceMinutes = stats.balanceMinutes
+  const totalWorkedMinutes = stats.totalWorkedMinutes
 
   return (
-    <div className="px-4 py-8 max-w-md mx-auto space-y-6">
+    <div className="px-4 py-8 max-w-md mx-auto space-y-6 pb-24">
       {/* Header */}
       <header className="flex items-center justify-between">
         <div className="space-y-1">
@@ -201,7 +337,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
 
       {/* Relógio Digital Card */}
       <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-900 shadow-2xl p-8 text-center flex flex-col justify-center min-h-[190px]">
-        {/* Glows */}
         <div className="absolute inset-0 bg-radial-gradient(circle_at_center,_rgba(6,182,212,0.1),_transparent_60%)" />
         <div className="absolute -top-10 -left-10 w-24 h-24 bg-cyan-500/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute -bottom-10 -right-10 w-24 h-24 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
@@ -226,7 +361,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
         </h3>
         <div className="grid grid-cols-2 gap-2.5">
           {APP_PUNCH_TYPES.map((type) => {
-            // Checar se já registrou essa batida hoje
             const punchToday = registeredPunches.find((p) => p.rawType === type.rawType)
             const isSelected = selectedRawType === type.rawType
 
@@ -262,7 +396,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
                   </div>
                 )}
 
-                {/* Recomendação indicator */}
                 {initialData.recommendedNextPunch?.rawType === type.rawType && (
                   <span className="absolute top-2 right-2 flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
@@ -320,6 +453,118 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
         </div>
       </section>
 
+      {/* Saldo de Horas Card (Calculado no Cache do App) */}
+      <section className="space-y-3">
+        <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
+          Resumo de Horas (Registradas via App)
+        </h3>
+        
+        <div className="rounded-[2.5rem] bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-900 p-6 space-y-5 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-xl pointer-events-none" />
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                Saldo Acumulado
+              </p>
+              <p className={`font-outfit font-black text-2xl tabular-nums leading-none ${
+                balanceMinutes > 0
+                  ? "text-emerald-400"
+                  : balanceMinutes < 0
+                  ? "text-red-400"
+                  : "text-slate-300"
+              }`}>
+                {formatHours(balanceMinutes)}
+              </p>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                Total Trabalhado
+              </p>
+              <p className="font-outfit font-black text-2xl text-white tabular-nums leading-none">
+                {formatHoursNoSign(totalWorkedMinutes)}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-wider text-slate-500">
+                Dias Registrados
+              </p>
+              <p className="font-outfit font-black text-xl text-slate-300 leading-none">
+                {stats.daySummaries.length} {stats.daySummaries.length === 1 ? "dia" : "dias"}
+              </p>
+            </div>
+
+            <div className="space-y-1 flex items-end justify-end">
+              {stats.daySummaries.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Deseja realmente limpar o cache local de batidas deste dispositivo?")) {
+                      localStorage.removeItem("app_ponto_cached_punches")
+                      setCachedPunches([])
+                      alert("Cache local de batidas limpo com sucesso!")
+                    }
+                  }}
+                  className="text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-red-400 transition-colors"
+                >
+                  Limpar Cache
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Collapsible Local History */}
+        {stats.daySummaries.length > 0 && (
+          <div className="space-y-2 mt-2">
+            <button
+              type="button"
+              onClick={() => setShowLocalHistory(!showLocalHistory)}
+              className="w-full py-2.5 bg-slate-900/30 border border-slate-900/60 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors"
+            >
+              {showLocalHistory ? "Ocultar Detalhes Locais" : "Ver Detalhes do Histórico Local"}
+            </button>
+
+            {showLocalHistory && (
+              <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1 mt-2">
+                {stats.daySummaries.map((day) => {
+                  const isPositive = day.balanceMinutes >= 0
+                  return (
+                    <div
+                      key={day.dateStr}
+                      className="rounded-2xl border border-slate-900/80 bg-slate-950/40 p-4 space-y-2"
+                    >
+                      <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+                        <span className="font-outfit font-black text-sm text-white">
+                          {day.dateStr}
+                        </span>
+                        <span className={`text-xs font-black font-outfit ${isPositive ? "text-emerald-400" : "text-red-400"}`}>
+                          {formatHours(day.balanceMinutes)}
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 text-[10px] font-outfit text-cyan-400">
+                        {day.punches.map((p) => (
+                          <span key={p.id} className="bg-slate-900 px-2 py-1 rounded-lg">
+                            {APP_PUNCH_TYPES.find((t) => t.rawType === p.rawType)?.label || p.rawType}: {new Date(p.punchDateTime).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                        ))}
+                      </div>
+
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">
+                        Trabalhado: {formatHoursNoSign(day.workedMinutes)} / Esperado: 8h00
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
       {/* Timeline de hoje */}
       <section className="space-y-3">
         <h3 className="text-xs font-black uppercase tracking-wider text-slate-400">
@@ -336,7 +581,6 @@ export function PontoDashboard({ initialData }: PontoDashboardProps) {
                 const matched = APP_PUNCH_TYPES.find((t) => t.rawType === punch.rawType)
                 return (
                   <div key={punch.id} className="relative">
-                    {/* Bullet */}
                     <span className="absolute -left-[26px] top-1 h-3.5 w-3.5 rounded-full border-2 border-slate-950 bg-cyan-400 shadow-sm" />
                     
                     <div className="flex justify-between items-center">

@@ -222,7 +222,7 @@ export async function registerPunchAction(
   }
 }
 
-export async function getEmployeeHistoryData(selectedPeriod?: string) {
+export async function getEmployeeHistoryData() {
   try {
     const user = await getAuthenticatedUser()
     if (!user) {
@@ -233,38 +233,7 @@ export async function getEmployeeHistoryData(selectedPeriod?: string) {
       return { error: "Usuário não vinculado a um colaborador" }
     }
 
-    const currentYear = new Date().getFullYear()
-    const currentMonth = new Date().getMonth() + 1
-    const currentPeriodKey = `${currentYear}-${String(currentMonth).padStart(2, "0")}`
-    const targetPeriod = selectedPeriod || currentPeriodKey
-
-    // 1. Buscar todos os espelhos do colaborador para montar a lista de meses disponíveis
-    const allMirrors = await (prisma as any).attendanceMirror.findMany({
-      where: { employeeId: user.employeeId },
-      select: {
-        id: true,
-        period: true,
-        startDate: true,
-        endDate: true,
-        status: true,
-      },
-      orderBy: { period: "desc" },
-    })
-
-    // 2. Buscar o espelho do período selecionado (com os dias detalhados)
-    const mirror = await (prisma as any).attendanceMirror.findFirst({
-      where: {
-        employeeId: user.employeeId,
-        period: targetPeriod,
-      },
-      include: {
-        days: {
-          orderBy: { date: "asc" },
-        },
-      },
-    })
-
-    // 3. Buscar todos os holerites publicados (PAID ou GENERATED) do colaborador
+    // 1. Buscar todos os holerites publicados (PAID ou GENERATED) do colaborador
     const payrolls = await (prisma as any).payroll.findMany({
       where: {
         employeeId: user.employeeId,
@@ -273,40 +242,17 @@ export async function getEmployeeHistoryData(selectedPeriod?: string) {
       orderBy: { referencePeriod: "desc" },
     })
 
+    // 2. Buscar todos os espelhos de ponto tratados/aprovados (EmployeeDocument de tipo ATTENDANCE_MIRROR)
+    const mirrors = await prisma.employeeDocument.findMany({
+      where: {
+        employeeId: user.employeeId,
+        type: "ATTENDANCE_MIRROR",
+      },
+      orderBy: { createdAt: "desc" },
+    })
+
     return {
       success: true,
-      periods: allMirrors.map((m: any) => ({
-        period: m.period,
-        startDate: m.startDate,
-        endDate: m.endDate,
-      })),
-      activeMirror: mirror
-        ? {
-            id: mirror.id,
-            period: mirror.period,
-            startDate: mirror.startDate,
-            endDate: mirror.endDate,
-            expectedMinutes: mirror.expectedMinutes,
-            workedMinutes: mirror.workedMinutes,
-            overtimeMinutes: mirror.overtimeMinutes,
-            deficitMinutes: mirror.deficitMinutes,
-            status: mirror.status,
-            days: mirror.days.map((d: any) => ({
-              id: d.id,
-              date: d.date,
-              expectedMinutes: d.expectedMinutes,
-              workedMinutes: d.workedMinutes,
-              overtimeMinutes: d.overtimeMinutes,
-              deficitMinutes: d.deficitMinutes,
-              firstIn: d.firstIn,
-              lunchOut: d.lunchOut,
-              lunchIn: d.lunchIn,
-              lastOut: d.lastOut,
-              status: d.status,
-              anomalies: d.anomalies ? JSON.parse(d.anomalies) : [],
-            })),
-          }
-        : null,
       payrolls: payrolls.map((p: any) => ({
         id: p.id,
         referencePeriod: p.referencePeriod,
@@ -315,7 +261,13 @@ export async function getEmployeeHistoryData(selectedPeriod?: string) {
         status: p.status,
         createdAt: p.createdAt,
       })),
-      targetPeriod,
+      mirrors: mirrors.map((m: any) => ({
+        id: m.id,
+        name: m.name,
+        description: m.description,
+        fileUrl: m.fileUrl,
+        createdAt: m.createdAt,
+      })),
     }
   } catch (error: any) {
     console.error("Erro ao buscar dados de histórico:", error)

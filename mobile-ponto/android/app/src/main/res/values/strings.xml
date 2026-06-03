@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Ponto - Spa do Colchão</string>
-    <string name="title_activity_main">Ponto - Spa do Colchão</string>
+    <string name="app_name">Ponto Eletronico - Spa do Colchão</string>
+    <string name="title_activity_main">Ponto Eletronico - Spa do Colchão</string>
     <string name="package_name">com.spadocolchao.ponto</string>
     <string name="custom_url_scheme">com.spadocolchao.ponto</string>
 </resources>

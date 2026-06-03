@@ -4,15 +4,8 @@ import { PontoHistoryView } from "../_components/PontoHistoryView"
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
-interface PageProps {
-  searchParams?: {
-    period?: string
-  }
-}
-
-export default async function PontoHistoricoPage({ searchParams }: PageProps) {
-  const period = searchParams?.period
-  const historyData = await getEmployeeHistoryData(period)
+export default async function PontoHistoricoPage() {
+  const historyData = await getEmployeeHistoryData()
 
   return <PontoHistoryView data={historyData} />
 }
