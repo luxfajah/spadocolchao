@@ -89,10 +89,10 @@ export async function login(prevState: any, formData: FormData) {
     include: authenticatedUserInclude,
   })
 
-  const userAgent = headers().get("user-agent") || ""
-  const isVendedorApp = userAgent.includes("CapacitorVendedor")
-  const isEntregadorApp = userAgent.includes("CapacitorEntregador")
-  const isPontoApp = userAgent.includes("CapacitorPonto")
+  const userAgent = (headers().get("user-agent") || "").toLowerCase()
+  const isVendedorApp = userAgent.includes("capacitorvendedor")
+  const isEntregadorApp = userAgent.includes("capacitorentregador")
+  const isPontoApp = userAgent.includes("capacitorponto")
 
   if (!authenticatedUser) {
     redirect(isVendedorApp ? "/app-vendedor/pdv" : isEntregadorApp ? "/app-entregador" : isPontoApp ? "/app-ponto" : (redirectTo || "/dashboard"))

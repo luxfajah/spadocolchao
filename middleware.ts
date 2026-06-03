@@ -6,10 +6,10 @@ export function middleware(request: NextRequest) {
   const requestHeaders = new Headers(request.headers)
   requestHeaders.set("x-pathname", request.nextUrl.pathname)
 
-  const userAgent = request.headers.get("user-agent") || ""
-  const isVendedorApp = userAgent.includes("CapacitorVendedor")
-  const isEntregadorApp = userAgent.includes("CapacitorEntregador")
-  const isPontoApp = userAgent.includes("CapacitorPonto")
+  const userAgent = (request.headers.get("user-agent") || "").toLowerCase()
+  const isVendedorApp = userAgent.includes("capacitorvendedor")
+  const isEntregadorApp = userAgent.includes("capacitorentregador")
+  const isPontoApp = userAgent.includes("capacitorponto")
 
   if (isVendedorApp && !request.nextUrl.pathname.startsWith("/app-vendedor") && request.nextUrl.pathname !== "/login") {
     return NextResponse.redirect(new URL("/app-vendedor/pdv", request.url))
