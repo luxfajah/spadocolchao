@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Vendedor Colchão</string>
-    <string name="title_activity_main">Vendedor Colchão</string>
+    <string name="app_name">Vendedor - Spa do Colchão</string>
+    <string name="title_activity_main">Vendedor - Spa do Colchão</string>
     <string name="package_name">com.spadocolchao.vendedor</string>
     <string name="custom_url_scheme">com.spadocolchao.vendedor</string>
 </resources>

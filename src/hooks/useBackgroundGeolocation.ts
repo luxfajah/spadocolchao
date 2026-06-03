@@ -27,8 +27,8 @@ export function useBackgroundGeolocation(userId: string | null) {
 
         const watcherId = await BackgroundGeolocation.addWatcher(
           {
-            backgroundMessage: "Gravando rota no plano de fundo.",
-            backgroundTitle: "Rastreamento Ativo",
+            backgroundMessage: " ",
+            backgroundTitle: " ",
             requestPermissions: true,
             stale: false,
             distanceFilter: 15, // Atualiza a cada 15 metros de movimentação
