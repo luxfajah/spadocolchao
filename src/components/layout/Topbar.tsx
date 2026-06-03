@@ -152,14 +152,16 @@ export function Topbar({ onMenuButtonClick, user, access }: TopbarProps) {
 
         <div className="relative flex h-16 items-center justify-between gap-4 px-4 md:px-8">
           <div className="flex min-w-0 items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden"
-              onClick={onMenuButtonClick}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
+            {onMenuButtonClick && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-11 w-11 rounded-2xl border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50 lg:hidden"
+                onClick={onMenuButtonClick}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
 
             <div className="hidden items-center gap-3 xl:flex">
               <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">

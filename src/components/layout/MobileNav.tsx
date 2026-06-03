@@ -104,146 +104,133 @@ function canAccessArea(allowedAreas: AppArea[], area?: AppArea | string) {
 export function MobileNav({ allowedAreas, homeHref }: { allowedAreas: AppArea[]; homeHref: string }) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
-  const isPDV = pathname.startsWith("/pdv")
-  const quickLinks = QUICK_LINKS.filter((item) => canAccessArea(allowedAreas, item.area)).slice(0, 4)
-  const leftLinks = quickLinks.slice(0, 2)
-  const rightLinks = quickLinks.slice(2, 4)
+  const quickLinks = QUICK_LINKS.filter((item) => canAccessArea(allowedAreas, item.area)).slice(0, 3)
   const visibleSessions = MORE_SESSIONS.map((session) => ({
     ...session,
     items: session.items.filter((item) => canAccessArea(allowedAreas, item.requiredArea)),
   })).filter((session) => session.items.length > 0)
 
+  const navItems = [
+    { href: homeHref, icon: Home, label: "Início" },
+    ...quickLinks.map((link) => ({
+      href: link.href,
+      icon: link.icon,
+      label: link.shortLabel,
+    })),
+  ]
+
   return (
-    <nav
-      className={cn(
-        "lg:hidden fixed left-0 right-0 z-50 pointer-events-none transition-all duration-500",
-        isPDV ? "top-0" : "bottom-0",
-      )}
-    >
-      <div className={cn("relative flex items-end px-4", isPDV ? "h-20 pt-4" : "h-24 pb-4")}>
-        <div
-          className={cn(
-            "absolute left-4 right-4 h-16 bg-white rounded-[2rem] shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] border border-slate-100 pointer-events-auto transition-all duration-500",
-            isPDV ? "top-2 rounded-b-[2rem] rounded-xl" : "bottom-4",
-          )}
-        />
-
-        <div className={cn("relative h-16 w-full pointer-events-auto flex items-center justify-between", isPDV ? "mt-[-12px]" : "")}>
-          <div className="flex flex-1 items-center justify-center gap-8 pl-4">
-            {leftLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "flex w-12 flex-col items-center justify-center transition-all duration-300",
-                  pathname.startsWith(link.href) ? "text-primary scale-110" : "text-slate-600",
-                )}
-              >
-                <link.icon className="mb-1 h-5 w-5" />
-                <span className="text-[9px] font-black uppercase tracking-tight">{link.shortLabel}</span>
-              </Link>
-            ))}
-          </div>
-
-          <div className="relative w-20 shrink-0">
-            <div className={cn("absolute left-1/2 -translate-x-1/2 transition-all duration-500", isPDV ? "top-6" : "-top-6")}>
-              <Link
-                href={homeHref}
-                className={cn(
-                  "flex h-16 w-16 items-center justify-center rounded-full border-[5px] border-white transition-all duration-500 shadow-xl",
-                  pathname === homeHref ? "bg-primary text-white scale-110" : "bg-slate-900 text-white hover:scale-105",
-                )}
-              >
-                <Home className="h-7 w-7" />
-              </Link>
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 flex items-center justify-around px-4 pt-2.5 pb-[calc(env(safe-area-inset-bottom)+10px)] shadow-[0_-8px_30px_rgba(0,0,0,0.06)]">
+      {navItems.map((item) => {
+        const Icon = item.icon
+        const active = item.href === homeHref ? pathname === item.href : pathname === item.href || pathname.startsWith(item.href + "/")
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center justify-center w-full py-1.5 gap-1 transition-all duration-300 relative ${
+              active ? "text-primary scale-105" : "text-slate-500 hover:text-slate-750"
+            }`}
+          >
+            <div className={`p-2 rounded-2xl transition-all duration-300 ${
+              active ? "bg-primary/10 shadow-sm" : ""
+            }`}>
+              <Icon size={20} className={active ? "stroke-[2.5px]" : "stroke-[2px]"} />
             </div>
-          </div>
+            <span className={`text-[9px] font-black uppercase tracking-[0.12em] transition-all duration-300 ${
+              active ? "text-primary font-bold" : "text-slate-400"
+            }`}>
+              {item.label}
+            </span>
+            {active && (
+              <div className="absolute top-0 w-8 h-[3px] bg-primary rounded-full animate-in fade-in duration-300" />
+            )}
+          </Link>
+        )
+      })}
 
-          <div className="flex flex-1 items-center justify-center gap-8 pr-4">
-            {rightLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  "flex w-12 flex-col items-center justify-center transition-all duration-300",
-                  pathname.startsWith(link.href) ? "text-primary scale-110" : "text-slate-600",
-                )}
-              >
-                <link.icon className="mb-1 h-5 w-5" />
-                <span className="text-[9px] font-black uppercase tracking-tight">{link.shortLabel}</span>
-              </Link>
-            ))}
-
-            <Drawer open={isOpen} onOpenChange={setIsOpen}>
-              <DrawerTrigger asChild>
-                <button className="flex w-12 flex-col items-center justify-center text-slate-600 transition-all active:scale-90">
-                  <MoreHorizontal className="mb-1 h-5 w-5" />
-                  <span className="text-[9px] font-black uppercase tracking-tight">Mais</span>
-                </button>
-              </DrawerTrigger>
-              <DrawerContent className="h-[85vh] rounded-t-[3rem] border-slate-100 p-0 shadow-2xl">
-                <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-slate-200" />
-                <DrawerHeader className="px-8 pt-4 pb-2">
-                  <DrawerTitle className="font-outfit text-2xl font-black uppercase tracking-tighter text-primary">Portal Spa do Colchão</DrawerTitle>
-                </DrawerHeader>
-                <ScrollArea className="flex-1 px-8 pb-12 custom-scrollbar">
-                  <div className="mt-6 space-y-10">
-                    {canAccessArea(allowedAreas, "pdv") ? (
-                      <div>
-                        <Link href="/pdv" onClick={() => setIsOpen(false)} className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] bg-primary p-5 text-white shadow-xl shadow-primary/20">
-                          <div className="absolute top-[-10px] right-[-10px] opacity-10 transition-transform group-hover:scale-110">
-                            <Store className="h-24 w-24" />
-                          </div>
-                          <div className="relative z-10 flex items-center gap-4">
-                            <div className="rounded-2xl bg-white/10 p-3">
-                              <Store className="h-6 w-6" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="font-outfit text-base font-black uppercase">Frente de Caixa</span>
-                              <span className="text-[10px] font-bold opacity-70">Vendas Rápidas</span>
-                            </div>
-                          </div>
-                          <div className="relative z-10 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-primary">Abrir</div>
-                        </Link>
+      <Drawer open={isOpen} onOpenChange={setIsOpen}>
+        <DrawerTrigger asChild>
+          <button
+            className={`flex flex-col items-center justify-center w-full py-1.5 gap-1 transition-all duration-300 relative ${
+              isOpen ? "text-primary scale-105" : "text-slate-500 hover:text-slate-750"
+            }`}
+          >
+            <div className={`p-2 rounded-2xl transition-all duration-300 ${
+              isOpen ? "bg-primary/10 shadow-sm" : ""
+            }`}>
+              <MoreHorizontal size={20} className={isOpen ? "stroke-[2.5px]" : "stroke-[2px]"} />
+            </div>
+            <span className={`text-[9px] font-black uppercase tracking-[0.12em] transition-all duration-300 ${
+              isOpen ? "text-primary font-bold" : "text-slate-400"
+            }`}>
+              Mais
+            </span>
+            {isOpen && (
+              <div className="absolute top-0 w-8 h-[3px] bg-primary rounded-full animate-in fade-in duration-300" />
+            )}
+          </button>
+        </DrawerTrigger>
+        <DrawerContent className="h-[85vh] rounded-t-[3rem] border-slate-100 p-0 shadow-2xl">
+          <div className="mx-auto mt-3 mb-2 h-1.5 w-12 rounded-full bg-slate-200" />
+          <DrawerHeader className="px-8 pt-4 pb-2">
+            <DrawerTitle className="font-outfit text-2xl font-black uppercase tracking-tighter text-primary">Portal Spa do Colchão</DrawerTitle>
+          </DrawerHeader>
+          <ScrollArea className="flex-1 px-8 pb-12 custom-scrollbar">
+            <div className="mt-6 space-y-10">
+              {canAccessArea(allowedAreas, "pdv") ? (
+                <div>
+                  <Link href="/pdv" onClick={() => setIsOpen(false)} className="group relative flex items-center justify-between overflow-hidden rounded-[2rem] bg-primary p-5 text-white shadow-xl shadow-primary/20">
+                    <div className="absolute top-[-10px] right-[-10px] opacity-10 transition-transform group-hover:scale-110">
+                      <Store className="h-24 w-24" />
+                    </div>
+                    <div className="relative z-10 flex items-center gap-4">
+                      <div className="rounded-2xl bg-white/10 p-3">
+                        <Store className="h-6 w-6" />
                       </div>
-                    ) : null}
-
-                    {visibleSessions.map((session) => (
-                      <div key={session.group}>
-                        <h3 className="mb-5 flex items-center gap-3 pl-1 text-[10px] font-black uppercase tracking-[0.25em] text-slate-300">
-                          {session.group}
-                          <div className="h-px flex-1 bg-slate-100" />
-                        </h3>
-                        <div className="grid grid-cols-2 gap-4">
-                          {session.items.map((item) => (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              onClick={() => setIsOpen(false)}
-                              className={cn(
-                                "group/btn flex items-center gap-4 rounded-3xl p-4 transition-all duration-300",
-                                pathname === item.href ? "bg-primary text-white shadow-lg" : "bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95",
-                              )}
-                            >
-                              <item.icon
-                                className={cn(
-                                  "h-4 w-4 shrink-0 transition-transform group-hover/btn:scale-110",
-                                  pathname === item.href ? "text-white" : "text-slate-400",
-                                )}
-                              />
-                              <span className="truncate text-[11px] font-bold tracking-tight">{item.title}</span>
-                            </Link>
-                          ))}
-                        </div>
+                      <div className="flex flex-col">
+                        <span className="font-outfit text-base font-black uppercase">Frente de Caixa</span>
+                        <span className="text-[10px] font-bold opacity-70">Vendas Rápidas</span>
                       </div>
+                    </div>
+                    <div className="relative z-10 rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-primary">Abrir</div>
+                  </Link>
+                </div>
+              ) : null}
+
+              {visibleSessions.map((session) => (
+                <div key={session.group}>
+                  <h3 className="mb-5 flex items-center gap-3 pl-1 text-[10px] font-black uppercase tracking-[0.25em] text-slate-300">
+                    {session.group}
+                    <div className="h-px flex-1 bg-slate-100" />
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    {session.items.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setIsOpen(false)}
+                        className={cn(
+                          "group/btn flex items-center gap-4 rounded-3xl p-4 transition-all duration-300",
+                          pathname === item.href ? "bg-primary text-white shadow-lg" : "bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95",
+                        )}
+                      >
+                        <item.icon
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-transform group-hover/btn:scale-110",
+                            pathname === item.href ? "text-white" : "text-slate-450",
+                          )}
+                        />
+                        <span className="truncate text-[11px] font-bold tracking-tight">{item.title}</span>
+                      </Link>
                     ))}
                   </div>
-                </ScrollArea>
-              </DrawerContent>
-            </Drawer>
-          </div>
-        </div>
-      </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </DrawerContent>
+      </Drawer>
     </nav>
   )
 }
