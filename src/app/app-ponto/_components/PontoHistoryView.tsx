@@ -57,7 +57,7 @@ interface PontoHistoryViewProps {
       status: string
       createdAt: Date | string
     }[]
-    targetPeriod: string
+    targetPeriod?: string
     error?: string
   }
 }
@@ -233,7 +233,7 @@ export function PontoHistoryView({ data }: PontoHistoryViewProps) {
             </label>
             <select
               id="period-select"
-              value={data.targetPeriod}
+              value={data.targetPeriod || ""}
               onChange={handlePeriodChange}
               className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-black uppercase tracking-wider text-white focus:outline-none focus:border-cyan-500 appearance-none cursor-pointer"
             >
