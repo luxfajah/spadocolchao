@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { registerPlugin } from '@capacitor/core';
+import { registerPlugin, Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import type { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
 import { createClient } from '@/utils/supabase/client';
@@ -14,6 +14,7 @@ export function useBackgroundGeolocation(userId: string | null) {
 
   useEffect(() => {
     if (!userId) return;
+    if (!Capacitor.isNativePlatform()) return; // Ignora no desktop web para não quebrar a tela
 
     let isComponentMounted = true;
 
