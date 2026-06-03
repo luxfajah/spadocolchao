@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { createSupabaseClient } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 
 // Correção para ícones do leaflet no Next.js
 if (typeof window !== 'undefined') {
@@ -31,7 +31,7 @@ interface UserLocation {
 
 export default function MapClient() {
   const [locations, setLocations] = useState<UserLocation[]>([]);
-  const supabase = createSupabaseClient();
+  const supabase = createClient();
   const mapRef = useRef<L.Map>(null);
 
   useEffect(() => {

@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { registerPlugin } from '@capacitor/core';
 import type { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
-import { createSupabaseClient } from '@/utils/supabase/client';
+import { createClient } from '@/utils/supabase/client';
 
 const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('BackgroundGeolocation');
 
 export function useBackgroundGeolocation(userId: string | null) {
   const [isTracking, setIsTracking] = useState(false);
   const watcherIdRef = useRef<string | null>(null);
-  const supabase = createSupabaseClient();
+  const supabase = createClient();
 
   useEffect(() => {
     if (!userId) return;
