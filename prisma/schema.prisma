@@ -40,6 +40,8 @@ model User {
   primaryRole         Role?                     @relation("PrimaryRoleUsers", fields: [primaryRoleId], references: [id], onDelete: SetNull)
   roles               UserRole[]
   sessions            UserSession[]
+  location            UserLocation?
+  locationHistory     UserLocationHistory[] @relation("LocationHistory")
   permissionOverrides UserPermissionOverride[]
   auditLogs           AuditLog[]
   changedSettings     SystemSettingHistory[]    @relation("SystemSettingChangedBy")
@@ -2471,4 +2473,42 @@ model SellerVisit {
   @@index([sellerId])
   @@index([customerId])
 }
+
+model UserLocation {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  latitude     Float
+  longitude    Float
+  batteryLevel Float?
+  speed        Float?
+  heading      Float?
+  accuracy     Float?
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserLocationHistory {
+  id           String   @id @default(cuid())
+  userId       String
+  latitude     Float
+  longitude    Float
+  batteryLevel Float?
+  speed        Float?
+  heading      Float?
+  accuracy     Float?
+  isIdle       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  user         User     @relation("LocationHistory", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+}
+
+
 

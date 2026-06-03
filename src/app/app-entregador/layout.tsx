@@ -2,6 +2,7 @@ import { getAuthenticatedUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { Map, Package, CheckSquare } from "lucide-react"
 import Link from "next/link"
+import { GeolocationProvider } from "@/components/GeolocationProvider"
 
 export default async function AppEntregadorLayout({ children }: { children: React.ReactNode }) {
   const user = await getAuthenticatedUser()
@@ -11,6 +12,7 @@ export default async function AppEntregadorLayout({ children }: { children: Reac
 
   return (
     <div className="flex flex-col h-screen bg-slate-50">
+      <GeolocationProvider userId={user.id} />
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto pb-16 custom-scrollbar">
         {children}

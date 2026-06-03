@@ -36,6 +36,7 @@ const NAV_ITEMS = [
     items: [
       { title: "PDV", href: "/pdv", icon: Store, requiredArea: "pdv" },
       { title: "Motor de Vendas", href: "/vendas-clientes/vendas", icon: Tags, requiredArea: "sales" },
+      { title: "Rastreamento GPS", href: "/rastreamento", icon: MapPin, requiredArea: "sales" },
       { title: "Central de Pedidos", href: "/vendas-clientes/pedidos", icon: ClipboardList, requiredArea: "orders" },
       { title: "Kanban de Pedidos", href: "/vendas-clientes/kanban", icon: Layers, requiredArea: "kanban" },
       { title: "Central de Clientes", href: "/vendas-clientes/clientes", icon: Users, requiredArea: "customers" },
