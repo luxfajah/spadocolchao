@@ -12,7 +12,7 @@ export default async function Home() {
   }
   
   if (userAgent.includes('CapacitorEntregador')) {
-    redirect('/app-entregador/pedidos')
+    redirect('/app-entregador')
   }
 
   const user = await getAuthenticatedUser()

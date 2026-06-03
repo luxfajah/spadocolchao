@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isEntregadorApp && !request.nextUrl.pathname.startsWith("/app-entregador") && request.nextUrl.pathname !== "/login") {
-    return NextResponse.redirect(new URL("/app-entregador/pedidos", request.url))
+    return NextResponse.redirect(new URL("/app-entregador", request.url))
   }
 
   if (request.nextUrl.pathname === "/login") {
