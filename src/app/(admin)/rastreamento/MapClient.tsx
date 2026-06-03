@@ -95,8 +95,8 @@ export default function MapClient() {
   return (
     <div className="w-full h-full relative z-0">
       <MapContainer 
-        center={[-23.5505, -46.6333]} // São Paulo (padrão)
-        zoom={11} 
+        center={[-25.5478, -54.5880]} // Foz do Iguaçu
+        zoom={13} 
         className="w-full h-full"
         ref={mapRef}
       >
