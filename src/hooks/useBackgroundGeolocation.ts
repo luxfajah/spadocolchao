@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { registerPlugin } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import type { BackgroundGeolocationPlugin, Location } from '@capacitor-community/background-geolocation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -7,6 +8,7 @@ const BackgroundGeolocation = registerPlugin<BackgroundGeolocationPlugin>('Backg
 
 export function useBackgroundGeolocation(userId: string | null) {
   const [isTracking, setIsTracking] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const watcherIdRef = useRef<string | null>(null);
   const supabase = createClient();
 
@@ -17,6 +19,11 @@ export function useBackgroundGeolocation(userId: string | null) {
 
     const startTracking = async () => {
       try {
+        // Remove watcher anterior se existir
+        if (watcherIdRef.current) {
+          await BackgroundGeolocation.removeWatcher({ id: watcherIdRef.current });
+        }
+
         const watcherId = await BackgroundGeolocation.addWatcher(
           {
             backgroundMessage: "Gravando rota no plano de fundo.",
@@ -27,17 +34,19 @@ export function useBackgroundGeolocation(userId: string | null) {
           },
           async function callback(location: Location | undefined, error) {
             if (error) {
+              console.error("BG_GEO_ERROR:", error);
               if (error.code === 'NOT_AUTHORIZED') {
-                if (window.confirm("O app precisa da permissão 'Permitir o tempo todo' para registrar as rotas em segundo plano. Deseja abrir as configurações?")) {
-                  BackgroundGeolocation.openSettings();
-                }
+                setLocationError("NOT_AUTHORIZED");
+              } else {
+                setLocationError("UNKNOWN_ERROR");
               }
               return;
             }
 
             if (location) {
+              setLocationError(null); // GPS is working
               const speedKmH = location.speed != null ? (location.speed * 3.6) : 0;
-              const isIdle = speedKmH < 2.0; // Menos de 2 km/h é considerado parado ou andando devagar.
+              const isIdle = speedKmH < 2.0;
 
               // Upsert na tabela UserLocation (Posição em Tempo Real)
               const { data: existingLoc, error: selErr } = await supabase.from('UserLocation').select('id').eq('userId', userId).single();
@@ -90,18 +99,27 @@ export function useBackgroundGeolocation(userId: string | null) {
           watcherIdRef.current = watcherId;
           setIsTracking(true);
         } else {
-          // Se o componente já desmontou enquanto aguardava a permissão/inicio
           BackgroundGeolocation.removeWatcher({ id: watcherId });
         }
       } catch (err) {
         console.error("Erro ao iniciar rastreamento", err);
+        setLocationError("NOT_AUTHORIZED");
       }
     };
 
     startTracking();
 
+    // Listen to app state changes (e.g. user went to settings and returned)
+    const appStateListener = App.addListener('appStateChange', ({ isActive }) => {
+      if (isActive) {
+        // App resumed, re-try starting tracker to see if permissions/GPS are now granted
+        startTracking();
+      }
+    });
+
     return () => {
       isComponentMounted = false;
+      appStateListener.then(listener => listener.remove());
       if (watcherIdRef.current) {
         BackgroundGeolocation.removeWatcher({ id: watcherIdRef.current });
         watcherIdRef.current = null;
@@ -110,5 +128,9 @@ export function useBackgroundGeolocation(userId: string | null) {
     };
   }, [userId]);
 
-  return { isTracking };
+  const openSettings = () => {
+    BackgroundGeolocation.openSettings();
+  };
+
+  return { isTracking, locationError, openSettings };
 }
