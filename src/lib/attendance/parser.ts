@@ -54,6 +54,7 @@ export function parsePunchTxt(buffer: Buffer): RawPunch[] {
 
         const dateObj = createInstantFromBusinessDateTime(year, month, day, hour, minute, 0)
         if (dateObj && !isNaN(dateObj.getTime())) {
+          dateObj.setDate(dateObj.getDate() - 1) // Correção: Relógio adiantado 1 dia
           results.push({
             enNo: pis, // O PIS ou ID serve como identificador
             dateTime: dateObj,
@@ -199,6 +200,9 @@ export function parsePunchTxt(buffer: Buffer): RawPunch[] {
         // Ensure year is 4 digits
         if (year < 100) year += 2000
         dateObj = createInstantFromBusinessDateTime(year, month, day, hour, minute, second)
+        if (dateObj) {
+           dateObj.setDate(dateObj.getDate() - 1) // Correção: Relógio adiantado 1 dia
+        }
       }
     }
 
