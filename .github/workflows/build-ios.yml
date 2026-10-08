@@ -41,9 +41,11 @@ jobs:
         run: |
           mkdir -p build/Payload
           cp -r build/SpaVendedor.xcarchive/Products/Applications/SpaVendedor.app build/Payload/
-          echo "🔏 Aplicando assinatura Ad-Hoc no aplicativo para execução no iOS..."
-          codesign --force --deep --sign - build/Payload/SpaVendedor.app
+          echo "🔏 Aplicando assinatura Ad-Hoc com Entitlements no aplicativo para execução no iOS..."
+          codesign --force --deep --sign - --entitlements ios-vendedor/SpaVendedor/Resources/SpaVendedor.entitlements build/Payload/SpaVendedor.app
           codesign -dvvv build/Payload/SpaVendedor.app 2>&1 | head -n 15
+          echo "📋 Entitlements aplicados:"
+          codesign -d --entitlements :- build/Payload/SpaVendedor.app 2>&1 || true
           cd build
           zip -qr SpaVendedor.ipa Payload
           echo "✅ .IPA gerado com sucesso:"

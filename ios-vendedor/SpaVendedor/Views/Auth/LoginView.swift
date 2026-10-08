@@ -9,6 +9,8 @@ public struct LoginView: View {
     @State private var errorMessage: String? = nil
     @State private var showServerConfig = false
     @State private var customServerURL = APIClient.shared.baseURLString
+    @State private var canUseBiometrics = false
+    @State private var biometricTypeLabel = "Biometria"
 
     public init() {}
 
@@ -146,12 +148,12 @@ public struct LoginView: View {
                             .padding(.top, 6)
 
                             // Biometria (Face ID / Touch ID)
-                            if BiometricManager.shared.canEvaluateBiometrics && appState.loadSavedUser() != nil {
+                            if canUseBiometrics && appState.loadSavedUser() != nil {
                                 Button(action: handleBiometrics) {
                                     HStack(spacing: 8) {
                                         Image(systemName: "faceid")
                                             .font(.title3)
-                                        Text("Acessar com \(BiometricManager.shared.biometricTypeString)")
+                                        Text("Acessar com \(biometricTypeLabel)")
                                             .font(.subheadline.bold())
                                     }
                                     .foregroundStyle(.white)
@@ -213,6 +215,12 @@ public struct LoginView: View {
                             Button("Fechar") { showServerConfig = false }
                         }
                     }
+                }
+            }
+            .task {
+                if appState.loadSavedUser() != nil {
+                    canUseBiometrics = BiometricManager.shared.canEvaluateBiometrics
+                    biometricTypeLabel = BiometricManager.shared.biometricTypeString
                 }
             }
         }
