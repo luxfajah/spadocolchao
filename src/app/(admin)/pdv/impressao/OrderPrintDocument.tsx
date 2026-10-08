@@ -1260,44 +1260,53 @@ export function OrderPrintDocument({
   // 1 FOLHA A4 COMPLETA E DEDICADA PARA O CLIENTE.
   // SEM COISAS DE DESTACAR OU PICOTES, COM PROTOCOLO DE RECEBIMENTO INTEGRAL.
   // =======================================================================
+  // =======================================================================
+  // GUIA 2 DE 2: COMPROVANTE DO CLIENTE & CERTIFICADO DE GARANTIA
+  // 1 FOLHA A4 COMPLETA E DIVIDIDA EM:
+  // - 50% DADOS DA COMPRA, CLIENTE, PAGAMENTO E PROTOCOLO DE RECEBIMENTO
+  // - 50% CERTIFICADO OFICIAL DE GARANTIA (ABNT NBR 15413) & MANUAL DO USUÁRIO
+  // =======================================================================
   const renderGuiaClienteGarantiaA4 = () => {
     return (
       <div
-        className="guia-page guia-page-2 w-full max-w-[210mm] min-h-[297mm] print:min-h-0 bg-white text-black font-sans mx-auto p-4 sm:p-5 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[8.5px] leading-tight flex flex-col justify-between"
+        className="guia-page guia-page-2 w-full max-w-[210mm] h-[284mm] max-h-[284mm] bg-white text-black font-sans mx-auto p-3 sm:p-3.5 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[7.5px] leading-tight flex flex-col justify-between overflow-hidden"
       >
-        <div className="flex-1 flex flex-col">
+        {/* =================================================================== */}
+        {/* METADE SUPERIOR (50% DO A4): DADOS DA COMPRA, CLIENTE, PAGAMENTO & RECEBIMENTO */}
+        {/* =================================================================== */}
+        <div className="h-[138mm] max-h-[138mm] flex flex-col justify-between border-b-2 border-black pb-1.5 mb-1.5 overflow-hidden">
           {/* CABEÇALHO CORPORATIVO DO PEDIDO */}
-          <header className="border-b-2 border-black pb-2 mb-2">
-            <div className="flex items-start justify-between gap-4">
+          <header className="border-b-2 border-black pb-1 mb-1">
+            <div className="flex items-start justify-between gap-3">
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="bg-black text-white px-2 py-0.5 text-[8px] font-black uppercase tracking-widest rounded-none">
-                    GUIA 2 DE 2: VIA DO CLIENTE & TERMO DE GARANTIA
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-widest rounded-none">
+                    GUIA 2 DE 2: COMPROVANTE DO CLIENTE & GARANTIA
                   </span>
-                  <span className="text-[8px] font-bold text-neutral-600 uppercase tracking-wider">
+                  <span className="text-[7px] font-bold text-neutral-600 uppercase tracking-wider">
                     EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}
                   </span>
                 </div>
-                <h1 className="text-xl font-black tracking-tight text-black uppercase">
+                <h1 className="text-lg font-black tracking-tight text-black uppercase leading-none">
                   {companyInfo.name}
                 </h1>
-                <p className="text-[9px] font-black text-neutral-800 uppercase tracking-wider">
-                  COMPROVANTE DE PEDIDO & CERTIFICADO DE GARANTIA
+                <p className="text-[8px] font-black text-neutral-800 uppercase tracking-wider mt-0.5">
+                  COMPROVANTE DE PEDIDO & CERTIFICADO DE GARANTIA CONTRATUAL
                 </p>
-                <p className="text-[8px] text-neutral-600 mt-0.5">
+                <p className="text-[7px] text-neutral-600 mt-0.5">
                   CNPJ: {companyInfo.cnpj} • SAC / WhatsApp: {companyInfo.phone} • {companyInfo.address}
                 </p>
               </div>
 
               {/* BOX RETANGULAR DO NÚMERO DO PEDIDO */}
-              <div className="border-2 border-black bg-neutral-50 p-2 min-w-[200px] text-right rounded-none">
-                <span className="text-[7.5px] font-black uppercase tracking-widest text-neutral-500 block">
-                  COMPROVANTE DO PEDIDO
+              <div className="border-2 border-black bg-neutral-50 p-1.5 min-w-[180px] text-right rounded-none">
+                <span className="text-[6.5px] font-black uppercase tracking-widest text-neutral-500 block">
+                  Nº UNIFICADO DO PEDIDO
                 </span>
-                <span className="text-2xl font-black text-black tracking-tight block font-mono">
+                <span className="text-xl font-black text-black tracking-tight block font-mono leading-none">
                   {orderNumberInfo.badgeNumber}
                 </span>
-                <div className="mt-1 pt-1 border-t border-black/30 flex justify-between text-[8px]">
+                <div className="mt-1 pt-0.5 border-t border-black/30 flex justify-between text-[7px]">
                   <span className="font-bold text-neutral-600">Ref: {orderNumberInfo.reference}</span>
                   <span className="font-black text-black uppercase">{seller?.name || "Balcão / Loja"}</span>
                 </div>
@@ -1306,64 +1315,67 @@ export function OrderPrintDocument({
           </header>
 
           {/* 1. DADOS DO CLIENTE & LOCAL DE ENTREGA */}
-          <section className="mb-2 border border-black rounded-none">
-            <div className="bg-black text-white px-2 py-1 flex items-center justify-between text-[8px] font-black uppercase tracking-wider">
-              <span>1. IDENTIFICAÇÃO DO CLIENTE & AGENDAMENTO</span>
+          <section className="mb-1 border border-black rounded-none bg-white">
+            <div className="bg-black text-white px-2 py-0.5 flex items-center justify-between text-[7px] font-black uppercase tracking-wider">
+              <span>1. IDENTIFICAÇÃO DO CLIENTE & LOCAL DE ENTREGA</span>
               <span>DATA DA COMPRA: {formatDate(sale.saleDate || order.createdAt)}</span>
             </div>
 
-            <div className="p-2 grid grid-cols-3 gap-2 text-[8.5px] bg-white">
-              <div>
-                <span className="font-bold text-neutral-500 uppercase text-[7px] block">Nome do Cliente</span>
-                <span className="font-black text-black uppercase text-[9px]">{customer?.fullName || "Cliente"}</span>
+            <div className="p-1.5 grid grid-cols-12 gap-1.5 text-[7.5px] bg-white">
+              <div className="col-span-4">
+                <span className="font-bold text-neutral-500 uppercase text-[6.5px] block">Nome do Cliente:</span>
+                <span className="font-black text-black uppercase text-[8px] truncate block">{customer?.fullName || "Cliente"}</span>
               </div>
-              <div>
-                <span className="font-bold text-neutral-500 uppercase text-[7px] block">CPF / CNPJ</span>
-                <span className="font-bold text-neutral-900 font-mono">{customer?.document || "Não informado"}</span>
+              <div className="col-span-3">
+                <span className="font-bold text-neutral-500 uppercase text-[6.5px] block">CPF / CNPJ:</span>
+                <span className="font-bold text-neutral-900 font-mono text-[7.5px]">{customer?.document || "Não informado"}</span>
               </div>
-              <div>
-                <span className="font-bold text-neutral-500 uppercase text-[7px] block">Telefone / WhatsApp</span>
-                <span className="font-bold text-neutral-900 font-mono">{customer?.phone || customer?.whatsapp || "Não informado"}</span>
+              <div className="col-span-3">
+                <span className="font-bold text-neutral-500 uppercase text-[6.5px] block">Telefone / WhatsApp:</span>
+                <span className="font-bold text-neutral-900 font-mono text-[7.5px]">{customer?.phone || customer?.whatsapp || "Não informado"}</span>
+              </div>
+              <div className="col-span-2 text-right">
+                <span className="font-bold text-neutral-500 uppercase text-[6.5px] block">Previsão Entrega:</span>
+                <span className="font-black text-black font-mono text-[7.5px]">
+                  {order.deliveryDate ? formatDate(order.deliveryDate) : "A combinar"}
+                </span>
               </div>
 
-              {mainAddress && (
-                <div className="col-span-2 pt-1 border-t border-neutral-300">
-                  <span className="font-bold text-neutral-500 uppercase text-[7px] block">Endereço de Entrega</span>
+              {/* Linha do Endereço Completo */}
+              <div className="col-span-12 pt-0.5 border-t border-neutral-300 flex justify-between items-center text-[7px]">
+                <div>
+                  <span className="font-bold text-neutral-500 uppercase text-[6.5px] mr-1">Endereço de Entrega:</span>
                   <span className="font-bold text-black">
-                    {mainAddress.street}, {mainAddress.number}
-                    {mainAddress.complement ? ` (${mainAddress.complement})` : ""}
-                    {mainAddress.neighborhood ? ` • Bairro: ${mainAddress.neighborhood}` : ""}
-                    {mainAddress.city ? ` • ${mainAddress.city}/${mainAddress.state}` : ""}
-                    {mainAddress.zipCode ? ` • CEP: ${mainAddress.zipCode}` : ""}
+                    {effectiveAddress.street}
+                    {effectiveAddress.number ? `, ${effectiveAddress.number}` : ""}
+                    {effectiveAddress.complement ? ` (${effectiveAddress.complement})` : ""}
+                    {effectiveAddress.neighborhood ? ` • Bairro: ${effectiveAddress.neighborhood}` : ""}
+                    {effectiveAddress.city ? ` • ${effectiveAddress.city}/${effectiveAddress.state}` : ""}
+                    {effectiveAddress.zipCode ? ` • CEP: ${effectiveAddress.zipCode}` : ""}
                   </span>
                 </div>
-              )}
-
-              <div className="pt-1 border-t border-neutral-300">
-                <span className="font-bold text-neutral-500 uppercase text-[7px] block">Previsão de Entrega</span>
-                <span className="font-black text-black font-mono">
-                  {order.deliveryDate ? formatDate(order.deliveryDate) : "A combinar"}
-                  {order.deliveryDate && ` (${formatTimeOnly(order.deliveryDate) || "Comercial"})`}
-                </span>
+                {effectiveAddress.reference && (
+                  <span className="text-neutral-600 italic text-[6.5px]">Ref: {effectiveAddress.reference}</span>
+                )}
               </div>
             </div>
           </section>
 
-          {/* 2. DISCRIMINAÇÃO DOS PRODUTOS & VALORES CONTRATADOS */}
-          <section className="mb-2 border border-black rounded-none">
-            <div className="bg-black text-white px-2 py-1 flex items-center justify-between text-[8px] font-black uppercase tracking-wider">
-              <span>2. DISCRIMINAÇÃO DOS PRODUTOS & VALORES CONTRATADOS</span>
+          {/* 2. DISCRIMINAÇÃO COMERCIAL DOS PRODUTOS & VALORES */}
+          <section className="mb-1 border border-black rounded-none bg-white flex-1 flex flex-col justify-between">
+            <div className="bg-black text-white px-2 py-0.5 flex items-center justify-between text-[7px] font-black uppercase tracking-wider">
+              <span>2. DISCRIMINAÇÃO DOS PRODUTOS & ESPECIFICAÇÕES CONTRATADAS</span>
               <span>TOTAL DE ITENS: {items.length}</span>
             </div>
 
-            <table className="w-full text-left text-[8px] border-collapse">
+            <table className="w-full text-left text-[7.5px] border-collapse">
               <thead>
-                <tr className="bg-neutral-100 text-black border-b border-black text-[7.5px] uppercase font-black">
-                  <th className="py-1 px-2 border-r border-neutral-300 w-8 text-center">Item</th>
-                  <th className="py-1 px-2 border-r border-neutral-300">Descrição do Produto & Especificações</th>
-                  <th className="py-1 px-2 border-r border-neutral-300 text-center w-12">Qtd</th>
-                  <th className="py-1 px-2 border-r border-neutral-300 text-right w-24">Valor Unit.</th>
-                  <th className="py-1 px-2 text-right w-24">Valor Total</th>
+                <tr className="bg-neutral-100 text-black border-b border-black text-[7px] uppercase font-black">
+                  <th className="py-0.5 px-1.5 border-r border-neutral-300 w-7 text-center">Item</th>
+                  <th className="py-0.5 px-1.5 border-r border-neutral-300">Descrição do Produto & Especificações Técnicas</th>
+                  <th className="py-0.5 px-1.5 border-r border-neutral-300 text-center w-10">Qtd</th>
+                  <th className="py-0.5 px-1.5 border-r border-neutral-300 text-right w-20">Valor Unit.</th>
+                  <th className="py-0.5 px-1.5 text-right w-20">Valor Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-300">
@@ -1371,12 +1383,12 @@ export function OrderPrintDocument({
                   const specs = extractTechnicalSpecs(item);
                   return (
                     <tr key={item.id || idx} className="text-black">
-                      <td className="py-1 px-2 font-black text-center border-r border-neutral-300 font-mono">
+                      <td className="py-0.5 px-1.5 font-black text-center border-r border-neutral-300 font-mono text-[7px]">
                         #{idx + 1}
                       </td>
-                      <td className="py-1 px-2 border-r border-neutral-300">
-                        <p className="font-black uppercase text-[8.5px] text-black">{item.description}</p>
-                        <p className="text-[7.5px] text-neutral-700">
+                      <td className="py-0.5 px-1.5 border-r border-neutral-300">
+                        <p className="font-black uppercase text-[7.5px] text-black leading-tight">{item.description}</p>
+                        <p className="text-[6.5px] text-neutral-700 leading-tight">
                           {specs.actualW > 0 ? `Medidas: ${specs.actualW}x${specs.actualL}x${specs.actualH}cm • ` : ""}
                           {specs.topFabricName ? `Tampo: ${specs.topFabricName} • ` : ""}
                           {specs.sideFabricName ? `Lateral: ${specs.sideFabricName} • ` : ""}
@@ -1385,18 +1397,18 @@ export function OrderPrintDocument({
                           {specs.boxType ? `Box: ${specs.boxType}` : ""}
                         </p>
                         {specs.technicalNotes && (
-                          <p className="text-[7px] text-neutral-600 italic mt-0.5">
+                          <p className="text-[6.5px] text-neutral-600 italic">
                             Obs: {specs.technicalNotes}
                           </p>
                         )}
                       </td>
-                      <td className="py-1 px-2 text-center font-black border-r border-neutral-300 font-mono">
+                      <td className="py-0.5 px-1.5 text-center font-black border-r border-neutral-300 font-mono text-[7px]">
                         {item.quantity}
                       </td>
-                      <td className="py-1 px-2 text-right font-medium text-neutral-800 border-r border-neutral-300 font-mono">
+                      <td className="py-0.5 px-1.5 text-right font-medium text-neutral-800 border-r border-neutral-300 font-mono text-[7px]">
                         {formatBRL(item.unitPrice)}
                       </td>
-                      <td className="py-1 px-2 text-right font-black text-black font-mono">
+                      <td className="py-0.5 px-1.5 text-right font-black text-black font-mono text-[7.5px]">
                         {formatBRL(item.totalAmount)}
                       </td>
                     </tr>
@@ -1406,12 +1418,12 @@ export function OrderPrintDocument({
             </table>
 
             {/* TOTALIZADORES E FORMAS DE PAGAMENTO */}
-            <div className="border-t-2 border-black p-2 bg-neutral-50 grid grid-cols-2 gap-4 text-[8.5px]">
+            <div className="border-t-2 border-black p-1.5 bg-neutral-50 grid grid-cols-2 gap-3 text-[7.5px]">
               {/* LADO ESQUERDO: FORMA DE PAGAMENTO */}
-              <div className="border-r border-black/30 pr-3 space-y-1">
+              <div className="border-r border-black/30 pr-2 space-y-0.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-neutral-700 uppercase text-[7.5px]">Forma de Pagamento:</span>
-                  <span className="font-black uppercase text-[7.5px] px-1.5 py-0.5 bg-black text-white">
+                  <span className="font-black text-neutral-700 uppercase text-[6.5px]">Condição de Pagamento:</span>
+                  <span className="font-black uppercase text-[6.5px] px-1 py-0.2 bg-black text-white">
                     {sale.financialStatus === "PAID" ? "PAGO ANTECIPADO" : "A RECEBER NA ENTREGA"}
                   </span>
                 </div>
@@ -1419,24 +1431,24 @@ export function OrderPrintDocument({
                 {installments.length > 0 ? (
                   <div className="space-y-0.5">
                     {installments.map((inst: any) => (
-                      <div key={inst.id} className="flex justify-between items-center text-[8px] bg-white p-1 border border-neutral-300">
+                      <div key={inst.id} className="flex justify-between items-center text-[7px] bg-white p-0.5 px-1 border border-neutral-300">
                         <span className="font-bold text-black">
                           {inst.installmentNumber}x {inst.paymentMethod?.name || "Pagamento"}
                         </span>
                         <span className="font-mono font-black text-black">{formatBRL(inst.amount)}</span>
-                        <span className="text-neutral-500 text-[7.5px]">Venc: {formatDate(inst.dueDate)}</span>
+                        <span className="text-neutral-500 text-[6.5px]">Venc: {formatDate(inst.dueDate)}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-[8px] font-bold text-neutral-700 bg-white p-1 border border-neutral-300">
+                  <p className="text-[7px] font-bold text-neutral-700 bg-white p-0.5 px-1 border border-neutral-300">
                     Condição combinada no balcão / faturamento direto
                   </p>
                 )}
 
                 {/* NOTAS FINANCEIRAS / ENTRADA NO ATO */}
                 {sale.notes && (
-                  <p className="text-[7.5px] font-bold text-neutral-800 bg-white p-1 border border-neutral-300">
+                  <p className="text-[6.5px] font-bold text-neutral-800 bg-white p-0.5 px-1 border border-neutral-300 line-clamp-2">
                     {sale.notes}
                   </p>
                 )}
@@ -1444,14 +1456,14 @@ export function OrderPrintDocument({
 
               {/* LADO DIREITO: VALORES E TOTAIS */}
               <div className="flex flex-col justify-between pl-1">
-                <div className="space-y-0.5 text-right text-[8px]">
+                <div className="space-y-0.5 text-right text-[7.5px]">
                   <div className="flex justify-between text-neutral-600">
                     <span>Subtotal dos Produtos:</span>
                     <span className="font-mono font-bold text-black">{formatBRL(sale.subtotalAmount)}</span>
                   </div>
                   {sale.discountAmount > 0 && (
                     <div className="flex justify-between text-neutral-700">
-                      <span>Desconto Aplicado:</span>
+                      <span>Desconto Concedido:</span>
                       <span className="font-mono font-bold text-neutral-900">- {formatBRL(sale.discountAmount)}</span>
                     </div>
                   )}
@@ -1463,108 +1475,228 @@ export function OrderPrintDocument({
                   )}
                 </div>
 
-                <div className="border-t-2 border-black pt-1 mt-1 flex justify-between items-baseline">
-                  <span className="font-black text-xs uppercase tracking-tight text-black">TOTAL DO PEDIDO:</span>
-                  <span className="text-base font-black text-black font-mono tracking-tight">
+                <div className="border-t-2 border-black pt-0.5 mt-0.5 flex justify-between items-baseline">
+                  <span className="font-black text-[9px] uppercase tracking-tight text-black">TOTAL DO PEDIDO:</span>
+                  <span className="text-sm font-black text-black font-mono tracking-tight">
                     {formatBRL(sale.totalAmount)}
                   </span>
                 </div>
               </div>
             </div>
           </section>
-        </div>
 
-        {/* PARTE INFERIOR: TERMO DE GARANTIA E PROTOCOLO DE RECEBIMENTO */}
-        <div className="mt-1 pt-0.5">
-          {/* 3. CERTIFICADO DE GARANTIA & MANUAL DE CUIDADOS */}
-          <section className="mb-1 border border-black rounded-none bg-white">
-            <div className="bg-black text-white px-2 py-0.5 text-[7.5px] font-black uppercase tracking-wider flex justify-between">
-              <span>3. CERTIFICADO DE GARANTIA & MANUAL DE CUIDADOS (SPA DO COLCHÃO)</span>
-              <span>NORMA TÉCNICA ABNT NBR 15413</span>
-            </div>
-
-            <div className="grid grid-cols-3 divide-x divide-black text-[7.5px] leading-snug">
-              {/* COLUNA 1: PRAZOS */}
-              <div className="p-1.5 space-y-0.5">
-                <p className="font-black text-black uppercase text-[7.5px] mb-0.5">
-                  1. PRAZOS E COBERTURA
-                </p>
-                <p>
-                  • <strong>Molas e Estrutura:</strong> 1 (um) ano contra vícios ou defeitos de fabricação na madeira ou molejo.
-                </p>
-                <p>
-                  • <strong>Espumas e Sustentação:</strong> 1 (um) ano. Conforme a norma <strong>ABNT NBR 15413</strong>, acomodação natural de até 10% nas áreas de maior apoio corporal é assentamento normal das fibras e espumas, não caracterizando defeito.
-                </p>
-                <p>
-                  • <strong>Tecidos e Costuras:</strong> 90 dias legais contra desfiamento espontâneo de costuras.
-                </p>
-              </div>
-
-              {/* COLUNA 2: CUIDADOS */}
-              <div className="p-1.5 space-y-0.5">
-                <p className="font-black text-black uppercase text-[7.5px] mb-0.5">
-                  2. MANUAL DE CONSERVAÇÃO
-                </p>
-                <p>
-                  • <strong>Giro Obrigatório:</strong> Nos primeiros 3 meses, gire o colchão (cabeça/pés) a cada 15 dias. Após esse período, gire mensalmente para assentamento uniforme.
-                </p>
-                <p>
-                  • <strong>Base de Apoio:</strong> Apoiar sobre base ou estrado plano e nivelado, sem vãos livres maiores que 6 cm.
-                </p>
-                <p>
-                  • <strong>Proteção:</strong> Obrigatório o uso de protetor impermeável de colchão. Não molhar e manter o quarto ventilado.
-                </p>
-              </div>
-
-              {/* COLUNA 3: EXCLUSÕES */}
-              <div className="p-1.5 space-y-0.5">
-                <p className="font-black text-black uppercase text-[7.5px] mb-0.5">
-                  3. EXCLUSÕES DA GARANTIA
-                </p>
-                <p>• Danos por umidade, mofo, derramamento de líquidos, urina ou produtos abrasivos.</p>
-                <p>• Deformações decorrentes de estrado inadequado ou peso superior ao limite nominal da densidade.</p>
-                <p>• Rasgos, furos por objetos pontiagudos ou fios puxados por animais domésticos.</p>
-                <p>• Remoção, violação ou ausência da etiqueta de identificação da fábrica.</p>
-              </div>
-            </div>
-          </section>
-
-          {/* 4. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE */}
-          <footer className="border border-black p-1.5 bg-neutral-50 rounded-none">
-            <div className="flex items-center justify-between text-[7.5px] font-black uppercase tracking-wider text-black mb-0.5">
-              <span>4. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE</span>
+          {/* 3. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE */}
+          <footer className="border border-black p-1 bg-neutral-50 rounded-none">
+            <div className="flex items-center justify-between text-[6.5px] font-black uppercase tracking-wider text-black mb-0.5">
+              <span>3. PROTOCOLO DE RECEBIMENTO & ACEITE DAS CONDIÇÕES</span>
               <span className="font-mono">{orderNumberInfo.badgeNumber}</span>
             </div>
 
-            <p className="text-[7.5px] text-neutral-700 mb-1 leading-tight">
-              Declaro ter recebido os produtos descritos no <strong>{orderNumberInfo.badgeNumber}</strong> em perfeitas
-              condições de acabamento, medidas e funcionamento, conferi as especificações contratadas e confirmo ciência
-              dos Termos de Garantia e Cuidados estipulados acima.
+            <p className="text-[6.5px] text-neutral-700 mb-0.5 leading-tight">
+              Declaro ter recebido os produtos do <strong>{orderNumberInfo.badgeNumber}</strong> em perfeitas
+              condições de uso, acabamento e medidas, conferi as especificações e estou ciente e de acordo com o
+              <strong> Certificado de Garantia e Manual de Conservação</strong> estipulado integralmente abaixo.
             </p>
 
-            <div className="grid grid-cols-4 gap-2 items-end pt-1">
+            <div className="grid grid-cols-4 gap-2 items-end pt-0.5">
               <div className="border-b border-black pb-0.5">
-                <span className="text-[6.5px] text-neutral-500 uppercase block">Nome do Recebedor:</span>
-                <span className="text-[8px] font-black uppercase text-black truncate block">
+                <span className="text-[6px] text-neutral-500 uppercase block">Nome do Recebedor:</span>
+                <span className="text-[7.5px] font-black uppercase text-black truncate block">
                   {order.recipientName || customer?.fullName || "___________________________"}
                 </span>
               </div>
               <div className="border-b border-black pb-0.5">
-                <span className="text-[6.5px] text-neutral-500 uppercase block">Documento (CPF / RG):</span>
-                <span className="text-[8px] font-bold text-black font-mono">
+                <span className="text-[6px] text-neutral-500 uppercase block">Documento (CPF / RG):</span>
+                <span className="text-[7.5px] font-bold text-black font-mono">
                   {customer?.document || "___________________________"}
                 </span>
               </div>
               <div className="border-b border-black pb-0.5 text-center">
-                <span className="text-[6.5px] text-neutral-500 uppercase block">Data e Horário:</span>
-                <span className="text-[8px] font-bold text-black font-mono">____ / ____ / 2026 às ____:____</span>
+                <span className="text-[6px] text-neutral-500 uppercase block">Data e Horário:</span>
+                <span className="text-[7.5px] font-bold text-black font-mono">____ / ____ / 2026 às ____:____</span>
               </div>
               <div className="border-b border-black pb-0.5 text-center">
-                <span className="text-[6.5px] text-neutral-500 uppercase block">Assinatura do Recebedor:</span>
-                <span className="text-[7px] text-neutral-400">Assinatura</span>
+                <span className="text-[6px] text-neutral-500 uppercase block">Assinatura do Cliente:</span>
+                <span className="text-[6.5px] text-neutral-400">Assinatura do Recebedor</span>
               </div>
             </div>
           </footer>
+        </div>
+
+        {/* =================================================================== */}
+        {/* METADE INFERIOR (PELO MENOS 50% DO A4): CERTIFICADO OFICIAL DE GARANTIA & MANUAL */}
+        {/* =================================================================== */}
+        <div className="h-[142mm] min-h-[142mm] flex flex-col justify-between border-2 border-black bg-white p-2 overflow-hidden">
+          {/* CABEÇALHO OFICIAL DO CERTIFICADO DE GARANTIA */}
+          <div className="bg-black text-white p-1 mb-1.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="bg-white text-black font-black text-[7.5px] px-1.5 py-0.2">CERTIFICADO OFICIAL</span>
+              <span className="font-black text-[8px] uppercase tracking-wider">
+                TERMO DE GARANTIA & MANUAL DO USUÁRIO — SPA DO COLCHÃO
+              </span>
+            </div>
+            <span className="text-[7px] font-mono text-neutral-300">
+              ABNT NBR 15413 • VINCULADO AO {orderNumberInfo.badgeNumber}
+            </span>
+          </div>
+
+          {/* GRID EM 3 COLUNAS OFICIAIS DE GARANTIA (PREENCHENDO A METADE DA PÁGINA) */}
+          <div className="grid grid-cols-3 divide-x-2 divide-black text-[7px] leading-tight flex-1">
+            {/* COLUNA 1: 🛡️ PRAZOS E COBERTURA TÉCNICA */}
+            <div className="pr-2 space-y-1 flex flex-col justify-between">
+              <div>
+                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
+                  <span className="font-black text-black uppercase text-[7.5px] block">
+                    🛡️ 1. PRAZOS LEGAIS & COBERTURA
+                  </span>
+                  <span className="text-[6.5px] text-neutral-600 block">Norma Técnica ABNT NBR 15413 & Código de Defesa do Consumidor</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Molas & Estrutura de Madeira (1 Ano):</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      Garantia de <strong>12 meses (1 ano)</strong> contra quebra de molas, afundamento anormal do molejo (Pocket Ensacadas ou Bonnel),
+                      rompimento de arames de sustentação e trincas, rachaduras ou empenamento no chassi de madeira tratada da Base Box.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Espumas & Conforto (1 Ano):</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      Garantia de <strong>12 meses (1 ano)</strong> contra perda de resiliência e deformação excessiva fora dos parâmetros técnicos.
+                    </p>
+                  </div>
+
+                  <div className="border border-black bg-neutral-100 p-1">
+                    <span className="font-black text-black uppercase text-[6.5px] block">⚖️ Tolerância Técnica ABNT NBR 15413:</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      Todo colchão sofre amaciamento natural nas regiões de maior pressão corporal (quadril e ombros).
+                      Acomodação de <strong>até 10% da altura original</strong> é processo físico normal das espumas e fibras,
+                      <strong> não configurando defeito de fabricação</strong>.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Tecidos & Costuras (90 Dias):</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      Garantia legal de <strong>90 dias</strong> (Art. 26 do CDC) para defeitos de tecelagem, desfiamento espontâneo de costuras e debrum.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
+                Garantia válida mediante apresentação deste certificado vinculado ao {orderNumberInfo.simplified}
+              </div>
+            </div>
+
+            {/* COLUNA 2: 🔄 MANUAL DE CONSERVAÇÃO & CRONOGRAMA DE GIRO */}
+            <div className="px-2 space-y-1 flex flex-col justify-between">
+              <div>
+                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
+                  <span className="font-black text-black uppercase text-[7.5px] block">
+                    🔄 2. CONSERVAÇÃO & GIRO OBRIGATÓRIO
+                  </span>
+                  <span className="text-[6.5px] text-neutral-600 block">Procedimentos indispensáveis para preservar a vida útil do produto</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="border border-black bg-neutral-100 p-1">
+                    <span className="font-black text-black uppercase text-[6.5px] block">🔄 Cronograma Obrigatório de Rotação (Giro):</span>
+                    <p className="text-[6.5px] text-neutral-900 mt-0.5">
+                      • <strong>Primeiros 90 dias (3 meses):</strong> Girar o colchão no sentido cabeça/pés a cada <strong>15 dias</strong> impreterivelmente.
+                      <br/>
+                      • <strong>Do 4º mês em diante:</strong> Girar em <strong>180° mensalmente</strong>.
+                      <br/>
+                      A rotação equaliza o assentamento do peso corporal e é condição indispensável para a manutenção da garantia.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Base de Apoio Adequada:</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      O colchão deve repousar exclusivamente sobre base box uniforme ou estrado plano e nivelado,
+                      com vão livre máximo de <strong>5 cm entre as ripas</strong>. Estrados arqueados ou ripas quebradas invalidam a garantia.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Proteção Higiênica Impermeável:</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      É mandatório o uso permanente de <strong>capa protetora impermeável</strong>. A penetração de suor, água ou urina
+                      destrói as células da espuma e oxida o molejo.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">✦ Ventilação & Proibições:</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      Manter o quarto arejado. Nunca dobrar o colchão, nunca colocar ferro quente sobre o tecido e proibir saltos (pulos).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
+                O não cumprimento do cronograma de giro compromete a durabilidade do núcleo
+              </div>
+            </div>
+
+            {/* COLUNA 3: ⚠️ EXCLUSÕES & ASSISTÊNCIA TÉCNICA (SAC) */}
+            <div className="pl-2 space-y-1 flex flex-col justify-between">
+              <div>
+                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
+                  <span className="font-black text-black uppercase text-[7.5px] block">
+                    ⚠️ 3. HIPÓTESES DE EXCLUSÃO & SAC
+                  </span>
+                  <span className="text-[6.5px] text-neutral-600 block">Condições de perda de cobertura e acionamento da assistência</span>
+                </div>
+
+                <div className="space-y-1">
+                  <div className="border border-black bg-rose-50/60 p-1 border-dashed">
+                    <span className="font-black text-rose-950 uppercase text-[6.5px] block">🚫 Hipóteses de Perda da Garantia:</span>
+                    <p className="text-[6.5px] text-neutral-900 mt-0.5 space-y-0.5">
+                      • <strong>Manchas ou Umidade:</strong> Presença de urina, suor excessivo, bebidas, mofo ou produtos químicos (invalida a garantia por norma sanitária).
+                      <br/>
+                      • <strong>Estrado Inadequado:</strong> Deformações causadas por estrados com ripas espaçadas &gt; 5cm ou bases tortas.
+                      <br/>
+                      • <strong>Dano Físico:</strong> Rasgos, furos por objetos pontiagudos, queimaduras ou fios puxados por animais domésticos.
+                      <br/>
+                      • <strong>Etiqueta Removida:</strong> Violação, remoção ou corte da etiqueta de identificação e número de série da fábrica.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">📞 Como Acionar a Assistência Técnica (SAC):</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      1. Entrar em contato via WhatsApp/Telefone: <strong>{companyInfo.phone}</strong> informando o <strong>{orderNumberInfo.badgeNumber}</strong>.
+                      <br/>
+                      2. Enviar fotos claras do produto e vídeo colocando uma régua rígida sobre a área para aferição da acomodação.
+                    </p>
+                  </div>
+
+                  <div className="border border-neutral-300 p-1 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[7px] block">⏱️ Vistoria Técnica no Prazo Legal:</span>
+                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                      A Spa do Colchão realizará vistoria técnica domiciliar ou fabril no prazo legal de até <strong>30 dias corridos</strong>,
+                      conforme estipulado no Artigo 18 da Lei Federal nº 8.078/1990 (Código de Defesa do Consumidor).
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
+                Atendimento SAC de Segunda a Sexta das 08h às 18h
+              </div>
+            </div>
+          </div>
+
+          {/* RODAPÉ DO CERTIFICADO OFICIAL */}
+          <div className="mt-1 pt-1 border-t-2 border-black flex items-center justify-between text-[6.5px] font-bold text-neutral-700 uppercase">
+            <span>{companyInfo.name} • INDÚSTRIA & REFORMA ESPECIALIZADA • CNPJ: {companyInfo.cnpj}</span>
+            <span>CERTIFICADO VINCULADO AO PEDIDO {orderNumberInfo.badgeNumber} • VALIDADE NACIONAL</span>
+          </div>
         </div>
       </div>
     );
