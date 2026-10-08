@@ -9,17 +9,74 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Save } from "lucide-react"
+import { ArrowLeft, Save, Sparkles, CheckCircle2 } from "lucide-react"
 import { NcmAutocomplete } from "./NcmAutocomplete"
+import { ProductPricingSimulator } from "./ProductPricingSimulator"
+import { FinancialBaselineMetrics } from "@/lib/pricing/financial-baseline"
+import { ProductRecipeCostDetail } from "@/lib/pricing/product-cost"
 
-export function ProductForm({ initialData = {}, onAction }: { initialData?: any, onAction: (data: any) => Promise<any> }) {
+interface ProductFormProps {
+  initialData?: any
+  onAction: (data: any) => Promise<any>
+  financialBaseline?: FinancialBaselineMetrics
+  recipeCost?: ProductRecipeCostDetail | null
+}
+
+export function ProductForm({ 
+  initialData = {}, 
+  onAction,
+  financialBaseline,
+  recipeCost
+}: ProductFormProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [type, setType] = useState(initialData.type || "PRODUCT")
   const [operationalCategory, setOperationalCategory] = useState(initialData.operationalCategory || "Colchão novo")
 
+  // Estado dos valores comerciais e operacionais controlados pelo simulador
+  const [defaultPrice, setDefaultPrice] = useState<number | undefined>(
+    initialData.defaultPrice !== null && initialData.defaultPrice !== undefined 
+      ? Number(initialData.defaultPrice) 
+      : undefined
+  )
+  const [minimumPrice, setMinimumPrice] = useState<number | undefined>(
+    initialData.minimumPrice !== null && initialData.minimumPrice !== undefined 
+      ? Number(initialData.minimumPrice) 
+      : undefined
+  )
+  const [defaultCommission, setDefaultCommission] = useState<number | undefined>(
+    initialData.defaultCommission !== null && initialData.defaultCommission !== undefined 
+      ? Number(initialData.defaultCommission) 
+      : 3.0
+  )
+  const [productionTimeMinutes, setProductionTimeMinutes] = useState<number | undefined>(
+    initialData.productionTimeMinutes !== null && initialData.productionTimeMinutes !== undefined 
+      ? Number(initialData.productionTimeMinutes) 
+      : undefined
+  )
+  const [estimatedLaborCost, setEstimatedLaborCost] = useState<number | undefined>(
+    initialData.estimatedLaborCost !== null && initialData.estimatedLaborCost !== undefined 
+      ? Number(initialData.estimatedLaborCost) 
+      : undefined
+  )
+
   // JSON operational config state
   const [opConfig, setOpConfig] = useState<any>(initialData.operationalConfig ? JSON.parse(initialData.operationalConfig) : {})
+
+  // Callback ao aplicar preços calculados no simulador
+  const handleApplyPricingFromSimulator = (pricing: {
+    defaultPrice: number
+    minimumPrice: number
+    estimatedLaborCost: number
+    productionMinutes?: number
+  }) => {
+    setDefaultPrice(pricing.defaultPrice)
+    setMinimumPrice(pricing.minimumPrice)
+    setEstimatedLaborCost(pricing.estimatedLaborCost)
+    if (pricing.productionMinutes !== undefined) {
+      setProductionTimeMinutes(pricing.productionMinutes)
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -29,6 +86,23 @@ export function ProductForm({ initialData = {}, onAction }: { initialData?: any,
     formData.set("operationalCategory", operationalCategory)
     formData.set("operationalConfig", JSON.stringify(opConfig))
     
+    // Assegura que os valores numéricos sincronizados pelo simulador estejam corretos no FormData
+    if (defaultPrice !== undefined && defaultPrice !== null) {
+      formData.set("defaultPrice", String(defaultPrice))
+    }
+    if (minimumPrice !== undefined && minimumPrice !== null) {
+      formData.set("minimumPrice", String(minimumPrice))
+    }
+    if (defaultCommission !== undefined && defaultCommission !== null) {
+      formData.set("defaultCommission", String(defaultCommission))
+    }
+    if (productionTimeMinutes !== undefined && productionTimeMinutes !== null) {
+      formData.set("productionTimeMinutes", String(productionTimeMinutes))
+    }
+    if (estimatedLaborCost !== undefined && estimatedLaborCost !== null) {
+      formData.set("estimatedLaborCost", String(estimatedLaborCost))
+    }
+
     // Convert switch/checkbox values to explicit booleans (FormData only has "on" if checked)
     const booleanFields = [
       "isActive", "allowPriceChangeInPDV", "requirePriceChangeJustification", "highlightInPDV",
@@ -152,7 +226,12 @@ export function ProductForm({ initialData = {}, onAction }: { initialData?: any,
       <Tabs defaultValue="identificacao" className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-6 mb-8 rounded-xl bg-card border border-border p-1">
           <TabsTrigger value="identificacao">Identificação</TabsTrigger>
-          <TabsTrigger value="comercial">Comercial</TabsTrigger>
+          <TabsTrigger value="comercial" className="relative">
+            Comercial & Preço
+            {financialBaseline && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 absolute top-1.5 right-1.5" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="operacional">Operacional</TabsTrigger>
           <TabsTrigger value="ficha">Ficha Técnica</TabsTrigger>
           <TabsTrigger value="estoque">Estoque</TabsTrigger>
@@ -190,35 +269,88 @@ export function ProductForm({ initialData = {}, onAction }: { initialData?: any,
             </div>
           </TabsContent>
 
-          {/* ABA 2: Comercial */}
-          <TabsContent value="comercial" className="space-y-6 mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="defaultPrice">Preço Base (R$)</Label>
-                <Input id="defaultPrice" name="defaultPrice" type="number" step="0.01" defaultValue={initialData.defaultPrice} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="minimumPrice">Preço Mínimo (R$)</Label>
-                <Input id="minimumPrice" name="minimumPrice" type="number" step="0.01" defaultValue={initialData.minimumPrice} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="defaultCommission">Comissão Padrão (%)</Label>
-                <Input id="defaultCommission" name="defaultCommission" type="number" step="0.01" defaultValue={initialData.defaultCommission} />
-              </div>
-            </div>
+          {/* ABA 2: Comercial & Precificação com Motor Financeiro */}
+          <TabsContent value="comercial" className="space-y-8 mt-0">
+            
+            {/* Simulador Integrado com o Setor Financeiro */}
+            {financialBaseline && (
+              <ProductPricingSimulator
+                initialPrice={defaultPrice}
+                initialCost={recipeCost?.totalSuppliesCost || initialData.defaultCost}
+                initialMinutes={productionTimeMinutes}
+                initialCommission={defaultCommission}
+                operationalCategory={operationalCategory}
+                financialBaseline={financialBaseline}
+                recipeCost={recipeCost}
+                onApplyPricing={handleApplyPricingFromSimulator}
+              />
+            )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-border pt-4">
-              <div className="flex items-center space-x-2">
-                <Switch id="allowPriceChangeInPDV" name="allowPriceChangeInPDV" defaultChecked={initialData.allowPriceChangeInPDV} />
-                <Label htmlFor="allowPriceChangeInPDV">Permite alterar preço no PDV?</Label>
+            {/* Inputs Oficiais Gravados no Banco de Dados */}
+            <div className="pt-6 border-t border-border space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-semibold text-foreground">
+                    Valores Oficiais Gravados no Cadastro
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    Preços e diretrizes comerciais ativos no Ponto de Venda (PDV).
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="requirePriceChangeJustification" name="requirePriceChangeJustification" defaultChecked={initialData.requirePriceChangeJustification} />
-                <Label htmlFor="requirePriceChangeJustification">Exige justificativa para alterar valor?</Label>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="defaultPrice" className="text-xs font-semibold">Preço Base Oficial (R$)</Label>
+                  <Input 
+                    id="defaultPrice" 
+                    name="defaultPrice" 
+                    type="number" 
+                    step="0.01" 
+                    value={defaultPrice !== undefined && defaultPrice !== null ? defaultPrice : ""} 
+                    onChange={e => setDefaultPrice(e.target.value ? parseFloat(e.target.value) : undefined)} 
+                    className="h-10 font-mono font-bold text-base text-blue-950 dark:text-blue-100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="minimumPrice" className="text-xs font-semibold">Preço Mínimo Autorizado (R$)</Label>
+                  <Input 
+                    id="minimumPrice" 
+                    name="minimumPrice" 
+                    type="number" 
+                    step="0.01" 
+                    value={minimumPrice !== undefined && minimumPrice !== null ? minimumPrice : ""} 
+                    onChange={e => setMinimumPrice(e.target.value ? parseFloat(e.target.value) : undefined)} 
+                    className="h-10 font-mono font-bold text-base text-slate-800 dark:text-slate-200"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="defaultCommission" className="text-xs font-semibold">Comissão Vendedores (%)</Label>
+                  <Input 
+                    id="defaultCommission" 
+                    name="defaultCommission" 
+                    type="number" 
+                    step="0.01" 
+                    value={defaultCommission !== undefined && defaultCommission !== null ? defaultCommission : ""} 
+                    onChange={e => setDefaultCommission(e.target.value ? parseFloat(e.target.value) : undefined)} 
+                    className="h-10 font-mono text-sm"
+                  />
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="highlightInPDV" name="highlightInPDV" defaultChecked={initialData.highlightInPDV} />
-                <Label htmlFor="highlightInPDV">Destacar este item no PDV?</Label>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-border pt-4">
+                <div className="flex items-center space-x-2">
+                  <Switch id="allowPriceChangeInPDV" name="allowPriceChangeInPDV" defaultChecked={initialData.allowPriceChangeInPDV} />
+                  <Label htmlFor="allowPriceChangeInPDV" className="text-xs">Permite alterar preço no PDV?</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="requirePriceChangeJustification" name="requirePriceChangeJustification" defaultChecked={initialData.requirePriceChangeJustification} />
+                  <Label htmlFor="requirePriceChangeJustification" className="text-xs">Exige justificativa para alterar?</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch id="highlightInPDV" name="highlightInPDV" defaultChecked={initialData.highlightInPDV} />
+                  <Label htmlFor="highlightInPDV" className="text-xs">Destacar no PDV?</Label>
+                </div>
               </div>
             </div>
           </TabsContent>
@@ -245,14 +377,44 @@ export function ProductForm({ initialData = {}, onAction }: { initialData?: any,
               </div>
             </div>
 
+            {recipeCost && (
+              <div className="bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-4 rounded-xl space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    Ficha Técnica Vinculada: {recipeCost.recipeName}
+                  </h4>
+                  <span className="text-sm font-bold font-mono text-emerald-700 dark:text-emerald-300">
+                    Custo de Insumos: R$ {recipeCost.totalSuppliesCost.toFixed(2)}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Composição de {recipeCost.items.length} insumos ({recipeCost.items.map(i => i.supplyName).slice(0, 4).join(", ")}...).
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="productionTimeMinutes">Tempo médio produção (min)</Label>
-                <Input id="productionTimeMinutes" name="productionTimeMinutes" type="number" defaultValue={initialData.productionTimeMinutes} />
+                <Input 
+                  id="productionTimeMinutes" 
+                  name="productionTimeMinutes" 
+                  type="number" 
+                  value={productionTimeMinutes !== undefined && productionTimeMinutes !== null ? productionTimeMinutes : ""} 
+                  onChange={e => setProductionTimeMinutes(e.target.value ? parseInt(e.target.value, 10) : undefined)} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="estimatedLaborCost">Custo est. mão de obra (R$)</Label>
-                <Input id="estimatedLaborCost" name="estimatedLaborCost" type="number" step="0.01" defaultValue={initialData.estimatedLaborCost} />
+                <Input 
+                  id="estimatedLaborCost" 
+                  name="estimatedLaborCost" 
+                  type="number" 
+                  step="0.01" 
+                  value={estimatedLaborCost !== undefined && estimatedLaborCost !== null ? estimatedLaborCost : ""} 
+                  onChange={e => setEstimatedLaborCost(e.target.value ? parseFloat(e.target.value) : undefined)} 
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="wastePercentage">Percentual de perda (%)</Label>
