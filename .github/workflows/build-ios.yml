@@ -1,0 +1,54 @@
+name: Build iOS Apps (Sideloadable IPA)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ios-vendedor/**'
+      - '.github/workflows/build-ios.yml'
+  workflow_dispatch:
+
+jobs:
+  build-vendedor:
+    name: Compilar Spa Vendedor (iOS IPA)
+    runs-on: macos-14
+
+    steps:
+      - name: 📥 Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Configurar Versão do Xcode
+        run: |
+          echo "Selecionando Xcode..."
+          sudo xcode-select -s /Applications/Xcode_15.4.app 2>/dev/null || sudo xcode-select -s /Applications/Xcode_16.0.app 2>/dev/null || xcode-select -p
+          xcodebuild -version
+
+      - name: 🔨 Compilar Projeto (xcodebuild archive)
+        run: |
+          mkdir -p build
+          xcodebuild archive \
+            -project ios-vendedor/SpaVendedor.xcodeproj \
+            -scheme SpaVendedor \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/SpaVendedor.xcarchive \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: 📦 Empacotar Arquivo .IPA para Sideload
+        run: |
+          mkdir -p build/Payload
+          cp -r build/SpaVendedor.xcarchive/Products/Applications/SpaVendedor.app build/Payload/
+          cd build
+          zip -qr SpaVendedor.ipa Payload
+          echo "✅ .IPA gerado com sucesso:"
+          ls -lh SpaVendedor.ipa
+
+      - name: 🚀 Publicar Artefato (.IPA) no GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpaVendedor-iOS
+          path: build/SpaVendedor.ipa
+          retention-days: 30
