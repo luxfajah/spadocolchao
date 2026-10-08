@@ -136,7 +136,7 @@ export function PosFloatingActions() {
       const result = await finalizeSale(payload);
 
       if (result?.success && (result as any).result?.orderId) {
-        window.open(`/pdv/receipt/${(result as any).result.orderId}`, "_blank");
+        window.open(`/pdv/impressao?orderId=${(result as any).result.orderId}`, "_blank");
         resetSale();
         setShowDeliveryModal(false);
       } else {

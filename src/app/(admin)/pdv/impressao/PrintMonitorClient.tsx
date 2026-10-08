@@ -32,16 +32,30 @@ import { OrderPrintDocument, getSimplifiedOrderNumber } from "./OrderPrintDocume
 
 interface PrintMonitorClientProps {
   initialOrders: any[];
+  initialSelectedOrderId?: string;
+  initialGuiaMode?: GuiaMode;
+  initialAutoPrint?: boolean;
 }
 
 export type GuiaMode = "both" | "production" | "customer";
 
-export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientProps) {
+export function PrintMonitorClient({
+  initialOrders = [],
+  initialSelectedOrderId,
+  initialGuiaMode,
+  initialAutoPrint = false,
+}: PrintMonitorClientProps) {
   const [orders, setOrders] = useState<any[]>(initialOrders);
-  const [selectedOrder, setSelectedOrder] = useState<any | null>(initialOrders[0] || null);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(() => {
+    if (initialSelectedOrderId) {
+      const match = initialOrders.find((o) => o.id === initialSelectedOrderId);
+      if (match) return match;
+    }
+    return initialOrders[0] || null;
+  });
   const [format, setFormat] = useState<"a4" | "thermal">("a4"); // Padrão A4 Corporativo
-  const [guiaMode, setGuiaMode] = useState<GuiaMode>("both"); // Padrão Sempre 2 Guias
-  const [copies, setCopies] = useState<1 | 2>(2);
+  const [guiaMode, setGuiaMode] = useState<GuiaMode>(initialGuiaMode || "both"); // Padrão Sempre 2 Guias
+  const [copies, setCopies] = useState<1 | 2>(initialGuiaMode && initialGuiaMode !== "both" ? 1 : 2);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterMode, setFilterMode] = useState<"all" | "pending" | "printed">("all");
   const [printedIds, setPrintedIds] = useState<string[]>([]);
@@ -51,10 +65,47 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
   const [isPrintingNow, setIsPrintingNow] = useState<boolean>(false);
   const [onlineUrl, setOnlineUrl] = useState<string>("https://spadocolchao.vercel.app/pdv/impressao");
 
-  // Carregar histórico local de impressos
+  // Carregar histórico local de impressos e parâmetros de URL
   useEffect(() => {
     if (typeof window !== "undefined") {
       setOnlineUrl(`${window.location.origin}/pdv/impressao`);
+
+      const params = new URLSearchParams(window.location.search);
+      const urlOrderId = params.get("orderId") || params.get("id") || initialSelectedOrderId;
+      const urlGuia = params.get("guia") as GuiaMode | null;
+      const shouldAutoPrint =
+        params.get("autoprint") === "true" ||
+        params.get("autoprint") === "1" ||
+        initialAutoPrint;
+
+      if (urlGuia === "both" || urlGuia === "production" || urlGuia === "customer") {
+        setGuiaMode(urlGuia);
+        setCopies(urlGuia === "both" ? 2 : 1);
+      }
+
+      if (urlOrderId) {
+        const found = orders.find((o) => o.id === urlOrderId);
+        if (found) {
+          setSelectedOrder(found);
+          if (shouldAutoPrint) {
+            setTimeout(() => handlePrint(found), 600);
+          }
+        } else {
+          // Busca o pedido específico se não estiver carregado na lista inicial
+          fetch(`/api/pdv/pedidos-impressao?id=${urlOrderId}`)
+            .then((r) => r.json())
+            .then((data) => {
+              if (data.order) {
+                setOrders((prev) => [data.order, ...prev.filter((o) => o.id !== data.order.id)]);
+                setSelectedOrder(data.order);
+                if (shouldAutoPrint) {
+                  setTimeout(() => handlePrint(data.order), 600);
+                }
+              }
+            })
+            .catch(() => {});
+        }
+      }
     }
     try {
       const stored = localStorage.getItem("spa_printed_order_ids");
@@ -65,12 +116,15 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
       if (storedFormat === "a4" || storedFormat === "thermal") {
         setFormat(storedFormat as any);
       }
-      const storedGuia = localStorage.getItem("spa_print_guia_mode");
-      if (storedGuia === "both" || storedGuia === "production" || storedGuia === "customer") {
-        setGuiaMode(storedGuia as any);
+      if (!initialGuiaMode) {
+        const storedGuia = localStorage.getItem("spa_print_guia_mode");
+        if (storedGuia === "both" || storedGuia === "production" || storedGuia === "customer") {
+          setGuiaMode(storedGuia as any);
+        }
       }
     } catch (_e) {}
   }, []);
+
 
   const markAsPrinted = useCallback((id: string) => {
     setPrintedIds((prev) => {

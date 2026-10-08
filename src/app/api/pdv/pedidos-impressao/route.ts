@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limit = Number(searchParams.get("limit")) || 40;
     const since = searchParams.get("since"); // ISO date string para buscar apenas novos pedidos
-    const orderId = searchParams.get("id");
+    const orderId = searchParams.get("id") || searchParams.get("orderId");
 
     if (orderId) {
       const order = await prisma.order.findUnique({

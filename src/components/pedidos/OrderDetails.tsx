@@ -123,6 +123,11 @@ export function OrderDetails({ order }: OrderDetailsProps) {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild className="rounded-xl gap-2 h-10 bg-slate-900 text-white hover:bg-black shadow-sm">
+            <Link href={`/pdv/impressao?orderId=${order.id}`} target="_blank">
+              <Printer className="h-4 w-4" /> Imprimir 2 Guias A4
+            </Link>
+          </Button>
           <Button variant="outline" className="rounded-xl gap-2 h-10">
             <Printer className="h-4 w-4" /> Imprimir Etiqueta
           </Button>
@@ -365,8 +370,10 @@ export function OrderDetails({ order }: OrderDetailsProps) {
                       <CardTitle className="text-xl font-black text-contrast uppercase italic">Fichas de Produção</CardTitle>
                       <CardDescription>Documentos de corte e montagem gerados</CardDescription>
                     </div>
-                    <Button className="rounded-xl gap-2 h-10 bg-primary shadow-lg border-brand-900/10 hover:shadow-primary/20 transition-all">
-                      <Printer className="h-4 w-4" /> Imprimir Ficha de Preparo
+                    <Button asChild className="rounded-xl gap-2 h-10 bg-primary shadow-lg border-brand-900/10 hover:shadow-primary/20 transition-all">
+                      <Link href={`/pdv/impressao?orderId=${order.id}&guia=production`} target="_blank">
+                        <Printer className="h-4 w-4" /> Imprimir Guia de Produção A4
+                      </Link>
                     </Button>
                  </CardHeader>
                  <CardContent>

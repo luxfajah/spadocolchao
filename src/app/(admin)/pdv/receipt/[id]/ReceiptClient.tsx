@@ -85,7 +85,7 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Link href="/pdv/impressao">
+          <Link href={`/pdv/impressao?orderId=${order.id}`} target="_blank">
             <Button 
               className="h-12 gap-2 rounded-full bg-emerald-600 px-6 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500 transition-all"
             >

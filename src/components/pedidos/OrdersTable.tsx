@@ -165,8 +165,10 @@ export function OrdersTable({ orders }: OrdersTableProps) {
                       <DropdownMenuItem className="rounded-2xl gap-3 px-4 py-3 cursor-pointer focus:bg-slate-50 font-bold text-xs text-slate-600 focus:text-primary" asChild>
                         <Link href={`/vendas-clientes/pedidos/${order.id}`}><Eye className="h-4 w-4" /> Ver Detalhes do Pedido</Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="rounded-2xl gap-3 px-4 py-3 cursor-pointer focus:bg-slate-50 font-bold text-xs text-slate-600">
-                        <Printer className="h-4 w-4" /> Nota de Corte / Preparo
+                      <DropdownMenuItem className="rounded-2xl gap-3 px-4 py-3 cursor-pointer focus:bg-slate-50 font-bold text-xs text-slate-600" asChild>
+                        <Link href={`/pdv/impressao?orderId=${order.id}`} target="_blank">
+                          <Printer className="h-4 w-4" /> 2 Guias A4 (Produção & Garantia)
+                        </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="rounded-2xl gap-3 px-4 py-3 cursor-pointer focus:bg-slate-50 font-bold text-xs text-slate-600">
                         <Settings className="h-4 w-4" /> Iniciar Produção
