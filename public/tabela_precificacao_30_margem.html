@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Spa do Colchão - Tabela de Precificação 30% Margem</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 10mm 12mm;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #0f172a;
+      background: #ffffff;
+      font-size: 8.5pt;
+      line-height: 1.35;
+    }
+
+    .header {
+      border-bottom: 2px solid #1e3a8a;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .logo-title h1 {
+      font-size: 15pt;
+      font-weight: 900;
+      color: #1e3a8a;
+      letter-spacing: -0.5px;
+      text-transform: uppercase;
+    }
+
+    .logo-title p {
+      font-size: 8pt;
+      color: #64748b;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .header-badge {
+      text-align: right;
+    }
+
+    .badge-pill {
+      background: #dbeafe;
+      color: #1e40af;
+      font-size: 7.5pt;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: 999px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border: 1px solid #bfdbfe;
+    }
+
+    .header-meta {
+      font-size: 7.5pt;
+      color: #94a3b8;
+      margin-top: 3px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* Parameters Grid */
+    .params-banner {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+    }
+
+    .param-box {
+      font-size: 7pt;
+    }
+
+    .param-label {
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 6.5pt;
+      display: block;
+    }
+
+    .param-val {
+      color: #0f172a;
+      font-weight: 800;
+      font-size: 8.5pt;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      margin-top: 1px;
+    }
+
+    .formula-banner {
+      background: #eff6ff;
+      border-left: 3px solid #2563eb;
+      padding: 6px 10px;
+      margin-bottom: 12px;
+      font-size: 7.5pt;
+      color: #1e3a8a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .formula-banner strong {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    }
+
+    /* Section & Tables */
+    .section-title {
+      font-size: 9.5pt;
+      font-weight: 800;
+      color: #1e3a8a;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .section-title::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e2e8f0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 10px;
+      font-size: 7.8pt;
+    }
+
+    th {
+      background: #f1f5f9;
+      color: #475569;
+      font-weight: 800;
+      text-transform: uppercase;
+      font-size: 6.5pt;
+      letter-spacing: 0.4px;
+      padding: 5px 6px;
+      text-align: right;
+      border-bottom: 1px solid #cbd5e1;
+    }
+
+    th:first-child {
+      text-align: left;
+    }
+
+    td {
+      padding: 4.5px 6px;
+      border-bottom: 1px solid #f1f5f9;
+      text-align: right;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 7.5pt;
+    }
+
+    td:first-child {
+      text-align: left;
+      font-family: inherit;
+      font-weight: 700;
+      color: #1e293b;
+      font-size: 8pt;
+    }
+
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    .td-base {
+      font-weight: 700;
+      color: #475569;
+    }
+
+    .td-price {
+      font-weight: 900;
+      color: #1e3a8a;
+      background: #eff6ff !important;
+      font-size: 8.5pt;
+    }
+
+    .td-profit {
+      font-weight: 800;
+      color: #059669;
+      background: #ecfdf5 !important;
+    }
+
+    .td-markup {
+      font-weight: 700;
+      color: #6366f1;
+    }
+
+    /* Footer notes */
+    .footer-notes {
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 7pt;
+      color: #64748b;
+    }
+
+    .footer-notes strong {
+      color: #0f172a;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-title">
+      <h1>Spa do Colchão</h1>
+      <p>Engenharia de Custos & Precificação Industrial • Margem Alvo: 30% Líquido</p>
+    </div>
+    <div class="header-badge">
+      <span class="badge-pill">Meta: 30% Líquido Limpo</span>
+      <div class="header-meta">Data: Outubro/2026</div>
+    </div>
+  </div>
+
+  <!-- PARÂMETROS FINANCEIROS -->
+  <div class="params-banner">
+    <div class="param-box">
+      <span class="param-label">Combustível Frota</span>
+      <div class="param-val">R$ 75 (Ref) / R$ 62,50</div>
+    </div>
+    <div class="param-box">
+      <span class="param-label">Tráfego CAC (Meta+Equipe)</span>
+      <div class="param-val">R$ 60,00 / venda</div>
+    </div>
+    <div class="param-box">
+      <span class="param-label">Mão de Obra (MOD)</span>
+      <div class="param-val">R$ 1,44 / minuto</div>
+    </div>
+    <div class="param-box">
+      <span class="param-label">Galpão (Fixos Rateados)</span>
+      <div class="param-val">R$ 159 (Ref) / R$ 39,77</div>
+    </div>
+    <div class="param-box">
+      <span class="param-label">Deduções Venda (12,5%)</span>
+      <div class="param-val">6% Simples + 3,5% Cartão + 3% Com.</div>
+    </div>
+  </div>
+
+  <div class="formula-banner">
+    <span>Fórmula Matemática Industrial: <strong>Preço Final = Custo Total Base ÷ 0,575</strong> (Cobre 100% dos custos + 12,5% deduções + 30% lucro)</span>
+    <span>Markup Médio: <strong>~1,74x a 1,76x</strong></span>
+  </div>
+
+  <!-- 1. REFORMAS DE CONJUNTO COMPLETO -->
+  <div class="section-title">1. Reformas de Conjunto Completo (Colchão + Box)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Insumos</th>
+        <th>MOD Fábrica</th>
+        <th>Frota + Tráfego</th>
+        <th>Galpão (Fixos)</th>
+        <th>Custo Total</th>
+        <th>Impostos (12,5%)</th>
+        <th>Preço Final (30%)</th>
+        <th>Lucro Líquido</th>
+        <th>Markup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Reforma Conjunto Casal (1,38 x 1,88)</td>
+        <td>R$ 341,11</td>
+        <td>R$ 122,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 757,57</td>
+        <td>R$ 162,50</td>
+        <td class="td-price">R$ 1.300,00</td>
+        <td class="td-profit">+ R$ 379,93 (29,2%)</td>
+        <td class="td-markup">1,72x</td>
+      </tr>
+      <tr>
+        <td>Reforma Conjunto Queen (1,58 x 1,98)</td>
+        <td>R$ 408,58</td>
+        <td>R$ 122,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 825,04</td>
+        <td>R$ 181,25</td>
+        <td class="td-price">R$ 1.450,00</td>
+        <td class="td-profit">+ R$ 443,71 (30,6%)</td>
+        <td class="td-markup">1,76x</td>
+      </tr>
+      <tr>
+        <td>Reforma Conjunto King (1,93 x 2,03)</td>
+        <td>R$ 490,84</td>
+        <td>R$ 122,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 907,30</td>
+        <td>R$ 198,75</td>
+        <td class="td-price">R$ 1.590,00</td>
+        <td class="td-profit">+ R$ 483,95 (30,4%)</td>
+        <td class="td-markup">1,75x</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 2. REFORMAS SÓ COLCHÃO -->
+  <div class="section-title">2. Reformas Só Colchão</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Insumos</th>
+        <th>MOD Fábrica</th>
+        <th>Frota + Tráfego</th>
+        <th>Galpão (Fixos)</th>
+        <th>Custo Total</th>
+        <th>Impostos (12,5%)</th>
+        <th>Preço Final (30%)</th>
+        <th>Lucro Líquido</th>
+        <th>Markup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Reforma Só Colchão Solteiro (0,88 x 1,88)</td>
+        <td>R$ 205,57</td>
+        <td>R$ 86,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 586,03</td>
+        <td>R$ 125,00</td>
+        <td class="td-price">R$ 1.000,00</td>
+        <td class="td-profit">+ R$ 288,97 (28,9%)</td>
+        <td class="td-markup">1,71x</td>
+      </tr>
+      <tr>
+        <td>Reforma Só Colchão Casal (1,38 x 1,88)</td>
+        <td>R$ 308,57</td>
+        <td>R$ 86,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 689,03</td>
+        <td>R$ 150,00</td>
+        <td class="td-price">R$ 1.200,00</td>
+        <td class="td-profit">+ R$ 360,97 (30,1%)</td>
+        <td class="td-markup">1,74x</td>
+      </tr>
+      <tr>
+        <td>Reforma Só Colchão Queen (1,58 x 1,98)</td>
+        <td>R$ 359,98</td>
+        <td>R$ 86,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 740,44</td>
+        <td>R$ 161,25</td>
+        <td class="td-price">R$ 1.290,00</td>
+        <td class="td-profit">+ R$ 388,31 (30,1%)</td>
+        <td class="td-markup">1,74x</td>
+      </tr>
+      <tr>
+        <td>Reforma Só Colchão King (1,93 x 2,03)</td>
+        <td>R$ 438,36</td>
+        <td>R$ 86,40</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 818,82</td>
+        <td>R$ 175,00</td>
+        <td class="td-price">R$ 1.400,00</td>
+        <td class="td-profit">+ R$ 406,18 (29,0%)</td>
+        <td class="td-markup">1,71x</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 3. REFORMAS SÓ BOX -->
+  <div class="section-title">3. Reformas Só Box</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Insumos</th>
+        <th>MOD Fábrica</th>
+        <th>Frota + Tráfego</th>
+        <th>Galpão (Fixos)</th>
+        <th>Custo Total</th>
+        <th>Impostos (12,5%)</th>
+        <th>Preço Final (30%)</th>
+        <th>Lucro Líquido</th>
+        <th>Markup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Reforma Só Box Solteiro (0,88 x 1,88)</td>
+        <td>R$ 28,63</td>
+        <td>R$ 43,20</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 365,89</td>
+        <td>R$ 81,25</td>
+        <td class="td-price">R$ 650,00</td>
+        <td class="td-profit">+ R$ 202,86 (31,2%)</td>
+        <td class="td-markup">1,78x</td>
+      </tr>
+      <tr>
+        <td>Reforma Só Box Casal (1,38 x 1,88)</td>
+        <td>R$ 32,54</td>
+        <td>R$ 43,20</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 369,80</td>
+        <td>R$ 81,25</td>
+        <td class="td-price">R$ 650,00</td>
+        <td class="td-profit">+ R$ 198,95 (30,6%)</td>
+        <td class="td-markup">1,76x</td>
+      </tr>
+      <tr>
+        <td>Reforma Só Box Queen / King</td>
+        <td>R$ 50,00</td>
+        <td>R$ 43,20</td>
+        <td>R$ 135,00</td>
+        <td>R$ 159,06</td>
+        <td class="td-base">R$ 387,26</td>
+        <td>R$ 86,25</td>
+        <td class="td-price">R$ 690,00</td>
+        <td class="td-profit">+ R$ 216,49 (31,4%)</td>
+        <td class="td-markup">1,78x</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 4. COLCHÕES NOVOS FABRICADOS -->
+  <div class="section-title">4. Colchões Novos Fabricados</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Insumos</th>
+        <th>MOD Fábrica</th>
+        <th>Frota + Tráfego</th>
+        <th>Galpão (Fixos)</th>
+        <th>Custo Total</th>
+        <th>Impostos (12,5%)</th>
+        <th>Preço Final (30%)</th>
+        <th>Lucro Líquido</th>
+        <th>Markup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Colchão SPA Essencial Casal (Bonnel)</td>
+        <td>R$ 552,27</td>
+        <td>R$ 57,60</td>
+        <td>R$ 122,50</td>
+        <td>R$ 39,77</td>
+        <td class="td-base">R$ 772,14</td>
+        <td>R$ 168,75</td>
+        <td class="td-price">R$ 1.350,00</td>
+        <td class="td-profit">+ R$ 409,11 (30,3%)</td>
+        <td class="td-markup">1,75x</td>
+      </tr>
+      <tr>
+        <td>Colchão SPA Supreme Casal (Pocket Pillow)</td>
+        <td>R$ 915,34</td>
+        <td>R$ 57,60</td>
+        <td>R$ 122,50</td>
+        <td>R$ 39,77</td>
+        <td class="td-base">R$ 1.135,20</td>
+        <td>R$ 248,75</td>
+        <td class="td-price">R$ 1.990,00</td>
+        <td class="td-profit">+ R$ 606,05 (30,4%)</td>
+        <td class="td-markup">1,75x</td>
+      </tr>
+      <tr>
+        <td>Colchão SPA Magnus Casal (Vibro/Ímãs)</td>
+        <td>R$ 1.738,73</td>
+        <td>R$ 79,20</td>
+        <td>R$ 122,50</td>
+        <td>R$ 39,77</td>
+        <td class="td-base">R$ 1.980,20</td>
+        <td>R$ 431,25</td>
+        <td class="td-price">R$ 3.450,00</td>
+        <td class="td-profit">+ R$ 1.038,55 (30,1%)</td>
+        <td class="td-markup">1,74x</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- 5. BOX NOVOS FABRICADOS -->
+  <div class="section-title">5. Box Novos Fabricados</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Produto</th>
+        <th>Insumos</th>
+        <th>MOD Fábrica</th>
+        <th>Frota + Tráfego</th>
+        <th>Galpão (Fixos)</th>
+        <th>Custo Total</th>
+        <th>Impostos (12,5%)</th>
+        <th>Preço Final (30%)</th>
+        <th>Lucro Líquido</th>
+        <th>Markup</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Box Life MDF Casal (1,38 x 1,88)</td>
+        <td>R$ 175,68</td>
+        <td>R$ 36,00</td>
+        <td>R$ 122,50</td>
+        <td>R$ 39,77</td>
+        <td class="td-base">R$ 373,95</td>
+        <td>R$ 81,25</td>
+        <td class="td-price">R$ 650,00</td>
+        <td class="td-profit">+ R$ 194,80 (30,0%)</td>
+        <td class="td-markup">1,74x</td>
+      </tr>
+      <tr>
+        <td>Box Baú Sienna Casal c/ Pistões a Gás</td>
+        <td>R$ 548,75</td>
+        <td>R$ 64,80</td>
+        <td>R$ 122,50</td>
+        <td>R$ 39,77</td>
+        <td class="td-base">R$ 775,82</td>
+        <td>R$ 168,75</td>
+        <td class="td-price">R$ 1.350,00</td>
+        <td class="td-profit">+ R$ 405,43 (30,0%)</td>
+        <td class="td-markup">1,74x</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- FOOTER -->
+  <div class="footer-notes">
+    <span>• <strong>Deduções consideradas:</strong> Simples Nacional (6%) + Taxa de Maquininha (3,5%) + Comissão de Vendas (3,0%) = 12,5%.</span>
+    <span>• <strong>Documento oficial gerado pelo Sistema Integrado Spa do Colchão</strong></span>
+  </div>
+
+</body>
+</html>
