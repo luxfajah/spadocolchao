@@ -41,12 +41,14 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(customers)
 }
 
-// POST: cria um cliente rápido (retorna JSON ao invés de redirect)
+// POST: cria um cliente completo (suporta web e mobile)
 export async function POST(req: NextRequest) {
   const user = await getUser()
-  if (!user) return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
-
   const body = await req.json()
+
+  if (!user && !body.sellerId && !body.userId) {
+    return NextResponse.json({ error: 'Não autenticado' }, { status: 401 })
+  }
   const {
     personType,
     fullName,
@@ -129,7 +131,39 @@ export async function POST(req: NextRequest) {
         }
       } : undefined,
     },
+    include: {
+      addresses: {
+        where: { isMain: true },
+        take: 1,
+      },
+    },
   })
 
-  return NextResponse.json({ id: customer.id, fullName: customer.fullName, document: customer.document }, { status: 201 })
+  const addr = customer.addresses?.[0]
+  return NextResponse.json({
+    success: true,
+    id: customer.id,
+    fullName: customer.fullName,
+    document: customer.document,
+    customer: {
+      id: customer.id,
+      personType: customer.personType,
+      fullName: customer.fullName,
+      tradeName: customer.tradeName,
+      document: customer.document,
+      rg: customer.rg,
+      birthDate: customer.birthDate ? customer.birthDate.toISOString() : null,
+      email: customer.email,
+      phone: customer.phone,
+      whatsapp: customer.whatsapp,
+      notes: customer.notes,
+      zipCode: addr?.zipCode || null,
+      addressStreet: addr?.street || null,
+      addressNumber: addr?.number || null,
+      addressComplement: addr?.complement || null,
+      addressNeighborhood: addr?.neighborhood || null,
+      addressCity: addr?.city || null,
+      addressState: addr?.state || null,
+    }
+  }, { status: 201 })
 }

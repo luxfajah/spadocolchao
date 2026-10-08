@@ -37,6 +37,7 @@
 		B10000282C10000100000001 /* StatusBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000282C10000100000001 /* StatusBadge.swift */; };
 		B10000292C10000100000001 /* MetricCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000292C10000100000001 /* MetricCard.swift */; };
 		B10000302C10000100000001 /* BrandHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000302C10000100000001 /* BrandHeader.swift */; };
+		B10000332C10000100000001 /* RegisterCustomerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F10000332C10000100000001 /* RegisterCustomerSheet.swift */; };
 		B10000312C10000100000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F10000312C10000100000001 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -72,6 +73,7 @@
 		F10000282C10000100000001 /* StatusBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusBadge.swift; sourceTree = "<group>"; };
 		F10000292C10000100000001 /* MetricCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCard.swift; sourceTree = "<group>"; };
 		F10000302C10000100000001 /* BrandHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrandHeader.swift; sourceTree = "<group>"; };
+		F10000332C10000100000001 /* RegisterCustomerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDV/RegisterCustomerSheet.swift; sourceTree = "<group>"; };
 		F10000312C10000100000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		F10000322C10000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -151,6 +153,7 @@
 				F10000172C10000100000001 /* ProductCardView.swift */,
 				F10000182C10000100000001 /* ProductCustomizerSheet.swift */,
 				F10000192C10000100000001 /* CartView.swift */,
+				F10000332C10000100000001 /* RegisterCustomerSheet.swift */,
 				F10000202C10000100000001 /* SaleSuccessSheet.swift */,
 				F10000212C10000100000001 /* OrdersKanbanView.swift */,
 				F10000222C10000100000001 /* OrderDetailView.swift */,
@@ -278,6 +281,7 @@
 				B10000172C10000100000001 /* ProductCardView.swift in Sources */,
 				B10000182C10000100000001 /* ProductCustomizerSheet.swift in Sources */,
 				B10000192C10000100000001 /* CartView.swift in Sources */,
+				B10000332C10000100000001 /* RegisterCustomerSheet.swift in Sources */,
 				B10000202C10000100000001 /* SaleSuccessSheet.swift in Sources */,
 				B10000212C10000100000001 /* OrdersKanbanView.swift in Sources */,
 				B10000222C10000100000001 /* OrderDetailView.swift in Sources */,

@@ -4,11 +4,16 @@ import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Building2,
+  Calendar,
   CheckCircle2,
+  Clock,
   CreditCard,
   DollarSign,
+  Package,
   QrCode,
   Trash2,
+  Truck,
+  User,
   Wallet,
 } from "lucide-react";
 import { usePos } from "./PosContext";
@@ -93,6 +98,22 @@ export function PosSummary() {
     campaignName,
     referralName,
     externalSellerName,
+    pickupDate,
+    setPickupDate,
+    pickupTime,
+    setPickupTime,
+    deliveryDate,
+    setDeliveryDate,
+    deliveryTime,
+    setDeliveryTime,
+    recipientName,
+    setRecipientName,
+    recipientPhone,
+    setRecipientPhone,
+    logisticsNotes,
+    setLogisticsNotes,
+    scheduleMode,
+    setScheduleMode,
   } = usePos();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -292,6 +313,286 @@ export function PosSummary() {
                   style={{ width: `${paymentProgress}%` }}
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* AGENDAMENTO DE LOGÍSTICA: RETIRADA E ENTREGA (ANTES DO PAGAMENTO) */}
+        <div className="rounded-[1.75rem] border border-blue-200/80 bg-gradient-to-br from-blue-50/70 via-white to-sky-50/40 p-5 sm:p-6 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-blue-100/80 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-[#02213f] text-white shadow-md shadow-blue-950/20">
+                <Truck className="h-5 w-5 text-sky-400" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-600">
+                  Agendamento Obrigatório
+                </span>
+                <h3 className="text-lg font-black tracking-tight text-slate-900">
+                  Data de Retirada & Entrega
+                </h3>
+              </div>
+            </div>
+
+            {/* Seletor de Modalidade */}
+            <div className="inline-flex rounded-2xl bg-slate-100 p-1 text-[11px] font-black">
+              <button
+                type="button"
+                onClick={() => setScheduleMode("both")}
+                className={`rounded-xl px-3.5 py-1.5 transition-all ${
+                  scheduleMode === "both"
+                    ? "bg-[#02213f] text-white shadow"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Retirada & Entrega
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduleMode("delivery")}
+                className={`rounded-xl px-3.5 py-1.5 transition-all ${
+                  scheduleMode === "delivery"
+                    ? "bg-[#02213f] text-white shadow"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Apenas Entrega
+              </button>
+              <button
+                type="button"
+                onClick={() => setScheduleMode("pickup")}
+                className={`rounded-xl px-3.5 py-1.5 transition-all ${
+                  scheduleMode === "pickup"
+                    ? "bg-[#02213f] text-white shadow"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                Apenas Retirada
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Bloco Retirada Agendada */}
+            {(scheduleMode === "both" || scheduleMode === "pickup") && (
+              <div className="rounded-[1.4rem] border border-amber-200/80 bg-amber-50/50 p-4 transition-all">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-amber-700" />
+                    <span className="text-xs font-black uppercase tracking-wider text-amber-950">
+                      Retirada Agendada
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-amber-200/60 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-amber-900">
+                    {scheduleMode === "pickup" ? "Retirada pelo Cliente" : "Coleta de Reforma"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Data da Retirada
+                    </label>
+                    <Input
+                      type="date"
+                      value={pickupDate}
+                      onChange={(e) => setPickupDate(e.target.value)}
+                      className="h-11 rounded-xl border-amber-200 bg-white text-xs font-black text-slate-900 shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Horário / Turno
+                    </label>
+                    <select
+                      value={pickupTime}
+                      onChange={(e) => setPickupTime(e.target.value)}
+                      className="flex h-11 w-full rounded-xl border border-amber-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm outline-none"
+                    >
+                      <option value="">Selecione o turno</option>
+                      <option value="09:00">Manhã (08h às 12h)</option>
+                      <option value="14:00">Tarde (13h às 18h)</option>
+                      <option value="10:00">Horário Comercial</option>
+                      <option value="18:00">Fim de Tarde (após 17h)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Atalhos de data rápida para retirada */}
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-slate-400">Atalhos:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      setPickupDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-amber-100/70"
+                  >
+                    Hoje
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 1);
+                      setPickupDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-amber-100/70"
+                  >
+                    Amanhã
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 3);
+                      setPickupDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-amber-100/70"
+                  >
+                    +3 dias
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Bloco Entrega Agendada */}
+            {(scheduleMode === "both" || scheduleMode === "delivery") && (
+              <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/50 p-4 transition-all">
+                <div className="mb-2.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-emerald-700" />
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-950">
+                      Entrega Agendada
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-emerald-200/60 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-wider text-emerald-900">
+                    Entrega no Endereço
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Data da Entrega
+                    </label>
+                    <Input
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      className="h-11 rounded-xl border-emerald-200 bg-white text-xs font-black text-slate-900 shadow-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      Horário / Turno
+                    </label>
+                    <select
+                      value={deliveryTime}
+                      onChange={(e) => setDeliveryTime(e.target.value)}
+                      className="flex h-11 w-full rounded-xl border border-emerald-200 bg-white px-3 text-xs font-bold text-slate-800 shadow-sm outline-none"
+                    >
+                      <option value="">Selecione o turno</option>
+                      <option value="09:00">Manhã (08h às 12h)</option>
+                      <option value="14:00">Tarde (13h às 18h)</option>
+                      <option value="10:00">Horário Comercial</option>
+                      <option value="18:00">Fim de Tarde (após 17h)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Atalhos de data rápida para entrega */}
+                <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-slate-400">Prazos de fábrica:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 5);
+                      setDeliveryDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-emerald-100/70"
+                  >
+                    +5 dias
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 7);
+                      setDeliveryDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-emerald-100/70"
+                  >
+                    +7 dias
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const d = new Date();
+                      d.setDate(d.getDate() + 10);
+                      setDeliveryDate(d.toISOString().split("T")[0]);
+                    }}
+                    className="rounded-lg bg-white px-2 py-0.5 text-[10px] font-bold text-slate-600 shadow-2xs hover:bg-emerald-100/70"
+                  >
+                    +10 dias (padrão)
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Dados opcionais do recebedor e observações */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Nome do Recebedor no Local
+                </label>
+                {customer?.fullName && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRecipientName(customer.fullName);
+                      if ((customer as any).phone) setRecipientPhone((customer as any).phone);
+                    }}
+                    className="text-[9px] font-bold text-blue-600 hover:underline"
+                  >
+                    Usar dados do cliente
+                  </button>
+                )}
+              </div>
+              <Input
+                placeholder={customer?.fullName || "Quem irá receber os produtos?"}
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Telefone de Contato para Entrega
+              </label>
+              <Input
+                placeholder="(00) 00000-0000"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold"
+              />
+            </div>
+
+            <div className="sm:col-span-2 space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Instruções de Logística / Rota para o Motorista
+              </label>
+              <Input
+                placeholder="Ex: Apartamento 42, Bloco C, interfone com defeito, ligar 20 min antes de chegar"
+                value={logisticsNotes}
+                onChange={(e) => setLogisticsNotes(e.target.value)}
+                className="h-10 rounded-xl border-slate-200 bg-white text-xs font-semibold"
+              />
             </div>
           </div>
         </div>

@@ -27,7 +27,7 @@ export function RegisterCustomerModal({
   sellerId,
   initialData,
 }: RegisterCustomerModalProps) {
-  const [isFullMode, setIsFullMode] = useState(false)
+  const [isFullMode, setIsFullMode] = useState(true)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 

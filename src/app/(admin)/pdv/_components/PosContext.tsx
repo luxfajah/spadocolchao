@@ -48,6 +48,22 @@ export type PosContextType = {
   resetSale: () => void;
   currentStep: number;
   setCurrentStep: (s: number) => void;
+  pickupDate: string;
+  setPickupDate: (d: string) => void;
+  pickupTime: string;
+  setPickupTime: (t: string) => void;
+  deliveryDate: string;
+  setDeliveryDate: (d: string) => void;
+  deliveryTime: string;
+  setDeliveryTime: (t: string) => void;
+  recipientName: string;
+  setRecipientName: (r: string) => void;
+  recipientPhone: string;
+  setRecipientPhone: (p: string) => void;
+  logisticsNotes: string;
+  setLogisticsNotes: (n: string) => void;
+  scheduleMode: "both" | "delivery" | "pickup";
+  setScheduleMode: (m: "both" | "delivery" | "pickup") => void;
 };
 
 const PosContext = createContext<PosContextType | undefined>(undefined);
@@ -66,6 +82,16 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
   const [globalDiscount, setGlobalDiscount] = useState(0);
   const [payments, setPayments] = useState<any[]>([]);
   const [currentStep, setCurrentStep] = useState(1);
+
+  // AGENDAMENTO DE LOGÍSTICA (RETIRADA E ENTREGA)
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+  const [deliveryTime, setDeliveryTime] = useState("");
+  const [recipientName, setRecipientName] = useState("");
+  const [recipientPhone, setRecipientPhone] = useState("");
+  const [logisticsNotes, setLogisticsNotes] = useState("");
+  const [scheduleMode, setScheduleMode] = useState<"both" | "delivery" | "pickup">("delivery");
 
   // RECUPERAR RASCUNHO (DRAFT) AO VOLTAR DO CADASTRO
   useEffect(() => {
@@ -132,6 +158,14 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
     setGlobalDiscount(0);
     setPayments([]);
     setCurrentStep(1);
+    setPickupDate("");
+    setPickupTime("");
+    setDeliveryDate("");
+    setDeliveryTime("");
+    setRecipientName("");
+    setRecipientPhone("");
+    setLogisticsNotes("");
+    setScheduleMode("delivery");
     localStorage.removeItem('pdv_draft');
   };
 
@@ -152,7 +186,15 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
       referralName, setReferralName,
       externalSellerName, setExternalSellerName,
       resetSale,
-      currentStep, setCurrentStep
+      currentStep, setCurrentStep,
+      pickupDate, setPickupDate,
+      pickupTime, setPickupTime,
+      deliveryDate, setDeliveryDate,
+      deliveryTime, setDeliveryTime,
+      recipientName, setRecipientName,
+      recipientPhone, setRecipientPhone,
+      logisticsNotes, setLogisticsNotes,
+      scheduleMode, setScheduleMode
     }}>
       {children}
     </PosContext.Provider>

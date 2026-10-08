@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, CreditCard, LogOut, ShoppingBag, Store, UserRound } from "lucide-react";
+import { CheckCircle2, CreditCard, LogOut, Printer, ShoppingBag, Store, UserRound } from "lucide-react";
 import { usePos } from "./PosContext";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -110,11 +110,24 @@ export function PosHeader() {
         </div>
 
         {/* Quick Stats & Exit */}
-        <div className="flex items-center gap-2 lg:gap-6">
+        <div className="flex items-center gap-2 lg:gap-4">
           <div className="flex flex-col items-end">
             <p className="text-[9px] font-black uppercase tracking-widest text-white/40">Total</p>
             <p className="font-outfit text-base lg:text-xl font-black text-sky-300">{formatBRL(total)}</p>
           </div>
+
+          {/* Central de Impressão de Pedidos */}
+          <Link href="/pdv/impressao" target="_blank">
+            <Button 
+              type="button"
+              variant="outline" 
+              className="h-11 gap-2 rounded-2xl bg-white/10 px-3.5 text-[10px] font-black uppercase tracking-widest text-sky-200 hover:bg-white/20 hover:text-white transition-all border border-white/20"
+              title="Abrir Central de Impressão Automática de Pedidos"
+            >
+              <Printer className="h-4 w-4 text-sky-400" />
+              <span className="hidden sm:inline">Impressão</span>
+            </Button>
+          </Link>
 
           {/* Botão Sair: só desktop */}
           <Link href="/vendas-clientes/pedidos" className="hidden lg:block">

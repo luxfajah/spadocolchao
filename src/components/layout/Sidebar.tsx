@@ -17,6 +17,7 @@ import {
   MapPin,
   Package,
   PieChart,
+  Printer,
   Settings2,
   Shield,
   Store,
@@ -35,6 +36,7 @@ const NAV_ITEMS = [
     icon: Tags,
     items: [
       { title: "PDV", href: "/pdv", icon: Store, requiredArea: "pdv" },
+      { title: "Impressão PDV", href: "/pdv/impressao", icon: Printer, requiredArea: "pdv" },
       { title: "Motor de Vendas", href: "/vendas-clientes/vendas", icon: Tags, requiredArea: "sales" },
       { title: "Rastreamento GPS", href: "/rastreamento", icon: MapPin, requiredArea: "sales" },
       { title: "Central de Pedidos", href: "/vendas-clientes/pedidos", icon: ClipboardList, requiredArea: "orders" },

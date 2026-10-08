@@ -30,14 +30,26 @@ export function PosFloatingActions() {
     campaignName,
     referralName,
     externalSellerName,
+    pickupDate,
+    setPickupDate,
+    pickupTime,
+    setPickupTime,
+    deliveryDate,
+    setDeliveryDate,
+    deliveryTime,
+    setDeliveryTime,
+    recipientName,
+    setRecipientName,
+    recipientPhone,
+    setRecipientPhone,
+    logisticsNotes,
+    setLogisticsNotes,
+    scheduleMode,
+    setScheduleMode,
   } = usePos();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeliveryModal, setShowDeliveryModal] = useState(false);
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [deliveryTime, setDeliveryTime] = useState("");
-  const [recipientName, setRecipientName] = useState("");
-  const [recipientPhone, setRecipientPhone] = useState("");
 
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
   const remaining = Math.max(total - totalPaid, 0);
@@ -71,7 +83,7 @@ export function PosFloatingActions() {
       return alert("O pagamento ainda não foi concluído. Faltam " + formatBRL(remaining));
     }
 
-    if (!deliveryDate) {
+    if (!deliveryDate && !pickupDate) {
       setShowDeliveryModal(true);
       return;
     }
@@ -89,9 +101,11 @@ export function PosFloatingActions() {
         globalDiscount,
         total,
         payments,
-        deliveryDate: `${deliveryDate}T${deliveryTime || "00:00"}:00`,
-        recipientName,
-        recipientPhone,
+        deliveryDate: deliveryDate ? `${deliveryDate}T${deliveryTime || "00:00"}:00` : null,
+        pickupDate: pickupDate ? `${pickupDate}T${pickupTime || "00:00"}:00` : null,
+        recipientName: recipientName || customer.fullName,
+        recipientPhone: recipientPhone || (customer as any)?.phone || "",
+        logisticsNotes,
         leadSourceDetail,
         campaignName,
         referralName,
@@ -103,10 +117,6 @@ export function PosFloatingActions() {
       if (result?.success && (result as any).result?.orderId) {
         window.open(`/pdv/receipt/${(result as any).result.orderId}`, "_blank");
         resetSale();
-        setPayments([]);
-        setDeliveryDate("");
-        setRecipientName("");
-        setRecipientPhone("");
         setShowDeliveryModal(false);
       } else {
         alert("Erro: " + result?.error);
@@ -190,70 +200,110 @@ export function PosFloatingActions() {
       </div>
 
       <Dialog open={showDeliveryModal} onOpenChange={setShowDeliveryModal}>
-        <DialogContent className="overflow-hidden rounded-[2.2rem] border-none p-0 sm:max-w-[520px]">
-          <DialogHeader className="border-b border-slate-100 bg-slate-50/80 p-8">
-            <DialogTitle className="text-2xl font-black tracking-tight text-primary">Dados de entrega</DialogTitle>
+        <DialogContent className="overflow-hidden rounded-[2.2rem] border-none p-0 sm:max-w-[560px]">
+          <DialogHeader className="border-b border-slate-100 bg-slate-50/80 p-6 sm:p-8">
+            <DialogTitle className="text-xl sm:text-2xl font-black tracking-tight text-primary">
+              Agendamento de Retirada & Entrega
+            </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-8 p-8">
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Data de entrega
-                </label>
-                <Input
-                  type="date"
-                  value={deliveryDate}
-                  onChange={(event) => setDeliveryDate(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-slate-50"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Horario aproximado
-                </label>
-                <Input
-                  type="time"
-                  value={deliveryTime}
-                  onChange={(event) => setDeliveryTime(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-slate-50"
-                />
+          <div className="space-y-6 p-6 sm:p-8 max-h-[75vh] overflow-y-auto">
+            {/* Bloco Retirada */}
+            <div className="rounded-[1.4rem] border border-amber-200/80 bg-amber-50/50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-900 mb-2.5">
+                Data de Retirada Agendada (Opcional se produto novo)
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Data de Retirada</label>
+                  <Input
+                    type="date"
+                    value={pickupDate}
+                    onChange={(event) => setPickupDate(event.target.value)}
+                    className="h-11 rounded-[1rem] border-amber-200 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Turno da Retirada</label>
+                  <select
+                    value={pickupTime}
+                    onChange={(event) => setPickupTime(event.target.value)}
+                    className="flex h-11 w-full rounded-[1rem] border border-amber-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="09:00">Manhã (08h às 12h)</option>
+                    <option value="14:00">Tarde (13h às 18h)</option>
+                    <option value="10:00">Comercial</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            <div className="space-y-5 rounded-[1.6rem] border border-slate-100 bg-slate-50/70 p-5">
+            {/* Bloco Entrega */}
+            <div className="rounded-[1.4rem] border border-emerald-200/80 bg-emerald-50/50 p-4">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-900 mb-2.5">
+                Data de Entrega Agendada
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Data de Entrega</label>
+                  <Input
+                    type="date"
+                    value={deliveryDate}
+                    onChange={(event) => setDeliveryDate(event.target.value)}
+                    className="h-11 rounded-[1rem] border-emerald-200 bg-white"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase text-slate-500">Turno da Entrega</label>
+                  <select
+                    value={deliveryTime}
+                    onChange={(event) => setDeliveryTime(event.target.value)}
+                    className="flex h-11 w-full rounded-[1rem] border border-emerald-200 bg-white px-3 text-xs font-bold text-slate-800 outline-none"
+                  >
+                    <option value="">Selecione...</option>
+                    <option value="09:00">Manhã (08h às 12h)</option>
+                    <option value="14:00">Tarde (13h às 18h)</option>
+                    <option value="10:00">Comercial</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 rounded-[1.4rem] border border-slate-100 bg-slate-50/70 p-4">
               <p className="text-[10px] font-black uppercase tracking-[0.22em] text-primary">
-                Recebedor alternativo (opcional)
+                Recebedor no Local e Contato
               </p>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Nome do recebedor
-                </label>
-                <Input
-                  placeholder="Quem vai receber o produto?"
-                  value={recipientName}
-                  onChange={(event) => setRecipientName(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-white"
-                />
-              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Nome do recebedor
+                  </label>
+                  <Input
+                    placeholder={customer?.fullName || "Quem vai receber o produto?"}
+                    value={recipientName}
+                    onChange={(event) => setRecipientName(event.target.value)}
+                    className="h-11 rounded-[1rem] border-slate-200 bg-white"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                  Telefone de contato
-                </label>
-                <Input
-                  placeholder="(00) 00000-0000"
-                  value={recipientPhone}
-                  onChange={(event) => setRecipientPhone(event.target.value)}
-                  className="h-12 rounded-[1.2rem] border-slate-200 bg-white"
-                />
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                    Telefone de contato
+                  </label>
+                  <Input
+                    placeholder="(00) 00000-0000"
+                    value={recipientPhone}
+                    onChange={(event) => setRecipientPhone(event.target.value)}
+                    className="h-11 rounded-[1rem] border-slate-200 bg-white"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter className="border-t border-slate-100 bg-slate-50/80 p-8 sm:justify-between">
+          <DialogFooter className="border-t border-slate-100 bg-slate-50/80 p-6 sm:justify-between">
             <Button
               type="button"
               variant="ghost"
@@ -265,7 +315,7 @@ export function PosFloatingActions() {
             <Button
               type="button"
               onClick={handleFinalize}
-              disabled={!deliveryDate || isSubmitting}
+              disabled={(!deliveryDate && !pickupDate) || isSubmitting}
               className="h-12 rounded-full bg-primary px-6 text-[10px] font-black uppercase tracking-[0.22em] text-white hover:bg-slate-900"
             >
               {isSubmitting ? "Finalizando..." : "Confirmar e gerar pedido"}

@@ -14,11 +14,6 @@ public struct CartView: View {
     @State private var completedSaleNumber: String? = nil
     @State private var showSuccess = false
 
-    // Novo cliente rápido
-    @State private var newCustName = ""
-    @State private var newCustPhone = ""
-    @State private var newCustAddress = ""
-
     public init() {}
 
     public var body: some View {
@@ -90,7 +85,9 @@ public struct CartView: View {
                 customerPickerSheet
             }
             .sheet(isPresented: $showNewCustomerSheet) {
-                newCustomerSheet
+                RegisterCustomerSheet { newCustomer in
+                    appState.selectedCustomer = newCustomer
+                }
             }
             .sheet(isPresented: $showSuccess) {
                 if let saleNum = completedSaleNumber {
@@ -383,39 +380,6 @@ public struct CartView: View {
                     Button("+ Novo") {
                         showCustomerPicker = false
                         showNewCustomerSheet = true
-                    }
-                }
-            }
-        }
-    }
-
-    private var newCustomerSheet: some View {
-        NavigationStack {
-            Form {
-                Section("Dados do Cliente") {
-                    TextField("Nome Completo", text: $newCustName)
-                    TextField("Telefone / WhatsApp", text: $newCustPhone)
-                        .keyboardType(.phonePad)
-                    TextField("Endereço Completo", text: $newCustAddress)
-                }
-            }
-            .navigationTitle("Cadastrar Cliente Rápido")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") { showNewCustomerSheet = false }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Salvar") {
-                        let newCust = Customer(
-                            fullName: newCustName.isEmpty ? "Cliente Balcão" : newCustName,
-                            phone: newCustPhone,
-                            whatsapp: newCustPhone,
-                            addressStreet: newCustAddress
-                        )
-                        appState.customers.insert(newCust, at: 0)
-                        appState.selectedCustomer = newCust
-                        showNewCustomerSheet = false
                     }
                 }
             }

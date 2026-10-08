@@ -81,6 +81,62 @@ public final class APIClient: Sendable {
         return (res.products, res.customers)
     }
 
+    // MARK: - Cadastro Completo de Cliente
+    public func createCustomer(customer: Customer, sellerId: String?) async throws -> Customer {
+        let endpoint = "\(baseURLString)/api/clientes"
+        guard let url = URL(string: endpoint) else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15.0
+
+        let body: [String: Any] = [
+            "personType": customer.personType,
+            "fullName": customer.fullName,
+            "tradeName": customer.tradeName ?? "",
+            "document": customer.document ?? "",
+            "rg": customer.rg ?? "",
+            "birthDate": customer.birthDate ?? "",
+            "email": customer.email ?? "",
+            "phone": customer.phone ?? "",
+            "whatsapp": customer.whatsapp ?? "",
+            "notes": customer.notes ?? "",
+            "zipCode": customer.zipCode ?? "",
+            "street": customer.addressStreet ?? "",
+            "number": customer.addressNumber ?? "",
+            "complement": customer.addressComplement ?? "",
+            "neighborhood": customer.addressNeighborhood ?? "",
+            "city": customer.addressCity ?? "",
+            "state": customer.addressState ?? "",
+            "sellerId": sellerId ?? ""
+        ]
+
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (httpResponse.statusCode == 200 || httpResponse.statusCode == 201) else {
+            if let errObj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let message = errObj["error"] as? String {
+                throw NSError(domain: "CustomerError", code: 400, userInfo: [NSLocalizedDescriptionKey: message])
+            }
+            throw URLError(.badServerResponse)
+        }
+
+        struct CreateCustomerResponse: Codable {
+            let success: Bool
+            let customer: Customer?
+        }
+
+        let res = try jsonDecoder.decode(CreateCustomerResponse.self, from: data)
+        guard let created = res.customer else {
+            throw NSError(domain: "CustomerError", code: 400, userInfo: [NSLocalizedDescriptionKey: "Cliente não retornado pelo servidor"])
+        }
+        return created
+    }
+
     // MARK: - Pedidos / Kanban
     public func fetchOrders(sellerId: String?, isAdmin: Bool = false) async throws -> [Order] {
         var components = URLComponents(string: "\(baseURLString)/api/vendedor/pedidos")

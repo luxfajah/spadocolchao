@@ -1328,6 +1328,7 @@ model Order {
   sellerId            String?
   currentStatus       String    @default("SOLD")
   promisedDate        DateTime?
+  pickupDate          DateTime?
   productionStartedAt DateTime?
   readyForDeliveryAt  DateTime?
   deliveryDate        DateTime?

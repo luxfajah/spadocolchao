@@ -111,7 +111,7 @@ export async function finalizeSale(payload: any) {
       customerId, sellerId, leadSourceId, sessionId,
       items, subtotal, globalDiscount, total, 
       payments, notes,
-      deliveryDate, recipientName, recipientPhone,
+      deliveryDate, pickupDate, recipientName, recipientPhone, logisticsNotes,
       leadSourceDetail, campaignName, referralName, externalSellerName
     } = payload
 
@@ -620,18 +620,57 @@ export async function finalizeSale(payload: any) {
       }
 
       // 4. Create Order & History
+      const combinedOrderNotes = [
+        notes,
+        logisticsNotes ? `Logística: ${logisticsNotes}` : null,
+        pickupDate ? `Retirada agendada: ${new Date(pickupDate).toLocaleString('pt-BR')}` : null,
+      ].filter(Boolean).join(" | ") || null
+
       const order = await tx.order.create({
         data: {
           saleId: sale.id,
           customerId: customerId,
           sellerId: sellerId || null,
           currentStatus: "SOLD",
+          pickupDate: pickupDate ? new Date(pickupDate) : null,
           deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-          promisedDate: deliveryDate ? new Date(deliveryDate) : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+          promisedDate: deliveryDate ? new Date(deliveryDate) : (pickupDate ? new Date(pickupDate) : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)),
           recipientName: recipientName || null,
-          recipientPhone: recipientPhone || null
+          recipientPhone: recipientPhone || null,
+          notes: combinedOrderNotes
         }
       })
+
+      if (deliveryDate) {
+        await tx.orderDelivery.create({
+          data: {
+            orderId: order.id,
+            status: "PENDING",
+            scheduledDate: new Date(deliveryDate),
+            recipientName: recipientName || null,
+            recipientPhone: recipientPhone || null,
+            notes: logisticsNotes || null
+          }
+        })
+      }
+
+      if (pickupDate || deliveryDate || logisticsNotes) {
+        const scheduleLog = [
+          pickupDate ? `Retirada agendada: ${new Date(pickupDate).toLocaleDateString('pt-BR')} ${new Date(pickupDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : null,
+          deliveryDate ? `Entrega agendada: ${new Date(deliveryDate).toLocaleDateString('pt-BR')} ${new Date(deliveryDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : null,
+          recipientName ? `Recebedor: ${recipientName}` : null,
+          logisticsNotes ? `Obs: ${logisticsNotes}` : null
+        ].filter(Boolean).join(" • ");
+
+        await tx.orderNote.create({
+          data: {
+            orderId: order.id,
+            type: "DELIVERY",
+            content: scheduleLog,
+            createdById: actor.id
+          }
+        });
+      }
 
       await tx.orderStatusHistory.create({
         data: {

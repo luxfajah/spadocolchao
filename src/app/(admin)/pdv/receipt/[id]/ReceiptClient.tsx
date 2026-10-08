@@ -141,6 +141,30 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
           </div>
         </div>
 
+        {/* LOGÍSTICA AGENDADA */}
+        {(order.pickupDate || order.deliveryDate) && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-[9px] space-y-1">
+            <p className="text-[8px] font-black uppercase tracking-wider text-slate-400">Logística Agendada</p>
+            {order.pickupDate && (
+              <div className="flex items-center justify-between font-bold text-amber-900">
+                <span>📦 RETIRADA:</span>
+                <span className="font-black">{formatDate(order.pickupDate)}</span>
+              </div>
+            )}
+            {order.deliveryDate && (
+              <div className="flex items-center justify-between font-bold text-emerald-900">
+                <span>🚚 ENTREGA:</span>
+                <span className="font-black">{formatDate(order.deliveryDate)}</span>
+              </div>
+            )}
+            {order.recipientName && (
+              <p className="text-slate-500 pt-1 border-t border-slate-200/60">
+                <span className="font-bold">Recebedor:</span> {order.recipientName} {order.recipientPhone ? `• ${order.recipientPhone}` : ''}
+              </p>
+            )}
+          </div>
+        )}
+
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
             <div className="h-3 w-0.5 bg-[#02213f] rounded-full" />
@@ -158,9 +182,16 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
             <tbody className="divide-y divide-slate-50">
               {items.map((item: any) => (
                 <tr key={item.id}>
-                  <td className="py-2 font-bold text-slate-500">{item.quantity}x</td>
-                  <td className="py-2 font-bold text-slate-800 pr-2">{item.description}</td>
-                  <td className="py-2 text-right font-black text-[#02213f]">{formatBRL(item.totalAmount)}</td>
+                  <td className="py-2 font-bold text-slate-500 align-top">{item.quantity}x</td>
+                  <td className="py-2 font-bold text-slate-800 pr-2">
+                    <div>{item.description}</div>
+                    {item.notes && (
+                      <div className="text-[8px] font-medium text-slate-500 mt-0.5 whitespace-pre-wrap leading-tight bg-slate-50 p-1 rounded">
+                        {item.notes}
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-2 text-right font-black text-[#02213f] align-top">{formatBRL(item.totalAmount)}</td>
                 </tr>
               ))}
             </tbody>
