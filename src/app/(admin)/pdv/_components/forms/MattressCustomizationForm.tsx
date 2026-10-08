@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Sparkles, Layers, Palette, Ribbon, PlusCircle } from "lucide-react";
+import { Check, Sparkles, Layers, Palette, Ribbon, PlusCircle, RefreshCw } from "lucide-react";
 import { usePos } from "../PosContext";
+import { detectMattressDimensions, getExtraFoamPricing } from "@/lib/pricing/foam-pricing";
 
 interface MattressCustomizationFormProps {
   product: any;
@@ -143,8 +144,14 @@ export function MattressCustomizationForm({
 }: MattressCustomizationFormProps) {
   const { initialData } = usePos();
 
+  // Dimensões físicas e precificação do modelo
+  const mattressDim = detectMattressDimensions(product?.name || "", product?.category || "");
+  const baseProductPrice = Number(product.price) || 0;
+  const baseMinimumPrice = Number(product.minimumPrice) || 0;
+
   // Estados de Personalização do Colchão
   const [selectedFoam, setSelectedFoam] = useState(EXTRA_FOAM_OPTIONS[0]);
+  const [currentFoamExtraPrice, setCurrentFoamExtraPrice] = useState(0);
   const [customFoamNotes, setCustomFoamNotes] = useState("");
 
   const [selectedTopFabric, setSelectedTopFabric] = useState(TOP_FABRIC_OPTIONS[0]);
@@ -157,8 +164,12 @@ export function MattressCustomizationForm({
   const [customFitilhoName, setCustomFitilhoName] = useState("");
 
   const [quantity, setQuantity] = useState(1);
-  const [unitPrice, setUnitPrice] = useState<number>(product.price || 0);
+  const [unitPrice, setUnitPrice] = useState<number>(baseProductPrice);
   const [technicalNotes, setTechnicalNotes] = useState("");
+
+  const activeFoamPricing = getExtraFoamPricing(selectedFoam.id, mattressDim.sizeKey);
+  const suggestedUnitPrice = baseProductPrice + activeFoamPricing.additionalPrice;
+  const recommendedMinimumPrice = baseMinimumPrice > 0 ? (baseMinimumPrice + activeFoamPricing.minimumFloorPrice) : 0;
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(val);
@@ -170,6 +181,15 @@ export function MattressCustomizationForm({
   const fitilhoPadraoSupply = supplyItems.find((s: any) => s.code === "INS-FIT-035");
   const fitilhoColmeiaSupply = supplyItems.find((s: any) => s.code === "INS-FIT-COL");
   const foamSupply = selectedFoam.code ? supplyItems.find((s: any) => s.code === selectedFoam.code) : null;
+
+  // Atualização dinâmica do preço ao trocar a camada de espuma
+  const handleSelectFoam = (f: typeof EXTRA_FOAM_OPTIONS[0]) => {
+    const newPricing = getExtraFoamPricing(f.id, mattressDim.sizeKey);
+    const priceDiff = newPricing.additionalPrice - currentFoamExtraPrice;
+    setSelectedFoam(f);
+    setCurrentFoamExtraPrice(newPricing.additionalPrice);
+    setUnitPrice((prev) => Math.max(0, prev + priceDiff));
+  };
 
   const handleSubmit = () => {
     const finalTopName = customTopFabricName.trim() ? customTopFabricName.trim() : selectedTopFabric.name;
@@ -201,6 +221,16 @@ export function MattressCustomizationForm({
       extraFoamSupplyItemId: foamSupply?.id || null,
       hasExtraFoam: selectedFoam.id !== "sem_extra",
       addedFoamHeight: selectedFoam.height,
+      extraFoamPrice: activeFoamPricing.additionalPrice,
+      extraFoamCost: activeFoamPricing.directCost,
+      foamVolumeM3: activeFoamPricing.volumeM3,
+      foamServiceType: selectedFoam.id !== "sem_extra" ? "CAMADA_EXTRA" : "PADRAO",
+
+      // Dimensões de engenharia
+      mattressSize: mattressDim.sizeKey,
+      actualWidth: mattressDim.width,
+      actualLength: mattressDim.length,
+      commercialSize: mattressDim.sizeKey.toLowerCase(),
 
       // Colchões não têm pés
       hasFeet: false,
@@ -209,7 +239,7 @@ export function MattressCustomizationForm({
 
       // Observações e Resumo de Engenharia
       technicalNotes: technicalNotes.trim() || null,
-      customizationSummary: `Tampo: ${finalTopName} • Faixa: ${finalSideName} • Fitilho: ${finalFitilhoName} • Espuma: ${finalFoamName}`,
+      customizationSummary: `Tampo: ${finalTopName} • Faixa: ${finalSideName} • Fitilho: ${finalFitilhoName} • Espuma: ${finalFoamName} (${activeFoamPricing.priceBadge})`,
     };
 
     onAdd(details, unitPrice, quantity);
@@ -222,9 +252,14 @@ export function MattressCustomizationForm({
         {/* Cabeçalho do Colchão */}
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-              Personalização de Colchão
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Personalização de Colchão
+              </span>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 border border-slate-200">
+                {mattressDim.label}
+              </span>
+            </div>
             <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 border border-emerald-200">
               <Layers className="h-3 w-3 text-emerald-600" />
               <span>Ficha Técnica Automática</span>
@@ -245,7 +280,7 @@ export function MattressCustomizationForm({
               </div>
               <div>
                 <h4 className="text-sm font-black text-slate-900">Camada Extra de Espuma (Pillow Top)</h4>
-                <p className="text-[11px] text-slate-500">Adicione conforto extra ou sustentação ortopédica</p>
+                <p className="text-[11px] text-slate-500">Adicione conforto extra ou sustentação com margem líquida de 30%</p>
               </div>
             </div>
             <span className="text-[11px] font-bold text-slate-600 truncate max-w-[170px]">
@@ -256,11 +291,12 @@ export function MattressCustomizationForm({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
             {EXTRA_FOAM_OPTIONS.map((f) => {
               const isSelected = selectedFoam.id === f.id;
+              const fPricing = getExtraFoamPricing(f.id, mattressDim.sizeKey);
               return (
                 <button
                   key={f.id}
                   type="button"
-                  onClick={() => setSelectedFoam(f)}
+                  onClick={() => handleSelectFoam(f)}
                   className={`flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all ${
                     isSelected
                       ? "border-primary bg-primary/5 ring-2 ring-primary/20 shadow-sm"
@@ -275,11 +311,24 @@ export function MattressCustomizationForm({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between gap-1">
                       <p className="text-xs font-bold text-slate-900 leading-tight">{f.name}</p>
-                      <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 shrink-0">
-                        {f.badge}
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0 ${
+                        f.id === "sem_extra"
+                          ? "bg-slate-100 text-slate-600 border border-slate-200"
+                          : "bg-emerald-100 text-emerald-800 border border-emerald-300 shadow-xs"
+                      }`}>
+                        {fPricing.priceBadge}
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-500 mt-1 leading-snug">{f.desc}</p>
+                    {f.id !== "sem_extra" && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[9px] font-semibold text-emerald-700">
+                        <span>Consumo: {fPricing.volumeM3}m³</span>
+                        <span>•</span>
+                        <span>Custo: {formatBRL(fPricing.directCost)}</span>
+                        <span>•</span>
+                        <span className="text-emerald-800 font-black">Margem Líq. 30%</span>
+                      </div>
+                    )}
                   </div>
                 </button>
               );
@@ -522,9 +571,21 @@ export function MattressCustomizationForm({
           </div>
 
           <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm space-y-2">
-            <label className="text-xs font-black uppercase tracking-wider text-slate-500">
-              Preço Unitário Negociado (R$)
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-black uppercase tracking-wider text-slate-500">
+                Preço Unitário Negociado (R$)
+              </label>
+              {unitPrice !== suggestedUnitPrice && (
+                <button
+                  type="button"
+                  onClick={() => setUnitPrice(suggestedUnitPrice)}
+                  className="flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Sugerido: {formatBRL(suggestedUnitPrice)}
+                </button>
+              )}
+            </div>
             <input
               type="number"
               step="0.01"
@@ -532,6 +593,20 @@ export function MattressCustomizationForm({
               onChange={(e) => setUnitPrice(parseFloat(e.target.value) || 0)}
               className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 font-outfit text-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary/20 tabular-nums"
             />
+            {/* Detalhamento financeiro da composição */}
+            <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-500">
+              <span>Base: <strong className="text-slate-700">{formatBRL(baseProductPrice)}</strong></span>
+              {activeFoamPricing.additionalPrice > 0 ? (
+                <span>Espuma: <strong className="text-emerald-700">+{formatBRL(activeFoamPricing.additionalPrice)}</strong></span>
+              ) : (
+                <span>Espuma: <strong className="text-slate-500">Padrão</strong></span>
+              )}
+              {recommendedMinimumPrice > 0 && (
+                <span className="text-[10px] text-amber-700 font-semibold">
+                  Piso: {formatBRL(recommendedMinimumPrice)}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -556,13 +631,18 @@ export function MattressCustomizationForm({
             <p className="font-outfit text-2xl font-black text-white tabular-nums tracking-tight">
               {formatBRL(unitPrice * quantity)}
             </p>
+            {activeFoamPricing.additionalPrice > 0 && (
+              <p className="text-[10px] text-emerald-400 font-semibold mt-0.5">
+                Inclui Camada Extra (+{formatBRL(activeFoamPricing.additionalPrice * quantity)}) • Margem Líq. 30%
+              </p>
+            )}
           </div>
           <div className="text-left sm:text-right border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
             <p className="text-[11px] text-slate-200 font-bold">
               {customTopFabricName.trim() ? customTopFabricName : selectedTopFabric.name} • Faixa: {customSideColorName.trim() ? customSideColorName : selectedSideColor.name}
             </p>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              Fitilho: {customFitilhoName.trim() ? customFitilhoName : selectedFitilho.name} • {selectedFoam.badge}
+              Fitilho: {customFitilhoName.trim() ? customFitilhoName : selectedFitilho.name} • {selectedFoam.name} ({activeFoamPricing.priceBadge})
             </p>
           </div>
         </div>

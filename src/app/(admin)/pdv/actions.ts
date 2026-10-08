@@ -9,6 +9,7 @@ import { calculateCommissions } from "@/lib/commission-engine"
 import { getPdvSellerOptions } from "@/lib/pdv-sellers"
 import { getAuthenticatedUser } from "@/lib/auth"
 import { assertAreaAccess } from "@/lib/access-control"
+import { detectMattressDimensions, calculateExtraFoamVolume } from "@/lib/pricing/foam-pricing"
 
 async function requirePdvActor() {
   const actor = await getAuthenticatedUser()
@@ -159,14 +160,33 @@ export async function finalizeSale(payload: any) {
         })
 
         // Hook up detailed tables using type category
-        if (item.type === 'Reforma Colchão' || item.type === 'Reforma de colchão') {
+        const isReformaColchao = 
+          item.type === 'Reforma Colchão' || 
+          item.type === 'Reforma de colchão' ||
+          item.type === 'Reforma Conjunto' ||
+          (item.name?.toLowerCase().includes('reforma') && item.name?.toLowerCase().includes('colchão'));
+
+        const isColchaoNovo = 
+          item.type === 'Colchão Novo' || 
+          item.type === 'Colchão novo' || 
+          item.type?.startsWith('Colchão SPA') || 
+          item.type === 'Pilow Top' ||
+          (!item.name?.toLowerCase().includes('reforma') && (item.name?.toLowerCase().includes('colchão') || item.type?.toLowerCase().includes('colchão')));
+
+        if (isReformaColchao) {
+          const mattressDim = detectMattressDimensions(
+            item.name || "",
+            item.type || "",
+            Number(item.details?.actualWidth) || 0,
+            Number(item.details?.actualLength) || 0
+          );
           await tx.saleItemDetailMattressReform.create({
             data: {
               saleItemId: saleItem.id,
               serviceType: item.details?.serviceType || 'simples',
-              commercialSize: item.details?.commercialSize || 'casal',
-              actualWidth: Number(item.details?.actualWidth) || 0,
-              actualLength: Number(item.details?.actualLength) || 0,
+              commercialSize: item.details?.commercialSize || mattressDim.sizeKey.toLowerCase(),
+              actualWidth: Number(item.details?.actualWidth) || mattressDim.width,
+              actualLength: Number(item.details?.actualLength) || mattressDim.length,
               actualHeight: Number(item.details?.actualHeight) || 0,
               mattressType: item.details?.mattressType || 'espuma',
               density: item.details?.density || null,
@@ -183,8 +203,8 @@ export async function finalizeSale(payload: any) {
               topFabricColor: item.details?.topFabricColor || item.details?.topColor || null,
               sideFabricColor: item.details?.sideFabricColor || item.details?.sideColor || null,
               
-              foamServiceType: item.details?.foamServiceType || 'NENHUM',
-              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              foamServiceType: item.details?.foamServiceType || (item.details?.hasExtraFoam ? 'CAMADA_EXTRA' : 'NENHUM'),
+              foamSupplyItemId: item.details?.extraFoamSupplyItemId || item.details?.foamSupplyItemId || null,
               addedFoamHeight: item.details?.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
               tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
               feetSupplyItemId: item.details?.feetSupplyItemId || null,
@@ -199,15 +219,15 @@ export async function finalizeSale(payload: any) {
           if (!hasBOM && (item.details?.actualWidth || item.details?.actualLength)) {
             await generateMaterialRequirementsForReform(tx, saleItem.id, {
               serviceType: item.details?.serviceType || 'simples',
-              actualWidth: Number(item.details?.actualWidth) || 0,
-              actualLength: Number(item.details?.actualLength) || 0,
+              actualWidth: Number(item.details?.actualWidth) || mattressDim.width,
+              actualLength: Number(item.details?.actualLength) || mattressDim.length,
               actualHeight: Number(item.details?.actualHeight) || 0,
               topFabricSupplyItemId: item.details?.topFabricId || null,
               sideFabricSupplyItemId: item.details?.sideFabricId || null,
               bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
               optWaterproofing: item.details?.optWaterproofing || false,
-              foamServiceType: item.details?.foamServiceType || 'NENHUM',
-              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              foamServiceType: item.details?.foamServiceType || (item.details?.hasExtraFoam ? 'CAMADA_EXTRA' : 'NENHUM'),
+              foamSupplyItemId: item.details?.extraFoamSupplyItemId || item.details?.foamSupplyItemId || null,
               addedFoamHeight: item.details?.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
               tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
               feetSupplyItemId: item.details?.feetSupplyItemId || null
@@ -256,13 +276,19 @@ export async function finalizeSale(payload: any) {
             })
           }
 
-        } else if (item.type === 'Colchão Novo' || item.type === 'Colchão novo') {
+        } else if (isColchaoNovo) {
+          const mattressDim = detectMattressDimensions(
+            item.name || "",
+            item.type || "",
+            Number(item.details?.actualWidth) || 0,
+            Number(item.details?.actualLength) || 0
+          );
           await tx.saleItemDetailNewMattress.create({
             data: {
               saleItemId: saleItem.id,
-              commercialSize: item.details?.commercialSize || 'casal',
-              actualWidth: Number(item.details?.actualWidth) || 0,
-              actualLength: Number(item.details?.actualLength) || 0,
+              commercialSize: item.details?.commercialSize || mattressDim.sizeKey.toLowerCase(),
+              actualWidth: Number(item.details?.actualWidth) || mattressDim.width,
+              actualLength: Number(item.details?.actualLength) || mattressDim.length,
               actualHeight: Number(item.details?.actualHeight) || 0,
               mattressType: item.details?.mattressType || 'espuma',
               density: item.details?.density || null,
@@ -271,7 +297,7 @@ export async function finalizeSale(payload: any) {
               bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
               sideFabricSupplyItemId: item.details?.sideFabricId || null,
               
-              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              foamSupplyItemId: item.details?.extraFoamSupplyItemId || item.details?.foamSupplyItemId || null,
               tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
               feetSupplyItemId: item.details?.feetSupplyItemId || null,
 
@@ -464,7 +490,18 @@ export async function finalizeSale(payload: any) {
               })
               if (extraFoamSupply) {
                 const addedHeightCm = Number(item.details.addedFoamHeight) || 5
-                const foamVolumeM3 = Number(((1.38 * 1.88 * (addedHeightCm / 100)) * itemQty).toFixed(4))
+                const mattressDim = detectMattressDimensions(
+                  item.name || "",
+                  item.type || "",
+                  Number(item.details?.actualWidth) || 0,
+                  Number(item.details?.actualLength) || 0
+                )
+                const foamVolumeM3 = calculateExtraFoamVolume(
+                  mattressDim.width,
+                  mattressDim.length,
+                  addedHeightCm,
+                  itemQty
+                )
                 const foamQty = extraFoamSupply.unit === 'M3' ? foamVolumeM3 : itemQty
 
                 await tx.saleItemMaterialRequirement.create({
