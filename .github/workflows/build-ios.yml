@@ -19,35 +19,36 @@ jobs:
 
       - name: ⚙️ Configurar Versão do Xcode
         run: |
-          echo "Selecionando Xcode..."
-          sudo xcode-select -s /Applications/Xcode_15.4.app 2>/dev/null || sudo xcode-select -s /Applications/Xcode_16.0.app 2>/dev/null || xcode-select -p
+          echo "Selecionando versão moderna do Xcode..."
+          if [ -d "/Applications/Xcode_16.2.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_16.1.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_16.0.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_16.0.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_15.4.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+          fi
           xcodebuild -version
 
-      - name: 🔨 Compilar Projeto (xcodebuild archive)
+      - name: 🔨 Compilar App para Dispositivo iOS (xcodebuild clean build)
         run: |
-          mkdir -p build
-          xcodebuild archive \
+          xcodebuild clean build \
             -project ios-vendedor/SpaVendedor.xcodeproj \
             -scheme SpaVendedor \
             -configuration Release \
-            -destination "generic/platform=iOS" \
-            -archivePath build/SpaVendedor.xcarchive \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath ./DerivedData \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
 
-      - name: 📦 Empacotar Arquivo .IPA para Sideload
+      - name: 📦 Empacotar Arquivo .IPA Limpo para Sideloadly
         run: |
-          mkdir -p build/Payload
-          cp -r build/SpaVendedor.xcarchive/Products/Applications/SpaVendedor.app build/Payload/
-          echo "🔏 Aplicando assinatura Ad-Hoc com Entitlements no aplicativo para execução no iOS..."
-          codesign --force --deep --sign - --entitlements ios-vendedor/SpaVendedor/Resources/SpaVendedor.entitlements build/Payload/SpaVendedor.app
-          codesign -dvvv build/Payload/SpaVendedor.app 2>&1 | head -n 15
-          echo "📋 Entitlements aplicados:"
-          codesign -d --entitlements :- build/Payload/SpaVendedor.app 2>&1 || true
-          cd build
-          zip -qr SpaVendedor.ipa Payload
+          mkdir -p Payload
+          cp -r DerivedData/Build/Products/Release-iphoneos/SpaVendedor.app Payload/
+          zip -r -9 SpaVendedor.ipa Payload/
           echo "✅ .IPA gerado com sucesso:"
           ls -lh SpaVendedor.ipa
 

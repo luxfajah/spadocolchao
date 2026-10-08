@@ -22,6 +22,11 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>O Spa do Colchão utiliza sua localização para registrar check-in e roteirização de visitas a clientes.</string>
 	<key>NSFaceIDUsageDescription</key>

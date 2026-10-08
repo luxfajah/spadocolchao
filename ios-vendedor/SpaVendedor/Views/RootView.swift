@@ -1,9 +1,11 @@
 import SwiftUI
 
 public struct RootView: View {
-    @Environment(AppState.self) private var appState
+    public let appState: AppState
 
-    public init() {}
+    public init(appState: AppState) {
+        self.appState = appState
+    }
 
     public var body: some View {
         Group {

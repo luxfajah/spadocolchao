@@ -6,7 +6,7 @@ struct SpaVendedorApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            RootView(appState: appState)
                 .environment(appState)
                 .preferredColorScheme(.light)
         }
