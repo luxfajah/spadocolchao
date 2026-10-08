@@ -30,6 +30,7 @@ public final class AppState {
     public var isLoading: Bool = false
     public var errorMessage: String? = nil
     public var isOfflineMode: Bool = false
+    public var isTestMode: Bool = true
 
     public init() {
         if let savedUser = loadSavedUser() {
@@ -149,7 +150,7 @@ public final class AppState {
         do {
             async let pdvTask = APIClient.shared.fetchPDVInit()
             let isAdmin = currentUser?.isAdmin == true
-            async let ordersTask = APIClient.shared.fetchOrders(sellerId: currentUser?.sellerId, isAdmin: isAdmin)
+            async let ordersTask = APIClient.shared.fetchOrders(sellerId: currentUser?.sellerId, isAdmin: isAdmin, testMode: isTestMode)
             async let statsTask = APIClient.shared.fetchGoalStats(sellerId: currentUser?.sellerId)
             async let visitsTask = APIClient.shared.fetchVisits(sellerId: currentUser?.sellerId)
 
@@ -181,6 +182,17 @@ public final class AppState {
             self.visits.insert(created, at: 0)
         } catch {
             self.visits.insert(newVisit, at: 0)
+        }
+    }
+
+    @MainActor
+    public func clearTestSales() async -> Int {
+        do {
+            let count = try await APIClient.shared.clearTestOrders()
+            await loadData()
+            return count
+        } catch {
+            return 0
         }
     }
 

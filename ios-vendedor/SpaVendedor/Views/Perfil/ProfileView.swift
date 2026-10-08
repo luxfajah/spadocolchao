@@ -10,7 +10,9 @@ public struct ProfileView: View {
     public init() {}
 
     public var body: some View {
-        NavigationStack {
+        @Bindable var state = appState
+
+        return NavigationStack {
             ZStack {
                 Color(uiColor: .systemGroupedBackground)
                     .ignoresSafeArea()
@@ -20,7 +22,8 @@ public struct ProfileView: View {
                         BrandHeader(
                             title: "Perfil do Vendedor",
                             subtitle: "Configurações da Conta",
-                            isOffline: appState.isOfflineMode
+                            isOffline: appState.isOfflineMode,
+                            isTestMode: appState.isTestMode
                         )
                         .padding(.horizontal)
                         .padding(.top, 8)
@@ -130,6 +133,46 @@ public struct ProfileView: View {
                                     }
                                     .font(.subheadline.bold())
                                     .foregroundStyle(.blue)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+
+                        // Ambiente de Testes / Sandbox
+                        GlassCard(cornerRadius: 18) {
+                            VStack(alignment: .leading, spacing: 14) {
+                                HStack {
+                                    Image(systemName: "flask.fill")
+                                        .foregroundStyle(appState.isTestMode ? Color.orange : Color.secondary)
+                                    Text("AMBIENTE DE TESTES (SANDBOX)")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(appState.isTestMode ? Color.orange : Color.secondary)
+                                }
+
+                                Toggle(isOn: $state.isTestMode) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Modo Sandbox Ativo")
+                                            .font(.subheadline.bold())
+                                        Text("Vendas criadas serão de teste e não alteram faturamento, estoque nem produção real.")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .tint(.orange)
+
+                                Divider()
+
+                                Button(action: {
+                                    Task {
+                                        _ = await appState.clearTestSales()
+                                    }
+                                }) {
+                                    HStack {
+                                        Image(systemName: "trash.fill")
+                                        Text("Limpar Vendas de Teste do Banco")
+                                    }
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(.red)
                                 }
                             }
                         }

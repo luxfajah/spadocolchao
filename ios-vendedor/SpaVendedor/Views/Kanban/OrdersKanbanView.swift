@@ -21,7 +21,8 @@ public struct OrdersKanbanView: View {
                         BrandHeader(
                             title: "Acompanhamento",
                             subtitle: "Fluxo de Produção & Entregas",
-                            isOffline: appState.isOfflineMode
+                            isOffline: appState.isOfflineMode,
+                            isTestMode: appState.isTestMode
                         )
                         .padding(.horizontal)
                         .padding(.top, 8)

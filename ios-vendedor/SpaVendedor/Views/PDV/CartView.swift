@@ -1082,7 +1082,8 @@ public struct CartView: View {
                     deliveryDate: deliveryDateString,
                     deliveryTime: isBothOrDelivery ? deliveryTime : nil,
                     logisticsNotes: logisticsNotes.trimmingCharacters(in: .whitespacesAndNewlines),
-                    notes: notes
+                    notes: notes,
+                    isTest: appState.isTestMode
                 )
 
                 await MainActor.run {

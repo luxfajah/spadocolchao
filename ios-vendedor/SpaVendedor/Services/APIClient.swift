@@ -138,7 +138,7 @@ public final class APIClient: Sendable {
     }
 
     // MARK: - Pedidos / Kanban
-    public func fetchOrders(sellerId: String?, isAdmin: Bool = false) async throws -> [Order] {
+    public func fetchOrders(sellerId: String?, isAdmin: Bool = false, testMode: Bool = false) async throws -> [Order] {
         var components = URLComponents(string: "\(baseURLString)/api/vendedor/pedidos")
         var queryItems: [URLQueryItem] = []
         if let sId = sellerId, !sId.isEmpty {
@@ -146,6 +146,9 @@ public final class APIClient: Sendable {
         }
         if isAdmin {
             queryItems.append(URLQueryItem(name: "isAdmin", value: "true"))
+        }
+        if testMode {
+            queryItems.append(URLQueryItem(name: "testMode", value: "true"))
         }
         if !queryItems.isEmpty {
             components?.queryItems = queryItems
@@ -274,7 +277,8 @@ public final class APIClient: Sendable {
         deliveryDate: String? = nil,
         deliveryTime: String? = nil,
         logisticsNotes: String? = nil,
-        notes: String
+        notes: String,
+        isTest: Bool = true
     ) async throws -> (saleNumber: String, orderId: String) {
         let endpoint = "\(baseURLString)/api/vendedor/pedidos"
         guard let url = URL(string: endpoint) else {
@@ -329,6 +333,7 @@ public final class APIClient: Sendable {
         if let dDate = deliveryDate { body["deliveryDate"] = dDate }
         if let dTime = deliveryTime { body["deliveryTime"] = dTime }
         if let lNotes = logisticsNotes { body["logisticsNotes"] = lNotes }
+        body["isTest"] = isTest
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
@@ -349,6 +354,32 @@ public final class APIClient: Sendable {
             throw NSError(domain: "PDVError", code: 400, userInfo: [NSLocalizedDescriptionKey: res.error ?? "Erro ao salvar pedido no servidor"])
         }
         return (saleNum, ordId)
+    }
+
+    // MARK: - Limpeza de Vendas de Teste
+    public func clearTestOrders() async throws -> Int {
+        let endpoint = "\(baseURLString)/api/vendedor/pedidos?testOnly=true"
+        guard let url = URL(string: endpoint) else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "DELETE"
+        request.timeoutInterval = 15.0
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+
+        struct DeleteResponse: Codable {
+            let success: Bool
+            let count: Int?
+            let message: String?
+        }
+
+        let res = try jsonDecoder.decode(DeleteResponse.self, from: data)
+        return res.count ?? 0
     }
 
     // MARK: - Envio de Localização

@@ -11,10 +11,25 @@ export async function GET(req: NextRequest) {
     const sellerId = searchParams.get("sellerId")
     const isAdmin = searchParams.get("isAdmin") === "true"
     const all = searchParams.get("all") === "true"
+    const testMode = searchParams.get("testMode") === "true"
 
     const whereClause: any = {}
     if (sellerId && sellerId !== "__NONE__" && sellerId !== "null" && !isAdmin && !all) {
       whereClause.sellerId = sellerId
+    }
+
+    if (testMode) {
+      whereClause.OR = [
+        { currentStatus: "TEST" },
+        { sale: { status: "TEST" } },
+        { sale: { number: { startsWith: "TEST-" } } },
+      ]
+    } else {
+      whereClause.AND = [
+        { currentStatus: { not: "TEST" } },
+        { sale: { status: { not: "TEST" } } },
+        { sale: { number: { not: { startsWith: "TEST-" } } } },
+      ]
     }
 
     const orders = await prisma.order.findMany({
@@ -132,7 +147,10 @@ export async function POST(req: NextRequest) {
       recipientPhone,
       logisticsNotes,
       notes,
+      isTest,
     } = body
+
+    const isTestMode = Boolean(isTest)
 
     if (!customerId) {
       return NextResponse.json(
@@ -173,7 +191,13 @@ export async function POST(req: NextRequest) {
     const initialPaid = hasDownPayment && isEntryPaid ? effectiveDownPaymentAmount : 0
     const isFullyPaid = initialPaid >= finalTotal - 0.05
     const isPartiallyPaid = initialPaid > 0 && !isFullyPaid
-    const financialStatus = isFullyPaid ? "PAID" : isPartiallyPaid ? "PARTIALLY_PAID" : "PENDING"
+    const financialStatus = isTestMode
+      ? "TEST"
+      : isFullyPaid
+      ? "PAID"
+      : isPartiallyPaid
+      ? "PARTIALLY_PAID"
+      : "PENDING"
 
     const parsedDelivery = deliveryDate
       ? new Date(deliveryDate.includes("T") ? deliveryDate : `${deliveryDate}T${deliveryTime || "00:00"}:00`)
@@ -195,14 +219,25 @@ export async function POST(req: NextRequest) {
     ].filter(Boolean).join(" | ")
 
     const combinedSaleNotes = [
-      notes || "Venda emitida via App iOS Vendedor",
+      isTestMode ? "[AMBIENTE DE TESTES / SANDBOX - NÃO PRODUZIR]" : null,
+      notes || (isTestMode ? "Venda de Teste via App iOS" : "Venda emitida via App iOS Vendedor"),
       freightNote,
       downPaymentNote,
       scheduleNotes,
     ].filter(Boolean).join(" | ")
 
     const result = await prisma.$transaction(async (tx) => {
-      const saleNumber = await generateSaleNumber()
+      let saleNumber: string
+      if (isTestMode) {
+        const testCount = await tx.sale.count({
+          where: { number: { startsWith: "TEST-" } },
+        })
+        const now = new Date()
+        const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`
+        saleNumber = `TEST-${yyyymm}-${String(testCount + 1).padStart(5, "0")}`
+      } else {
+        saleNumber = await generateSaleNumber()
+      }
 
       const sale = await tx.sale.create({
         data: {
@@ -215,7 +250,7 @@ export async function POST(req: NextRequest) {
           surchargeAmount: finalFreight,
           totalAmount: finalTotal,
           paidAmount: initialPaid,
-          status: "CONFIRMED",
+          status: isTestMode ? "TEST" : "CONFIRMED",
           financialStatus,
           notes: combinedSaleNotes,
         },
@@ -426,6 +461,102 @@ export async function POST(req: NextRequest) {
     console.error("Erro ao finalizar pedido via App iOS:", error)
     return NextResponse.json(
       { success: false, error: error.message || "Erro ao processar venda" },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE: Exclusão de vendas de teste / sandbox sem afetar dados reais
+export async function DELETE(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url)
+    const testOnly = searchParams.get("testOnly") === "true"
+    const saleId = searchParams.get("saleId")
+
+    const whereSale: any = {}
+    if (testOnly) {
+      whereSale.OR = [
+        { status: "TEST" },
+        { financialStatus: "TEST" },
+        { number: { startsWith: "TEST-" } },
+        { notes: { contains: "SANDBOX" } },
+        { notes: { contains: "AMBIENTE DE TESTES" } },
+      ]
+    } else if (saleId) {
+      whereSale.id = saleId
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Parâmetro inválido para exclusão" },
+        { status: 400 }
+      )
+    }
+
+    const testSales = await prisma.sale.findMany({
+      where: whereSale,
+      select: { id: true },
+    })
+    const saleIds = testSales.map((s) => s.id)
+
+    if (saleIds.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: "Nenhuma venda de teste encontrada para remoção",
+        count: 0,
+      })
+    }
+
+    const orders = await prisma.order.findMany({
+      where: { saleId: { in: saleIds } },
+      select: { id: true },
+    })
+    const orderIds = orders.map((o) => o.id)
+
+    const saleItems = await prisma.saleItem.findMany({
+      where: { saleId: { in: saleIds } },
+      select: { id: true },
+    })
+    const saleItemIds = saleItems.map((i) => i.id)
+
+    const slips = await prisma.orderProductionSlip.findMany({
+      where: { orderId: { in: orderIds } },
+      select: { id: true },
+    })
+    const slipIds = slips.map((s) => s.id)
+
+    await prisma.$transaction(async (tx) => {
+      if (slipIds.length > 0 || saleItemIds.length > 0) {
+        await tx.orderProductionSlipLine.deleteMany({
+          where: {
+            OR: [
+              { productionSlipId: { in: slipIds } },
+              { saleItemId: { in: saleItemIds } },
+            ],
+          },
+        })
+      }
+      if (orderIds.length > 0) {
+        await tx.orderProductionSlip.deleteMany({ where: { orderId: { in: orderIds } } })
+        await tx.orderDelivery.deleteMany({ where: { orderId: { in: orderIds } } })
+        await tx.orderNote.deleteMany({ where: { orderId: { in: orderIds } } })
+        await tx.orderStatusHistory.deleteMany({ where: { orderId: { in: orderIds } } })
+        await tx.order.deleteMany({ where: { id: { in: orderIds } } })
+      }
+      await tx.saleInstallment.deleteMany({ where: { saleId: { in: saleIds } } })
+      await tx.saleItemDetailMattressReform.deleteMany({ where: { saleItemId: { in: saleItemIds } } })
+      await tx.saleItemDetailBoxReform.deleteMany({ where: { saleItemId: { in: saleItemIds } } })
+      await tx.saleItem.deleteMany({ where: { saleId: { in: saleIds } } })
+      await tx.sale.deleteMany({ where: { id: { in: saleIds } } })
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: `${saleIds.length} venda(s) de teste removida(s) com sucesso!`,
+      count: saleIds.length,
+    })
+  } catch (error: any) {
+    console.error("Erro ao deletar vendas de teste:", error)
+    return NextResponse.json(
+      { success: false, error: error.message || "Erro ao deletar vendas de teste" },
       { status: 500 }
     )
   }

@@ -42,7 +42,8 @@ public struct PDVView: View {
                         BrandHeader(
                             title: "Catálogo de Produtos",
                             subtitle: "Olá, \(appState.currentUser?.name ?? "Vendedor")",
-                            isOffline: appState.isOfflineMode
+                            isOffline: appState.isOfflineMode,
+                            isTestMode: appState.isTestMode
                         )
                         .padding(.horizontal)
                         .padding(.top, 8)
