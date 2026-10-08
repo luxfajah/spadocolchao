@@ -223,7 +223,6 @@ export async function POST(req: NextRequest) {
         let itemDescription = item.name
         if (item.customization) {
           const parts = [
-            item.customization.size,
             item.customization.extraFoam && !item.customization.extraFoam.includes("Sem Camada") ? item.customization.extraFoam : null,
             item.customization.topFabric ? `Tampo: ${item.customization.topFabric}` : null,
             item.customization.color ? `Tecido: ${item.customization.color}` : null,

@@ -13,6 +13,18 @@ public struct ProductCustomizerSheet: View {
     public init(product: Product, onAddToCart: @escaping (CustomizationOptions, Int) -> Void) {
         self.product = product
         self.onAddToCart = onAddToCart
+
+        var initialOptions = CustomizationOptions()
+        if let detected = product.detectedSize {
+            switch detected {
+            case "Solteiro": initialOptions.size = .solteiro
+            case "Queen": initialOptions.size = .queen
+            case "King": initialOptions.size = .king
+            case "Sob Medida": initialOptions.size = .sobMedida
+            default: initialOptions.size = .casal
+            }
+        }
+        _options = State(initialValue: initialOptions)
     }
 
     private var isMattressType: Bool {
@@ -28,11 +40,15 @@ public struct ProductCustomizerSheet: View {
             Form {
                 // MARK: - Cabeçalho do Produto
                 Section {
-                    VStack(alignment: .leading, spacing: 6) {
+                    VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text(product.name)
                                 .font(.headline.bold())
                             Spacer()
+                        }
+
+                        // Tags informativas de Categoria e Medida do Produto
+                        HStack(spacing: 8) {
                             Text(product.categoryDisplayName)
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 8)
@@ -40,6 +56,18 @@ public struct ProductCustomizerSheet: View {
                                 .background(Color.blue.opacity(0.12))
                                 .foregroundStyle(Color.blue)
                                 .clipShape(Capsule())
+
+                            if let sizeName = product.detectedSize {
+                                Text(sizeName)
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 3)
+                                    .background(Color.purple.opacity(0.12))
+                                    .foregroundStyle(Color.purple)
+                                    .clipShape(Capsule())
+                            }
+
+                            Spacer()
                         }
 
                         if let desc = product.description, !desc.isEmpty {
@@ -56,42 +84,8 @@ public struct ProductCustomizerSheet: View {
                                 .font(.caption2.bold())
                                 .foregroundStyle(Color.emerald)
                         }
-                        .padding(.top, 2)
                     }
                     .padding(.vertical, 4)
-                }
-
-                // MARK: - Medida & Dimensões
-                Section("Medida Comercial") {
-                    Picker("Tamanho", selection: $options.size) {
-                        ForEach(MattressSize.allCases, id: \.self) { size in
-                            Text(size.rawValue).tag(size)
-                        }
-                    }
-
-                    if options.size == .sobMedida {
-                        HStack {
-                            Text("Largura (cm)")
-                            Spacer()
-                            TextField("138", value: $options.customWidth, format: .number)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-                        HStack {
-                            Text("Comprimento (cm)")
-                            Spacer()
-                            TextField("188", value: $options.customLength, format: .number)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-                        HStack {
-                            Text("Altura (cm)")
-                            Spacer()
-                            TextField("25", value: $options.customHeight, format: .number)
-                                .keyboardType(.decimalPad)
-                                .multilineTextAlignment(.trailing)
-                        }
-                    }
                 }
 
                 // MARK: - Colchão: Camada Extra de Espuma (Pillow Top)

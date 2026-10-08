@@ -225,13 +225,15 @@ public struct CartView: View {
                         if item.hasCustomization {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
-                                    Text(item.customization.size.rawValue)
-                                        .font(.caption2.bold())
-                                        .padding(.horizontal, 6)
-                                        .padding(.vertical, 2)
-                                        .background(Color.blue.opacity(0.12))
-                                        .foregroundStyle(Color.blue)
-                                        .clipShape(Capsule())
+                                    if let sizeName = item.product.detectedSize {
+                                        Text(sizeName)
+                                            .font(.caption2.bold())
+                                            .padding(.horizontal, 6)
+                                            .padding(.vertical, 2)
+                                            .background(Color.blue.opacity(0.12))
+                                            .foregroundStyle(Color.blue)
+                                            .clipShape(Capsule())
+                                    }
 
                                     if item.customization.extraFoam != .none {
                                         Text(item.customization.extraFoam.badge)
