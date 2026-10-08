@@ -3,6 +3,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { BoxCustomizationForm } from "./BoxCustomizationForm";
 import { MattressCustomizationForm } from "./MattressCustomizationForm";
+import { SetCustomizationForm } from "./SetCustomizationForm";
 import { StandardProductCustomizationForm } from "./StandardProductCustomizationForm";
 import { UpholsteryCleaningForm } from "./UpholsteryCleaningForm";
 import { usePos } from "../PosContext";
@@ -57,24 +58,35 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
       return <UpholsteryCleaningForm product={product} onAdd={(details, price) => handleAdd(details, price, 1)} onCancel={onClose} />;
     }
 
-    // 2. Box Novos (Box Life MDF, Box Baú Sienna, Box Spá Levitá)
-    // Exclusivo para os box novos, e não para reformas
-    const isReforma = categoryLower.includes("reforma") || nameLower.includes("reforma");
-    const isBoxNovo = (categoryLower.includes("box") || nameLower.includes("box") || categoryLower.includes("baú") || nameLower.includes("baú")) && !isReforma;
+    // 2. CONJUNTOS (Colchão + Box juntos - Novos ou Reformas de Conjunto)
+    const isConjunto = categoryLower.includes("conjunto") 
+      || nameLower.includes("conjunto") 
+      || (nameLower.includes("box") && (nameLower.includes("colchão") || nameLower.includes("colchao")));
 
-    if (isBoxNovo) {
+    if (isConjunto) {
+      return <SetCustomizationForm product={product} onAdd={handleAdd} onCancel={onClose} />;
+    }
+
+    // 3. BOX E BAÚS (Novos ou Reformas de Box) -> ZERO ESPUMA, personaliza pés e veludo
+    const isBox = (categoryLower.includes("box") || nameLower.includes("box") || categoryLower.includes("baú") || nameLower.includes("baú"));
+
+    if (isBox) {
       return <BoxCustomizationForm product={product} onAdd={handleAdd} onCancel={onClose} />;
     }
 
-    // 3. Colchões (SPA Essencial, Supreme, Magnus, Pilow Top e Reforma de Colchão)
-    // Camada extra de espuma + Tecido Tampo + Tecido Lateral + Fitilhos
-    const isColchao = categoryLower.includes("colchão") || nameLower.includes("colchão") || categoryLower.includes("pilow") || nameLower.includes("pilow");
+    // 4. COLCHÕES (Novos ou Reformas de Colchão) -> Camada extra de espuma + Tampo + Veludo + Fitilho
+    const isColchao = categoryLower.includes("colchão") 
+      || nameLower.includes("colchão") 
+      || categoryLower.includes("colchao") 
+      || nameLower.includes("colchao") 
+      || categoryLower.includes("pilow") 
+      || nameLower.includes("pilow");
 
     if (isColchao) {
       return <MattressCustomizationForm product={product} onAdd={handleAdd} onCancel={onClose} />;
     }
 
-    // 4. Demais reformas (Reforma de Box, Reforma de Conjunto) e produtos gerais
+    // 5. Demais produtos gerais
     return <StandardProductCustomizationForm product={product} onAdd={handleAdd} onCancel={onClose} />;
   };
 

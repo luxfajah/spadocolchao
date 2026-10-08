@@ -240,8 +240,14 @@ public struct PDVView: View {
             }
             .navigationBarHidden(true)
             .sheet(item: $productToCustomize) { product in
-                ProductCustomizerSheet(product: product) { options, qty in
-                    appState.addToCart(product: product, customization: options, quantity: qty)
+                ProductCustomizerSheet(product: product) { options, qty, negotiatedPrice, justification in
+                    appState.addToCart(
+                        product: product,
+                        customization: options,
+                        quantity: qty,
+                        negotiatedUnitPrice: negotiatedPrice,
+                        priceJustification: justification
+                    )
                 }
             }
             .sheet(isPresented: $showCartSheet) {

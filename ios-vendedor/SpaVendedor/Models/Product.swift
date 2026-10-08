@@ -62,24 +62,38 @@ public struct Product: Codable, Identifiable, Hashable {
         type.localizedCaseInsensitiveContains("box")
     }
 
+    public var isConjunto: Bool {
+        name.localizedCaseInsensitiveContains("conjunto") ||
+        type.localizedCaseInsensitiveContains("conjunto") ||
+        (name.localizedCaseInsensitiveContains("box") && (name.localizedCaseInsensitiveContains("colchão") || name.localizedCaseInsensitiveContains("colchao")))
+    }
+
+    public var isOnlyBox: Bool {
+        !isConjunto && (isBox || isReformaBox || isCamaBox || name.localizedCaseInsensitiveContains("baú") || name.localizedCaseInsensitiveContains("bau"))
+    }
+
+    public var isOnlyColchao: Bool {
+        !isConjunto && (isColchao || isReformaColchao || isColchaoNovo || isPillowTop)
+    }
+
     public var isReformaConjunto: Bool {
-        isReforma && (name.localizedCaseInsensitiveContains("conjunto") || (name.localizedCaseInsensitiveContains("colchão") && name.localizedCaseInsensitiveContains("box")))
+        isReforma && isConjunto
     }
 
     public var isReformaColchao: Bool {
-        isReforma && !isReformaConjunto && (name.localizedCaseInsensitiveContains("colchão") || name.localizedCaseInsensitiveContains("colchao"))
+        isReforma && isOnlyColchao
     }
 
     public var isReformaBox: Bool {
-        isReforma && !isReformaConjunto && name.localizedCaseInsensitiveContains("box")
+        isReforma && isOnlyBox
     }
 
     public var isColchaoNovo: Bool {
-        !isReforma && (name.localizedCaseInsensitiveContains("colchão") || name.localizedCaseInsensitiveContains("colchao"))
+        !isReforma && isOnlyColchao
     }
 
     public var isCamaBox: Bool {
-        !isReforma && name.localizedCaseInsensitiveContains("box")
+        !isReforma && isOnlyBox
     }
 
     public var isPillowTop: Bool {

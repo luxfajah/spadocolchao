@@ -121,25 +121,45 @@ public struct CartItem: Identifiable, Codable, Hashable {
     public let id: UUID
     public let product: Product
     public var quantity: Int
+    public var originalPrice: Double
     public var unitPrice: Double
+    public var priceJustification: String?
     public var customization: CustomizationOptions
 
     public init(
         id: UUID = UUID(),
         product: Product,
         quantity: Int = 1,
+        originalPrice: Double? = nil,
         unitPrice: Double? = nil,
+        priceJustification: String? = nil,
         customization: CustomizationOptions = CustomizationOptions()
     ) {
         self.id = id
         self.product = product
         self.quantity = quantity
-        self.unitPrice = unitPrice ?? (product.defaultPrice + customization.extraPrice)
+        let baseOfficial = originalPrice ?? (product.defaultPrice + customization.extraPrice)
+        self.originalPrice = baseOfficial
+        self.unitPrice = unitPrice ?? baseOfficial
+        self.priceJustification = priceJustification
         self.customization = customization
     }
 
     public var totalAmount: Double {
         unitPrice * Double(quantity)
+    }
+
+    public var hasDiscount: Bool {
+        unitPrice < originalPrice - 0.01
+    }
+
+    public var discountAmount: Double {
+        max(0.0, (originalPrice - unitPrice) * Double(quantity))
+    }
+
+    public var discountPercent: Double {
+        guard originalPrice > 0 else { return 0 }
+        return max(0.0, ((originalPrice - unitPrice) / originalPrice) * 100.0)
     }
 
     public var hasCustomization: Bool {

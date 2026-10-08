@@ -1,5 +1,118 @@
 import SwiftUI
 
+// Modal de edição de preço unitário de um item do carrinho
+struct EditItemPriceSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let item: CartItem
+    let onSave: (Double, String) -> Void
+
+    @State private var newPriceText: String = ""
+    @State private var justificationText: String = ""
+
+    init(item: CartItem, onSave: @escaping (Double, String) -> Void) {
+        self.item = item
+        self.onSave = onSave
+        _newPriceText = State(initialValue: String(format: "%.2f", item.unitPrice).replacingOccurrences(of: ".", with: ","))
+        _justificationText = State(initialValue: item.priceJustification ?? "")
+    }
+
+    private var parsedNewPrice: Double {
+        let cleaned = newPriceText.replacingOccurrences(of: ",", with: ".")
+        return max(0.0, Double(cleaned) ?? item.unitPrice)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(item.product.name)
+                            .font(.headline.bold())
+                        Text("Edição e negociação de valor unitário praticado no PDV")
+                            .font(.caption)
+                            .foregroundStyle(Color.secondary)
+                    }
+                }
+
+                Section("Valores de Referência") {
+                    HStack {
+                        Text("Preço Base Oficial de Tabela")
+                            .foregroundStyle(Color.secondary)
+                        Spacer()
+                        Text(formatCurrency(item.originalPrice))
+                            .bold()
+                    }
+
+                    if parsedNewPrice < item.originalPrice - 0.05 {
+                        let diff = item.originalPrice - parsedNewPrice
+                        let pct = (diff / item.originalPrice) * 100.0
+                        HStack {
+                            Text("Desconto Concedido")
+                                .foregroundStyle(Color.emerald)
+                            Spacer()
+                            Text("-\(formatCurrency(diff)) (\(String(format: "%.1f", pct))%)")
+                                .foregroundStyle(Color.emerald)
+                                .bold()
+                        }
+                    } else if parsedNewPrice > item.originalPrice + 0.05 {
+                        let diff = parsedNewPrice - item.originalPrice
+                        HStack {
+                            Text("Acréscimo")
+                                .foregroundStyle(Color.blue)
+                            Spacer()
+                            Text("+\(formatCurrency(diff))")
+                                .foregroundStyle(Color.blue)
+                                .bold()
+                        }
+                    }
+                }
+
+                Section("Novo Preço Unitário (R$)") {
+                    HStack {
+                        Text("R$")
+                            .font(.headline.bold())
+                            .foregroundStyle(Color.blue)
+                        TextField("0,00", text: $newPriceText)
+                            .keyboardType(.decimalPad)
+                            .font(.title3.bold())
+                    }
+
+                    Button("Restaurar Preço Oficial (\(formatCurrency(item.originalPrice)))") {
+                        newPriceText = String(format: "%.2f", item.originalPrice).replacingOccurrences(of: ".", with: ",")
+                    }
+                    .font(.caption.bold())
+                }
+
+                Section("Justificativa Comercial da Negociação") {
+                    TextField("Ex: Desconto autorizado pela gerência, pagamento à vista...", text: $justificationText)
+                        .font(.subheadline)
+                }
+            }
+            .navigationTitle("Editar Preço do Item")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancelar") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Confirmar Preço") {
+                        onSave(parsedNewPrice, justificationText)
+                        dismiss()
+                    }
+                    .bold()
+                }
+            }
+        }
+    }
+
+    private func formatCurrency(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale(identifier: "pt_BR")
+        return formatter.string(from: NSNumber(value: value)) ?? "R$ \(value)"
+    }
+}
+
 public struct CartView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppState.self) private var appState
@@ -11,6 +124,12 @@ public struct CartView: View {
     @State private var isSubmitting = false
     @State private var completedSaleNumber: String? = nil
     @State private var showSuccess = false
+
+    // Item em edição de preço
+    @State private var itemToEditPrice: CartItem? = nil
+
+    // Desconto Global Digitável
+    @State private var globalDiscountText = ""
 
     // Frete digitável
     @State private var freightText = ""
@@ -31,7 +150,7 @@ public struct CartView: View {
     @State private var logisticsNotes = ""
     @State private var notes = ""
 
-    // Snapshot para exibir no modal de sucesso (para poder esvaziar o carrinho de imediato)
+    // Snapshot para exibir no modal de sucesso
     @State private var lastSaleTotal: Double = 0.0
     @State private var lastSaleCommission: Double = 0.0
     @State private var lastCustomerName: String = ""
@@ -68,19 +187,22 @@ public struct CartView: View {
                             // Seção 1: Cliente Selecionado
                             customerSection
 
-                            // Seção 2: Itens do Carrinho
+                            // Seção 2: Itens do Carrinho com Edição de Preço
                             itemsSection
 
-                            // Seção 3: Entrada no Ato (Sinal 10%, 20%, 30% ou livre)
+                            // Seção 3: Desconto Global da Venda
+                            globalDiscountSection
+
+                            // Seção 4: Entrada no Ato (Sinal 10%, 20%, 30% ou livre)
                             downPaymentSection
 
-                            // Seção 4: Pagamento do Saldo na Entrega
+                            // Seção 5: Pagamento do Saldo na Entrega
                             paymentSection
 
-                            // Seção 5: Agendamento de Retirada & Entrega com Horários
+                            // Seção 6: Agendamento de Retirada & Entrega com Horários
                             logisticsSchedulingSection
 
-                            // Seção 6: Resumo Financeiro & Frete Digitável
+                            // Seção 7: Resumo Financeiro, Frete & Comissão
                             financialSummarySection
 
                             // Botão Confirmar Pedido
@@ -101,11 +223,17 @@ public struct CartView: View {
                     ToolbarItem(placement: .destructiveAction) {
                         Button("Limpar") {
                             appState.clearCart()
-                            appState.freightAmount = 0.0
                             freightText = ""
+                            globalDiscountText = ""
                         }
                         .foregroundStyle(Color.red)
                     }
+                }
+            }
+            .sheet(item: $itemToEditPrice) { item in
+                EditItemPriceSheet(item: item) { newPrice, justification in
+                    appState.updateItemPrice(id: item.id, newPrice: newPrice, justification: justification)
+                    updateDownPaymentFromPercent()
                 }
             }
             .sheet(isPresented: $showCustomerPicker) {
@@ -186,7 +314,7 @@ public struct CartView: View {
         }
     }
 
-    // Seção 2: Itens do Carrinho
+    // Seção 2: Itens do Carrinho com Edição de Preço
     private var itemsSection: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ITENS DO PEDIDO (\(appState.cartItemCount))")
@@ -196,32 +324,42 @@ public struct CartView: View {
 
             ForEach(appState.cartItems) { item in
                 GlassCard(cornerRadius: 16) {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 10) {
                         HStack(alignment: .top) {
                             VStack(alignment: .leading, spacing: 3) {
                                 Text(item.product.name)
                                     .font(.headline)
                                     .lineLimit(2)
 
-                                Text("\(item.quantity)x \(formatCurrency(item.unitPrice))")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.secondary)
+                                HStack(spacing: 6) {
+                                    if item.hasDiscount {
+                                        Text(formatCurrency(item.originalPrice))
+                                            .font(.caption)
+                                            .strikethrough()
+                                            .foregroundStyle(Color.secondary)
+                                    }
+                                    Text("\(item.quantity)x \(formatCurrency(item.unitPrice))")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(item.hasDiscount ? Color.emerald : Color.secondary)
+                                }
                             }
 
                             Spacer()
 
-                            Text(formatCurrency(item.totalAmount))
-                                .font(.headline)
-                                .foregroundStyle(Color.blue)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(formatCurrency(item.totalAmount))
+                                    .font(.headline)
+                                    .foregroundStyle(Color.blue)
 
-                            Button(action: { appState.removeFromCart(id: item.id) }) {
-                                Image(systemName: "trash")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.red)
+                                if item.hasDiscount {
+                                    Text("-\(formatCurrency(item.discountAmount))")
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(Color.emerald)
+                                }
                             }
-                            .padding(.leading, 6)
                         }
 
+                        // Detalhamento de personalização do item
                         if item.hasCustomization {
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack(spacing: 6) {
@@ -235,7 +373,8 @@ public struct CartView: View {
                                             .clipShape(Capsule())
                                     }
 
-                                    if item.customization.extraFoam != .none {
+                                    // Camada de espuma (apenas para colchão ou conjunto, nunca box)
+                                    if !item.product.isOnlyBox && item.customization.extraFoam != .none {
                                         Text(item.customization.extraFoam.badge)
                                             .font(.caption2.bold())
                                             .padding(.horizontal, 6)
@@ -263,19 +402,79 @@ public struct CartView: View {
                                     }
                                 }
 
-                                if item.product.isBox || item.product.isCamaBox || item.product.isReformaBox {
+                                if item.product.isConjunto || item.product.isOnlyBox {
                                     Text("Pés: \(item.customization.feetType)")
                                         .font(.caption2)
                                         .foregroundStyle(Color.secondary)
                                 }
 
-                                if !item.customization.observations.isEmpty {
-                                    Text("Obs: \(item.customization.observations)")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color.secondary)
+                                if let just = item.priceJustification, !just.isEmpty {
+                                    Text("Negociação: \(just)")
+                                        .font(.caption2.bold())
+                                        .foregroundStyle(Color.orange)
+                                        .padding(.horizontal, 6)
+                                        .padding(.vertical, 2)
+                                        .background(Color.orange.opacity(0.1))
+                                        .clipShape(RoundedRectangle(cornerRadius: 6))
                                 }
                             }
                             .padding(.top, 2)
+                        }
+
+                        Divider()
+
+                        // Barra de Ações do Item: Ajustar Preço, Quantidade e Excluir
+                        HStack {
+                            // Botão de Editar Preço Praticado
+                            Button(action: {
+                                itemToEditPrice = item
+                            }) {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "pencil.circle.fill")
+                                    Text("Editar Preço")
+                                }
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.blue)
+                            }
+                            .buttonStyle(.bordered)
+
+                            Spacer()
+
+                            // Stepper de Quantidade
+                            HStack(spacing: 8) {
+                                Button(action: {
+                                    appState.updateItemQuantity(id: item.id, newQuantity: item.quantity - 1)
+                                    updateDownPaymentFromPercent()
+                                }) {
+                                    Image(systemName: "minus")
+                                        .font(.caption.bold())
+                                        .frame(width: 28, height: 28)
+                                        .background(Color(uiColor: .tertiarySystemFill))
+                                        .clipShape(Circle())
+                                }
+
+                                Text("\(item.quantity)")
+                                    .font(.subheadline.bold())
+                                    .frame(minWidth: 20)
+
+                                Button(action: {
+                                    appState.updateItemQuantity(id: item.id, newQuantity: item.quantity + 1)
+                                    updateDownPaymentFromPercent()
+                                }) {
+                                    Image(systemName: "plus")
+                                        .font(.caption.bold())
+                                        .frame(width: 28, height: 28)
+                                        .background(Color(uiColor: .tertiarySystemFill))
+                                        .clipShape(Circle())
+                                }
+                            }
+
+                            Button(action: { appState.removeFromCart(id: item.id) }) {
+                                Image(systemName: "trash")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.red)
+                                    .padding(.leading, 8)
+                            }
                         }
                     }
                 }
@@ -283,7 +482,68 @@ public struct CartView: View {
         }
     }
 
-    // Seção 3: Entrada no Ato (Sinal)
+    // Seção 3: Desconto Global da Venda
+    private var globalDiscountSection: some View {
+        GlassCard(cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label("Desconto Geral da Venda", systemImage: "tag.fill")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary)
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("R$")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.secondary)
+                        TextField("0,00", text: $globalDiscountText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .font(.subheadline.bold())
+                            .frame(width: 90)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(uiColor: .tertiarySystemFill))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onChange(of: globalDiscountText) { _, newVal in
+                                let cleaned = newVal.replacingOccurrences(of: ",", with: ".")
+                                appState.globalDiscount = max(0.0, Double(cleaned) ?? 0.0)
+                                updateDownPaymentFromPercent()
+                            }
+                    }
+                }
+
+                // Presets Rápidos de Desconto
+                HStack(spacing: 8) {
+                    ForEach([50, 100, 200], id: \.self) { val in
+                        Button(action: {
+                            globalDiscountText = "\(val)"
+                            appState.globalDiscount = Double(val)
+                            updateDownPaymentFromPercent()
+                        }) {
+                            Text("-R$ \(val)")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
+                                .background(Color.red.opacity(0.1))
+                                .foregroundStyle(Color.red)
+                                .clipShape(Capsule())
+                        }
+                    }
+                    if appState.globalDiscount > 0 {
+                        Button("Zerar") {
+                            globalDiscountText = ""
+                            appState.globalDiscount = 0.0
+                            updateDownPaymentFromPercent()
+                        }
+                        .font(.caption2.bold())
+                        .foregroundStyle(Color.secondary)
+                    }
+                }
+            }
+        }
+    }
+
+    // Seção 4: Entrada no Ato (Sinal)
     private var downPaymentSection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(alignment: .leading, spacing: 14) {
@@ -412,7 +672,7 @@ public struct CartView: View {
         }
     }
 
-    // Seção 4: Pagamento do Saldo
+    // Seção 5: Pagamento do Saldo
     private var paymentSection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(alignment: .leading, spacing: 12) {
@@ -443,7 +703,7 @@ public struct CartView: View {
         }
     }
 
-    // Seção 5: Agendamento de Retirada & Entrega com Horários e Turnos
+    // Seção 6: Agendamento de Retirada & Entrega com Horários e Turnos
     private var logisticsSchedulingSection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(alignment: .leading, spacing: 16) {
@@ -569,7 +829,7 @@ public struct CartView: View {
         }
     }
 
-    // Seção 6: Resumo Financeiro & Frete Digitável
+    // Seção 7: Resumo Financeiro & Frete Digitável
     private var financialSummarySection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(spacing: 10) {
@@ -587,6 +847,7 @@ public struct CartView: View {
                         Spacer()
                         Text("-\(formatCurrency(appState.globalDiscount))")
                             .foregroundStyle(Color.red)
+                            .bold()
                     }
                 }
 
@@ -655,17 +916,26 @@ public struct CartView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
 
-                // Destaque de Comissão do Vendedor
-                HStack {
-                    Image(systemName: "gift.fill")
-                        .foregroundStyle(Color.emerald)
-                    Text("Sua Comissão Estimada:")
-                        .font(.caption.bold())
-                        .foregroundStyle(Color.emerald)
-                    Spacer()
-                    Text(formatCurrency(appState.estimatedCommission))
-                        .font(.headline.bold())
-                        .foregroundStyle(Color.emerald)
+                // Destaque de Comissão do Vendedor (calculada sobre produtos com desconto, sem frete)
+                VStack(spacing: 4) {
+                    HStack {
+                        Image(systemName: "gift.fill")
+                            .foregroundStyle(Color.emerald)
+                        Text("Sua Comissão Estimada (\(appState.commissionPercentText)):")
+                            .font(.caption.bold())
+                            .foregroundStyle(Color.emerald)
+                        Spacer()
+                        Text(formatCurrency(appState.estimatedCommission))
+                            .font(.headline.bold())
+                            .foregroundStyle(Color.emerald)
+                    }
+
+                    HStack {
+                        Text("* Incide sobre produtos e reformas (\(formatCurrency(appState.commissionableAmount))), excluindo frete.")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.secondary)
+                        Spacer()
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -779,6 +1049,7 @@ public struct CartView: View {
                     appState.clearCart()
                     appState.freightAmount = 0.0
                     self.freightText = ""
+                    self.globalDiscountText = ""
                     self.hasDownPayment = false
                     self.downPaymentAmount = 0.0
                     self.downPaymentCustomText = ""
@@ -796,6 +1067,7 @@ public struct CartView: View {
                     appState.clearCart()
                     appState.freightAmount = 0.0
                     self.freightText = ""
+                    self.globalDiscountText = ""
                     self.hasDownPayment = false
                     self.downPaymentAmount = 0.0
                     self.downPaymentCustomText = ""

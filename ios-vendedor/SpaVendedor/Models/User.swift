@@ -11,6 +11,14 @@ public struct User: Codable, Identifiable {
     public let commissionRate: Double
     public let isAdmin: Bool
 
+    public var commissionPercent: Double {
+        commissionRate >= 1.0 ? commissionRate : commissionRate * 100.0
+    }
+
+    public var commissionFraction: Double {
+        commissionRate >= 1.0 ? commissionRate / 100.0 : commissionRate
+    }
+
     public init(
         id: String,
         name: String,

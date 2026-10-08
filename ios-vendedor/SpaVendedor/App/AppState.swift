@@ -51,20 +51,64 @@ public final class AppState {
         max(0.0, cartSubtotal - globalDiscount + freightAmount)
     }
 
-    public var estimatedCommission: Double {
-        let rate = currentUser?.commissionRate ?? 0.05
-        return cartTotal * rate
+    // A comissão incide exclusivamente sobre o valor dos produtos/serviços com desconto, NUNCA sobre o frete!
+    public var commissionableAmount: Double {
+        max(0.0, cartSubtotal - globalDiscount)
     }
 
-    public func addToCart(product: Product, customization: CustomizationOptions = CustomizationOptions(), quantity: Int = 1) {
-        let price = product.defaultPrice + customization.extraPrice
+    public var commissionPercent: Double {
+        currentUser?.commissionPercent ?? 5.0
+    }
+
+    public var commissionPercentText: String {
+        let pct = commissionPercent
+        if pct.truncatingRemainder(dividingBy: 1) == 0 {
+            return "\(Int(pct))%"
+        } else {
+            return String(format: "%.1f%%", pct)
+        }
+    }
+
+    public var estimatedCommission: Double {
+        commissionableAmount * (commissionPercent / 100.0)
+    }
+
+    public func addToCart(
+        product: Product,
+        customization: CustomizationOptions = CustomizationOptions(),
+        quantity: Int = 1,
+        negotiatedUnitPrice: Double? = nil,
+        priceJustification: String? = nil
+    ) {
+        let officialPrice = product.defaultPrice + customization.extraPrice
         let item = CartItem(
             product: product,
             quantity: quantity,
-            unitPrice: price,
+            originalPrice: officialPrice,
+            unitPrice: negotiatedUnitPrice ?? officialPrice,
+            priceJustification: priceJustification,
             customization: customization
         )
         cartItems.append(item)
+    }
+
+    public func updateItemPrice(id: UUID, newPrice: Double, justification: String? = nil) {
+        if let idx = cartItems.firstIndex(where: { $0.id == id }) {
+            cartItems[idx].unitPrice = max(0.0, newPrice)
+            if let just = justification {
+                cartItems[idx].priceJustification = just.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+        }
+    }
+
+    public func updateItemQuantity(id: UUID, newQuantity: Int) {
+        if let idx = cartItems.firstIndex(where: { $0.id == id }) {
+            if newQuantity <= 0 {
+                cartItems.remove(at: idx)
+            } else {
+                cartItems[idx].quantity = newQuantity
+            }
+        }
     }
 
     public func removeFromCart(id: UUID) {

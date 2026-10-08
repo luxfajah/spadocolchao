@@ -5,12 +5,19 @@ public struct ProductCustomizerSheet: View {
     @Environment(AppState.self) private var appState
 
     public let product: Product
-    public let onAddToCart: (CustomizationOptions, Int) -> Void
+    public let onAddToCart: (CustomizationOptions, Int, Double, String?) -> Void
 
     @State private var options = CustomizationOptions()
     @State private var quantity = 1
 
-    public init(product: Product, onAddToCart: @escaping (CustomizationOptions, Int) -> Void) {
+    // Preço Negociado Digitável
+    @State private var negotiatedPriceText = ""
+    @State private var priceJustification = ""
+
+    public init(
+        product: Product,
+        onAddToCart: @escaping (CustomizationOptions, Int, Double, String?) -> Void
+    ) {
         self.product = product
         self.onAddToCart = onAddToCart
 
@@ -27,12 +34,37 @@ public struct ProductCustomizerSheet: View {
         _options = State(initialValue: initialOptions)
     }
 
-    private var isMattressType: Bool {
-        product.isColchao || product.isReformaColchao || product.isReformaConjunto || product.isColchaoNovo
+    private var isConjunto: Bool {
+        product.isConjunto
     }
 
-    private var isBoxType: Bool {
-        product.isBox || product.isCamaBox || product.isReformaBox || product.isReformaConjunto
+    private var isOnlyBox: Bool {
+        product.isOnlyBox
+    }
+
+    private var isOnlyColchao: Bool {
+        product.isOnlyColchao
+    }
+
+    // Preço de tabela sugerido (base + opcionais de espuma do colchão se houver)
+    private var suggestedPrice: Double {
+        if isOnlyBox {
+            // Em BOX NUNCA existe espuma extra
+            return product.defaultPrice
+        }
+        return product.defaultPrice + options.extraPrice
+    }
+
+    private var effectiveUnitPrice: Double {
+        let cleaned = negotiatedPriceText.replacingOccurrences(of: ",", with: ".")
+        if let val = Double(cleaned), val > 0 {
+            return val
+        }
+        return suggestedPrice
+    }
+
+    private var computedTotal: Double {
+        effectiveUnitPrice * Double(quantity)
     }
 
     public var body: some View {
@@ -88,8 +120,9 @@ public struct ProductCustomizerSheet: View {
                     .padding(.vertical, 4)
                 }
 
-                // MARK: - Colchão: Camada Extra de Espuma (Pillow Top)
-                if isMattressType {
+                // MARK: - 1. COLCHÃO: Espuma Extra e Tampo (Apenas para Colchão ou Conjunto)
+                // REGRA: EM BOX NUNCA EXISTE ESPUMA EXTRA!
+                if isConjunto || isOnlyColchao {
                     Section {
                         Picker("Camada de Conforto", selection: $options.extraFoam) {
                             ForEach(ExtraFoamType.allCases, id: \.self) { foam in
@@ -103,6 +136,12 @@ public struct ProductCustomizerSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
+                        .onChange(of: options.extraFoam) { _, _ in
+                            // Se o preço negociado estiver vazio, atualiza o texto com o novo sugerido
+                            if negotiatedPriceText.isEmpty {
+                                negotiatedPriceText = String(format: "%.2f", suggestedPrice).replacingOccurrences(of: ".", with: ",")
+                            }
+                        }
 
                         if options.extraFoam != .none {
                             HStack(spacing: 8) {
@@ -120,10 +159,10 @@ public struct ProductCustomizerSheet: View {
                             .padding(.vertical, 2)
                         }
                     } header: {
-                        Text("1. Camada Extra de Espuma (Pillow Top)")
+                        Text(isConjunto ? "1. Colchão: Camada Extra de Espuma (Pillow Top)" : "1. Camada Extra de Espuma (Pillow Top)")
                     }
 
-                    // MARK: - Colchão: Tecido do Tampo Superior
+                    // Tecido do Tampo Superior do Colchão
                     Section {
                         Picker("Tecido do Tampo", selection: $options.topFabric) {
                             Text("Matelassê Branco Acolchoado (Padrão de Fábrica)").tag("Matelassê Branco Acolchoado")
@@ -133,11 +172,28 @@ public struct ProductCustomizerSheet: View {
                         }
                         .pickerStyle(.menu)
                     } header: {
-                        Text("2. Tecido do Tampo Superior (Superfície)")
+                        Text(isConjunto ? "2. Colchão: Tecido do Tampo Superior" : "2. Tecido do Tampo Superior")
                     }
                 }
 
-                // MARK: - Revestimento / Faixa Lateral (Veludo Spa)
+                // MARK: - 2. CAMA BOX: Pés do Box (Apenas para Box ou Conjunto)
+                // REGRA: EM COLCHÃO AVULSO NÃO EXISTE PÉS DE BOX!
+                if isConjunto || isOnlyBox {
+                    Section {
+                        Picker("Modelo dos Pés", selection: $options.feetType) {
+                            Text("Pé Plástico 12cm Preto (Padrão Box)").tag("Pé Plástico 12cm Preto")
+                            Text("Pé Plástico 6cm Rebaixado (Ideal p/ Baú)").tag("Pé Plástico 6cm Rebaixado")
+                            Text("Pé Madeira Maciça 12cm (Elegance)").tag("Pé Madeira Maciça 12cm")
+                            Text("Pés c/ Rodízio Móvel (Praticidade)").tag("Pés c/ Rodízio Móvel")
+                            Text("Sem Pés (Embutido / Alvenaria)").tag("Sem Pés")
+                        }
+                        .pickerStyle(.menu)
+                    } header: {
+                        Text(isConjunto ? "3. Cama Box: Modelo dos Pés" : "1. Cama Box: Modelo dos Pés")
+                    }
+                }
+
+                // MARK: - 3. REVESTIMENTO COORDENADO: VELUDO & FITILHO
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Cor Selecionada: \(options.fabricColor)")
@@ -179,10 +235,16 @@ public struct ProductCustomizerSheet: View {
                         .padding(.vertical, 4)
                     }
                 } header: {
-                    Text(isMattressType ? "3. Cor do Tecido Lateral (Veludo)" : "1. Cor do Revestimento do Box (Veludo)")
+                    if isConjunto {
+                        Text("4. Revestimento Coordenado (Faixas Colchão & Box)")
+                    } else if isOnlyBox {
+                        Text("2. Revestimento do Box (Veludo)")
+                    } else {
+                        Text("3. Revestimento Lateral (Veludo)")
+                    }
                 }
 
-                // MARK: - Fitilho de Fechamento (Debrum)
+                // Fitilho de Acabamento (Debrum)
                 Section {
                     Picker("Modelo do Fitilho", selection: $options.fitilho) {
                         Text("Fitilho Tom sobre Tom (Harmônico)").tag("Fitilho Tom sobre Tom")
@@ -197,20 +259,89 @@ public struct ProductCustomizerSheet: View {
                     Text("Fitilho de Fechamento (Debrum)")
                 }
 
-                // MARK: - Box / Cama Box: Pés
-                if isBoxType {
-                    Section {
-                        Picker("Modelo dos Pés", selection: $options.feetType) {
-                            Text("Pé Plástico 12cm Preto (Padrão Box)").tag("Pé Plástico 12cm Preto")
-                            Text("Pé Plástico 6cm Rebaixado (Ideal p/ Baú)").tag("Pé Plástico 6cm Rebaixado")
-                            Text("Pé Madeira Maciça 12cm (Elegance)").tag("Pé Madeira Maciça 12cm")
-                            Text("Pés c/ Rodízio Móvel (Praticidade)").tag("Pés c/ Rodízio Móvel")
-                            Text("Sem Pés (Embutido / Alvenaria)").tag("Sem Pés")
+                // MARK: - 4. PREÇO UNITÁRIO NEGOCIADO & DESCONTO (EDITÁVEL PELO VENDEDOR)
+                Section {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack {
+                            Text("Preço de Tabela Sugerido:")
+                                .font(.caption)
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                            Text(formatCurrency(suggestedPrice))
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.secondary)
                         }
-                        .pickerStyle(.menu)
-                    } header: {
-                        Text("Pés da Cama Box")
+
+                        // Campo de Preço Unitário Digitável
+                        HStack {
+                            Text("Preço Unitário Negociado:")
+                                .font(.subheadline.bold())
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Text("R$")
+                                    .font(.headline.bold())
+                                    .foregroundStyle(Color.blue)
+                                TextField(String(format: "%.2f", suggestedPrice), text: $negotiatedPriceText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.title3.bold())
+                                    .frame(width: 120)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 6)
+                                    .background(Color(uiColor: .tertiarySystemFill))
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+                        }
+
+                        // Indicador de Desconto ou Acréscimo
+                        if effectiveUnitPrice < suggestedPrice - 0.05 {
+                            let discount = suggestedPrice - effectiveUnitPrice
+                            let pct = (discount / suggestedPrice) * 100.0
+                            HStack {
+                                Image(systemName: "tag.fill")
+                                    .foregroundStyle(Color.emerald)
+                                Text("Desconto concedido: -\(formatCurrency(discount)) (\(String(format: "%.1f", pct))%)")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(Color.emerald)
+                                Spacer()
+                                Button("Restaurar") {
+                                    negotiatedPriceText = ""
+                                }
+                                .font(.caption2.bold())
+                                .buttonStyle(.bordered)
+                            }
+                            .padding(.vertical, 2)
+                        } else if effectiveUnitPrice > suggestedPrice + 0.05 {
+                            let extra = effectiveUnitPrice - suggestedPrice
+                            HStack {
+                                Text("Acréscimo de negociação: +\(formatCurrency(extra))")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(Color.blue)
+                                Spacer()
+                                Button("Restaurar") {
+                                    negotiatedPriceText = ""
+                                }
+                                .font(.caption2.bold())
+                                .buttonStyle(.bordered)
+                            }
+                        }
+
+                        // Justificativa Comercial
+                        if effectiveUnitPrice != suggestedPrice {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Justificativa da Negociação:")
+                                    .font(.caption2.bold())
+                                    .foregroundStyle(Color.secondary)
+                                TextField("Ex: Fechado à vista, autorizado pela gerência...", text: $priceJustification)
+                                    .font(.caption)
+                                    .textFieldStyle(.roundedBorder)
+                            }
+                            .padding(.top, 4)
+                        }
                     }
+                    .padding(.vertical, 4)
+                } header: {
+                    Text("Preço Unitário & Negociação")
                 }
 
                 // MARK: - Observações Técnicas
@@ -234,13 +365,14 @@ public struct ProductCustomizerSheet: View {
                 Section {
                     VStack(spacing: 8) {
                         HStack {
-                            Text("Preço Base Unitário")
+                            Text("Preço Unitário Praticado")
                                 .foregroundStyle(Color.secondary)
                             Spacer()
-                            Text(formatCurrency(product.defaultPrice))
+                            Text(formatCurrency(effectiveUnitPrice))
+                                .bold()
                         }
 
-                        if options.extraPrice > 0 {
+                        if !isOnlyBox && options.extraPrice > 0 {
                             HStack {
                                 Text("Opcional: \(options.extraFoam.badge)")
                                     .foregroundStyle(Color.blue)
@@ -263,7 +395,7 @@ public struct ProductCustomizerSheet: View {
                     }
                 }
             }
-            .navigationTitle("Personalizar Item")
+            .navigationTitle(isConjunto ? "Personalizar Conjunto" : (isOnlyBox ? "Personalizar Box" : "Personalizar Colchão"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -280,16 +412,13 @@ public struct ProductCustomizerSheet: View {
         }
     }
 
-    private var computedUnit: Double {
-        product.defaultPrice + options.extraPrice
-    }
-
-    private var computedTotal: Double {
-        computedUnit * Double(quantity)
-    }
-
     private func handleAdd() {
-        onAddToCart(options, quantity)
+        onAddToCart(
+            options,
+            quantity,
+            effectiveUnitPrice,
+            priceJustification.isEmpty ? nil : priceJustification.trimmingCharacters(in: .whitespacesAndNewlines)
+        )
         dismiss()
     }
 

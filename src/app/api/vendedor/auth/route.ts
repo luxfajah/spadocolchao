@@ -67,6 +67,12 @@ export async function POST(req: NextRequest) {
       user.jobTitle?.toLowerCase().includes("gerente")
     )
 
+    let commissionRate = 0.05
+    if (seller?.defaultCommissionRate !== null && seller?.defaultCommissionRate !== undefined) {
+      const numRate = Number(seller.defaultCommissionRate)
+      commissionRate = numRate >= 1 ? numRate / 100 : numRate
+    }
+
     return NextResponse.json({
       success: true,
       token: user.id, // Token de sessão simplificado para o app
@@ -78,7 +84,7 @@ export async function POST(req: NextRequest) {
         role: isUserAdmin ? "ADMIN" : (user.primaryRole?.name || "VENDEDOR"),
         sellerId: seller?.id || null,
         sellerCode: seller?.code || null,
-        commissionRate: seller?.defaultCommissionRate || 0.05,
+        commissionRate,
         isAdmin: isUserAdmin,
       },
     })
