@@ -181,23 +181,11 @@ function buildOrderStatusTimelineData(
 }
 
 async function consumeOrderProductionStock(orderId: string, tx: Prisma.TransactionClient) {
-  const existingConsumption = await tx.stockMovement.findFirst({
-    where: {
-      referenceType: "ORDER_PRODUCTION",
-      referenceId: orderId,
-      movementType: "EXIT",
-    },
-    select: { id: true },
-  })
-
-  if (existingConsumption) {
-    return { consumed: false, count: 0 }
-  }
-
   const order = await tx.order.findUnique({
     where: { id: orderId },
     select: {
       code: true,
+      saleId: true,
       sale: {
         select: {
           items: {
@@ -218,6 +206,25 @@ async function consumeOrderProductionStock(orderId: string, tx: Prisma.Transacti
       },
     },
   })
+
+  if (!order) {
+    return { consumed: false, count: 0 }
+  }
+
+  const existingConsumption = await tx.stockMovement.findFirst({
+    where: {
+      OR: [
+        { referenceType: "ORDER_PRODUCTION", referenceId: orderId },
+        ...(order.saleId ? [{ referenceType: "SALE", referenceId: order.saleId }] : [])
+      ],
+      movementType: "EXIT",
+    },
+    select: { id: true },
+  })
+
+  if (existingConsumption) {
+    return { consumed: false, count: 0 }
+  }
 
   const requirements =
     order?.sale.items.flatMap((item) =>

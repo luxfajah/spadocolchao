@@ -56,11 +56,21 @@ export function PosCart() {
 
                   <div className="min-w-0 flex-1 sm:hidden">
                     <p className="text-sm font-black leading-tight text-primary line-clamp-1">{item.name}</p>
+                    {item.details?.customizationSummary && (
+                      <p className="text-[11px] font-medium text-slate-500 line-clamp-1 mt-0.5">
+                        {item.details.customizationSummary}
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="min-w-0 flex-1 hidden sm:block">
                   <p className="text-base font-black leading-tight text-primary">{item.name}</p>
+                  {item.details?.customizationSummary && (
+                    <p className="mt-0.5 text-xs font-semibold text-slate-500">
+                      {item.details.customizationSummary}
+                    </p>
+                  )}
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
                     <span className="rounded-full bg-white px-2.5 py-1 text-primary/80">{item.type}</span>
                     <span>

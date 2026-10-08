@@ -114,6 +114,12 @@ export async function finalizeSale(payload: any) {
 
       // 2. Create Items & Specific details
       for (const item of items) {
+        const itemCustomizationSummary = item.details?.customizationSummary || null
+        const itemTechNotes = item.details?.technicalNotes || null
+        const fullItemNotes = itemCustomizationSummary
+          ? (itemTechNotes ? `${itemCustomizationSummary} | Obs: ${itemTechNotes}` : itemCustomizationSummary)
+          : (itemTechNotes || null)
+
         const saleItem = await tx.saleItem.create({
           data: {
             saleId: sale.id,
@@ -123,183 +129,196 @@ export async function finalizeSale(payload: any) {
             originalPrice: item.originalPrice,
             unitPrice: item.unitPrice,
             discountAmount: item.discountAmount,
-            totalAmount: item.totalAmount
+            totalAmount: item.totalAmount,
+            notes: fullItemNotes
           }
         })
 
         // Hook up detailed tables using type category
-        // In our POS, type matches category text. 
         if (item.type === 'Reforma Colchão' || item.type === 'Reforma de colchão') {
           await tx.saleItemDetailMattressReform.create({
             data: {
               saleItemId: saleItem.id,
-              serviceType: item.details.serviceType || 'simples',
-              commercialSize: item.details.commercialSize || 'casal',
-              actualWidth: Number(item.details.actualWidth) || 0,
-              actualLength: Number(item.details.actualLength) || 0,
-              actualHeight: Number(item.details.actualHeight) || 0,
-              mattressType: item.details.mattressType || 'espuma',
-              density: item.details.density || null,
+              serviceType: item.details?.serviceType || 'simples',
+              commercialSize: item.details?.commercialSize || 'casal',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              mattressType: item.details?.mattressType || 'espuma',
+              density: item.details?.density || null,
               
-              optTotalReplacement: item.details.optTotalReplacement || false,
-              optFoamStructReinforce: item.details.optFoamStructReinforce || false,
-              optRegluing: item.details.optRegluing || false,
-              optSpringSystemRepl: item.details.optSpringSystemRepl || false,
-              optSpringSystemRepair: item.details.optSpringSystemRepair || false,
-              optFullFabricRepl: item.details.optFullFabricRepl || false,
-              topFabricSupplyItemId: item.details.topFabricId || null,
-              sideFabricSupplyItemId: item.details.sideFabricId || null,
-              bottomFabricSupplyItemId: item.details.bottomFabricId || null,
-              topFabricColor: item.details.topColor || null,
-              sideFabricColor: item.details.sideColor || null,
+              optTotalReplacement: item.details?.optTotalReplacement || false,
+              optFoamStructReinforce: item.details?.optFoamStructReinforce || false,
+              optRegluing: item.details?.optRegluing || false,
+              optSpringSystemRepl: item.details?.optSpringSystemRepl || false,
+              optSpringSystemRepair: item.details?.optSpringSystemRepair || false,
+              optFullFabricRepl: item.details?.optFullFabricRepl || false,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
+              topFabricColor: item.details?.topFabricColor || item.details?.topColor || null,
+              sideFabricColor: item.details?.sideFabricColor || item.details?.sideColor || null,
               
-              foamServiceType: item.details.foamServiceType || 'NENHUM',
-              foamSupplyItemId: item.details.foamSupplyItemId || null,
-              addedFoamHeight: item.details.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
-              tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-              feetSupplyItemId: item.details.feetSupplyItemId || null,
+              foamServiceType: item.details?.foamServiceType || 'NENHUM',
+              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              addedFoamHeight: item.details?.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null,
 
-              technicalNotes: item.details.technicalNotes || null
+              technicalNotes: fullItemNotes
             }
           })
 
-          await generateMaterialRequirementsForReform(tx, saleItem.id, {
-            serviceType: item.details.serviceType || 'simples',
-            actualWidth: Number(item.details.actualWidth) || 0,
-            actualLength: Number(item.details.actualLength) || 0,
-            actualHeight: Number(item.details.actualHeight) || 0,
-            topFabricSupplyItemId: item.details.topFabricId || null,
-            sideFabricSupplyItemId: item.details.sideFabricId || null,
-            bottomFabricSupplyItemId: item.details.bottomFabricId || null,
-            optWaterproofing: item.details.optWaterproofing || false,
-            
-            foamServiceType: item.details.foamServiceType || 'NENHUM',
-            foamSupplyItemId: item.details.foamSupplyItemId || null,
-            addedFoamHeight: item.details.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
-            
-            tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-            feetSupplyItemId: item.details.feetSupplyItemId || null
+          const hasBOM = await tx.productRecipe.findFirst({
+            where: { productServiceId: item.productServiceId, isActive: true }
           })
+          if (!hasBOM && (item.details?.actualWidth || item.details?.actualLength)) {
+            await generateMaterialRequirementsForReform(tx, saleItem.id, {
+              serviceType: item.details?.serviceType || 'simples',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
+              optWaterproofing: item.details?.optWaterproofing || false,
+              foamServiceType: item.details?.foamServiceType || 'NENHUM',
+              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              addedFoamHeight: item.details?.addedFoamHeight ? Number(item.details.addedFoamHeight) : null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null
+            })
+          }
 
         } else if (item.type === 'Reforma Box' || item.type === 'Reforma de box') {
           await tx.saleItemDetailBoxReform.create({
             data: {
               saleItemId: saleItem.id,
-              serviceType: item.details.serviceType || 'simples',
-              boxType: item.details.boxType || 'comum',
-              commercialSize: item.details.commercialSize || 'casal',
-              actualWidth: Number(item.details.actualWidth) || 0,
-              actualLength: Number(item.details.actualLength) || 0,
-              actualHeight: Number(item.details.actualHeight) || 0,
-              optStructureReinforce: item.details.optStructureReinforce || false,
-              optHardwareReplacement: item.details.optHardwareReplacement || false,
-              optFullFabricRepl: item.details.optFullFabricRepl || false,
-              topFabricSupplyItemId: item.details.topFabricId || null,
-              sideFabricSupplyItemId: item.details.sideFabricId || null,
-              topFabricColor: item.details.topColor || null,
-              sideFabricColor: item.details.sideColor || null,
+              serviceType: item.details?.serviceType || 'simples',
+              boxType: item.details?.boxType || 'comum',
+              commercialSize: item.details?.commercialSize || 'casal',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              optStructureReinforce: item.details?.optStructureReinforce || false,
+              optHardwareReplacement: item.details?.optHardwareReplacement || false,
+              optFullFabricRepl: item.details?.optFullFabricRepl || false,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              topFabricColor: item.details?.topFabricColor || item.details?.topColor || null,
+              sideFabricColor: item.details?.sideFabricColor || item.details?.sideColor || null,
               
-              tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-              feetSupplyItemId: item.details.feetSupplyItemId || null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null,
 
-              technicalNotes: item.details.technicalNotes || null
+              technicalNotes: fullItemNotes
             }
           })
 
-          await generateMaterialRequirementsForReform(tx, saleItem.id, {
-            serviceType: item.details.serviceType || 'simples',
-            actualWidth: Number(item.details.actualWidth) || 0,
-            actualLength: Number(item.details.actualLength) || 0,
-            actualHeight: Number(item.details.actualHeight) || 0,
-            topFabricSupplyItemId: item.details.topFabricId || null,
-            sideFabricSupplyItemId: item.details.sideFabricId || null,
-            optWaterproofing: item.details.optWaterproofing || false,
-            
-            tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-            feetSupplyItemId: item.details.feetSupplyItemId || null
+          const hasBOM = await tx.productRecipe.findFirst({
+            where: { productServiceId: item.productServiceId, isActive: true }
           })
+          if (!hasBOM && (item.details?.actualWidth || item.details?.actualLength)) {
+            await generateMaterialRequirementsForReform(tx, saleItem.id, {
+              serviceType: item.details?.serviceType || 'simples',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              optWaterproofing: item.details?.optWaterproofing || false,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null
+            })
+          }
 
         } else if (item.type === 'Colchão Novo' || item.type === 'Colchão novo') {
           await tx.saleItemDetailNewMattress.create({
             data: {
               saleItemId: saleItem.id,
-              commercialSize: item.details.commercialSize || 'casal',
-              actualWidth: Number(item.details.actualWidth) || 0,
-              actualLength: Number(item.details.actualLength) || 0,
-              actualHeight: Number(item.details.actualHeight) || 0,
-              mattressType: item.details.mattressType || 'espuma',
-              density: item.details.density || null,
+              commercialSize: item.details?.commercialSize || 'casal',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              mattressType: item.details?.mattressType || 'espuma',
+              density: item.details?.density || null,
               
-              topFabricSupplyItemId: item.details.topFabricId || null,
-              bottomFabricSupplyItemId: item.details.bottomFabricId || null,
-              sideFabricSupplyItemId: item.details.sideFabricId || null,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
               
-              foamSupplyItemId: item.details.foamSupplyItemId || null,
-              tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-              feetSupplyItemId: item.details.feetSupplyItemId || null,
+              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null,
 
-              technicalNotes: item.details.technicalNotes || null
+              technicalNotes: fullItemNotes
             }
           })
 
-          // Calcular material (Usa a mesma lógica por M2 / Metragem / Volume)
-          await generateMaterialRequirementsForReform(tx, saleItem.id, {
-            serviceType: 'producao',
-            actualWidth: Number(item.details.actualWidth) || 0,
-            actualLength: Number(item.details.actualLength) || 0,
-            actualHeight: Number(item.details.actualHeight) || 0,
-            topFabricSupplyItemId: item.details.topFabricId || null,
-            sideFabricSupplyItemId: item.details.sideFabricId || null,
-            bottomFabricSupplyItemId: item.details.bottomFabricId || null,
-            
-            foamServiceType: item.details.foamSupplyItemId ? 'TROCA_TOTAL' : 'NENHUM',
-            foamSupplyItemId: item.details.foamSupplyItemId || null,
-            
-            tapeSupplyItemId: item.details.tapeSupplyItemId || null
+          const hasBOM = await tx.productRecipe.findFirst({
+            where: { productServiceId: item.productServiceId, isActive: true }
           })
+          if (!hasBOM && (item.details?.actualWidth || item.details?.actualLength)) {
+            await generateMaterialRequirementsForReform(tx, saleItem.id, {
+              serviceType: 'producao',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              bottomFabricSupplyItemId: item.details?.bottomFabricId || null,
+              foamServiceType: item.details?.foamSupplyItemId ? 'TROCA_TOTAL' : 'NENHUM',
+              foamSupplyItemId: item.details?.foamSupplyItemId || null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null
+            })
+          }
         } else if (item.type === 'Box Novo' || item.type === 'Box novo') {
            await tx.saleItemDetailNewBox.create({
             data: {
               saleItemId: saleItem.id,
-              boxType: item.details.boxType || 'comum',
-              commercialSize: item.details.commercialSize || 'casal',
-              actualWidth: Number(item.details.actualWidth) || 0,
-              actualLength: Number(item.details.actualLength) || 0,
-              actualHeight: Number(item.details.actualHeight) || 0,
+              boxType: item.details?.boxType || 'comum',
+              commercialSize: item.details?.commercialSize || 'casal',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
               
-              optStructureReinforce: item.details.optStructureReinforce || false,
-              optHardwareReplacement: item.details.optHardwareReplacement || false,
+              optStructureReinforce: item.details?.optStructureReinforce || false,
+              optHardwareReplacement: item.details?.optHardwareReplacement || false,
 
-              topFabricSupplyItemId: item.details.topFabricId || null,
-              sideFabricSupplyItemId: item.details.sideFabricId || null,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
               
-              feetSupplyItemId: item.details.feetSupplyItemId || null,
-              tapeSupplyItemId: item.details.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
 
-              technicalNotes: item.details.technicalNotes || null
+              technicalNotes: fullItemNotes
             }
           })
 
-          await generateMaterialRequirementsForReform(tx, saleItem.id, {
-            serviceType: 'producao',
-            actualWidth: Number(item.details.actualWidth) || 0,
-            actualLength: Number(item.details.actualLength) || 0,
-            actualHeight: Number(item.details.actualHeight) || 0,
-            topFabricSupplyItemId: item.details.topFabricId || null,
-            sideFabricSupplyItemId: item.details.sideFabricId || null,
-            
-            tapeSupplyItemId: item.details.tapeSupplyItemId || null,
-            feetSupplyItemId: item.details.feetSupplyItemId || null
+          const hasBOM = await tx.productRecipe.findFirst({
+            where: { productServiceId: item.productServiceId, isActive: true }
           })
+          if (!hasBOM && (item.details?.actualWidth || item.details?.actualLength)) {
+            await generateMaterialRequirementsForReform(tx, saleItem.id, {
+              serviceType: 'producao',
+              actualWidth: Number(item.details?.actualWidth) || 0,
+              actualLength: Number(item.details?.actualLength) || 0,
+              actualHeight: Number(item.details?.actualHeight) || 0,
+              topFabricSupplyItemId: item.details?.topFabricId || null,
+              sideFabricSupplyItemId: item.details?.sideFabricId || null,
+              tapeSupplyItemId: item.details?.tapeSupplyItemId || null,
+              feetSupplyItemId: item.details?.feetSupplyItemId || null
+            })
+          }
         } else if (item.type === 'Limpeza Estofados' || item.type === 'Limpeza de estofados' || item.type === 'Higienização de estofados' || item.type === 'Impermeabilização de estofados' || item.type === 'Impermeabilização' || item.type === 'Higienização') {
           const uCleaning = await tx.saleItemDetailUpholsteryCleaning.create({
             data: {
               saleItemId: saleItem.id,
-              technicalNotes: item.details.technicalNotes || null
+              technicalNotes: fullItemNotes
             }
           })
           
-          if (item.details.rows && Array.isArray(item.details.rows)) {
+          if (item.details?.rows && Array.isArray(item.details.rows)) {
             for (const row of item.details.rows) {
               await tx.saleItemDetailUpholsteryCleaningRow.create({
                 data: {
@@ -312,6 +331,177 @@ export async function finalizeSale(payload: any) {
                 }
               })
             }
+          }
+        }
+
+        // 2.5 Processamento de Ficha Técnica (BOM) e Baixa Automática de Estoque
+        const existingReqsCount = await tx.saleItemMaterialRequirement.count({
+          where: { saleItemId: saleItem.id }
+        })
+
+        if (existingReqsCount === 0 && item.productServiceId) {
+          // Gerar requisitos a partir da Ficha Técnica do Produto
+          const productWithRecipe = await tx.productService.findUnique({
+            where: { id: item.productServiceId },
+            include: {
+              recipes: {
+                where: { isActive: true },
+                include: {
+                  items: {
+                    include: { supplyItem: true },
+                    orderBy: { displayOrder: "asc" }
+                  }
+                }
+              }
+            }
+          })
+
+          const recipe = productWithRecipe?.recipes.find((r) => r.isDefault) || productWithRecipe?.recipes[0]
+
+          if (recipe && recipe.items.length > 0) {
+            const itemQty = Number(item.quantity) || 1
+            for (const rItem of recipe.items) {
+              const isFeetItem = rItem.supplyItem.code?.startsWith("INS-PE") || rItem.supplyItem.name?.toLowerCase().includes("pé")
+              
+              // Se o cliente escolheu "Sem Pés", pula o insumo de pé da baixa
+              if (isFeetItem && item.details?.hasFeet === false) {
+                continue
+              }
+
+              // Se o cliente escolheu um modelo de pé específico cadastrado
+              let effectiveSupplyItemId = rItem.supplyItemId
+              let effectiveSupplyItem = rItem.supplyItem
+              if (isFeetItem && item.details?.feetSupplyItemId) {
+                const customFeetSupply = await tx.supplyItem.findUnique({
+                  where: { id: item.details.feetSupplyItemId }
+                })
+                if (customFeetSupply) {
+                  effectiveSupplyItemId = customFeetSupply.id
+                  effectiveSupplyItem = customFeetSupply
+                }
+              }
+
+              // Se o cliente escolheu um modelo de fitilho específico cadastrado (ex: Colméia Especial)
+              const isFitilhoItem = rItem.supplyItem.code?.startsWith("INS-FIT") || rItem.supplyItem.name?.toLowerCase().includes("fitim") || rItem.supplyItem.name?.toLowerCase().includes("fitilho")
+              if (isFitilhoItem && item.details?.fitilhoSupplyItemId) {
+                const customFitilhoSupply = await tx.supplyItem.findUnique({
+                  where: { id: item.details.fitilhoSupplyItemId }
+                })
+                if (customFitilhoSupply) {
+                  effectiveSupplyItemId = customFitilhoSupply.id
+                  effectiveSupplyItem = customFitilhoSupply
+                }
+              }
+
+              const qtyNeeded = Number(rItem.baseQuantity) * itemQty
+
+              await tx.saleItemMaterialRequirement.create({
+                data: {
+                  saleItemId: saleItem.id,
+                  sourceRecipeId: recipe.id,
+                  sourceRecipeItemId: rItem.id,
+                  supplyItemId: effectiveSupplyItemId,
+                  part: rItem.componentPart || "Produção",
+                  quantityCalculated: qtyNeeded,
+                  unit: rItem.unit || effectiveSupplyItem.unit,
+                  unitCostSnapshot: effectiveSupplyItem.averageCost || 0,
+                  totalCostSnapshot: (effectiveSupplyItem.averageCost || 0) * qtyNeeded,
+                  notes: rItem.notes || `Ficha técnica: ${recipe.name}`
+                }
+              })
+
+              if (productWithRecipe?.consumesStock || recipe.consumesStock) {
+                await tx.supplyItem.update({
+                  where: { id: effectiveSupplyItemId },
+                  data: {
+                    currentStock: { decrement: qtyNeeded }
+                  }
+                })
+
+                await tx.stockMovement.create({
+                  data: {
+                    supplyItemId: effectiveSupplyItemId,
+                    movementType: "EXIT",
+                    quantity: qtyNeeded,
+                    unitCost: effectiveSupplyItem.averageCost || 0,
+                    totalCost: (effectiveSupplyItem.averageCost || 0) * qtyNeeded,
+                    referenceType: "SALE",
+                    referenceId: sale.id,
+                    notes: `Baixa por venda #${sale.number} - Produto: ${item.name} (${rItem.componentPart || 'Insumo'})`
+                  }
+                })
+              }
+            }
+
+            // Se o colchão teve Camada Extra de Espuma selecionada
+            if (item.details?.hasExtraFoam && item.details?.extraFoamSupplyItemId) {
+              const extraFoamSupply = await tx.supplyItem.findUnique({
+                where: { id: item.details.extraFoamSupplyItemId }
+              })
+              if (extraFoamSupply) {
+                const addedHeightCm = Number(item.details.addedFoamHeight) || 5
+                const foamVolumeM3 = Number(((1.38 * 1.88 * (addedHeightCm / 100)) * itemQty).toFixed(4))
+                const foamQty = extraFoamSupply.unit === 'M3' ? foamVolumeM3 : itemQty
+
+                await tx.saleItemMaterialRequirement.create({
+                  data: {
+                    saleItemId: saleItem.id,
+                    sourceRecipeId: recipe.id,
+                    supplyItemId: extraFoamSupply.id,
+                    part: "Camada Extra de Conforto",
+                    quantityCalculated: foamQty,
+                    unit: extraFoamSupply.unit,
+                    unitCostSnapshot: extraFoamSupply.averageCost || 0,
+                    totalCostSnapshot: (extraFoamSupply.averageCost || 0) * foamQty,
+                    notes: `Pillow / Camada Extra: ${item.details.extraFoamOption || extraFoamSupply.name}`
+                  }
+                })
+
+                if (productWithRecipe?.consumesStock || recipe.consumesStock) {
+                  await tx.supplyItem.update({
+                    where: { id: extraFoamSupply.id },
+                    data: { currentStock: { decrement: foamQty } }
+                  })
+
+                  await tx.stockMovement.create({
+                    data: {
+                      supplyItemId: extraFoamSupply.id,
+                      movementType: "EXIT",
+                      quantity: foamQty,
+                      unitCost: extraFoamSupply.averageCost || 0,
+                      totalCost: (extraFoamSupply.averageCost || 0) * foamQty,
+                      referenceType: "SALE",
+                      referenceId: sale.id,
+                      notes: `Baixa por venda #${sale.number} - Camada Extra: ${item.name} (${extraFoamSupply.name})`
+                    }
+                  })
+                }
+              }
+            }
+          }
+        } else if (existingReqsCount > 0) {
+          // Baixar do estoque os requisitos gerados dinamicamente pelos formulários de reforma
+          const dynamicReqs = await tx.saleItemMaterialRequirement.findMany({
+            where: { saleItemId: saleItem.id },
+            include: { supplyItem: true }
+          })
+          for (const dReq of dynamicReqs) {
+            await tx.supplyItem.update({
+              where: { id: dReq.supplyItemId },
+              data: { currentStock: { decrement: dReq.quantityCalculated } }
+            })
+            await tx.stockMovement.create({
+              data: {
+                supplyItemId: dReq.supplyItemId,
+                movementType: "EXIT",
+                quantity: dReq.quantityCalculated,
+                unitCost: dReq.unitCostSnapshot || 0,
+                totalCost: dReq.totalCostSnapshot || 0,
+                referenceType: "SALE",
+                referenceId: sale.id,
+                notes: `Baixa por venda #${sale.number} - Reforma: ${dReq.part}`
+              }
+            })
           }
         }
       }
@@ -406,7 +596,7 @@ export async function finalizeSale(payload: any) {
 
       // Caixa agora não é atualizado pois o pagamento é na entrega.
       return { success: true, saleId: sale.id, orderId: order.id }
-    })
+    }, { maxWait: 15000, timeout: 30000 })
 
     revalidatePath("/dashboard")
     return { success: true, result }
