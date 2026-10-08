@@ -17,7 +17,6 @@ import {
   CheckSquare,
   Square,
   Layers,
-  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,14 +34,14 @@ interface PrintMonitorClientProps {
   initialOrders: any[];
 }
 
-export type GuiaMode = "prod_and_client" | "all" | "production" | "customer" | "warranty";
+export type GuiaMode = "both" | "production" | "customer";
 
 export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientProps) {
   const [orders, setOrders] = useState<any[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(initialOrders[0] || null);
   const [format, setFormat] = useState<"a4" | "thermal">("a4"); // Padrão A4 Corporativo
-  const [guiaMode, setGuiaMode] = useState<GuiaMode>("prod_and_client"); // Padrão 2 Guias Separadas
-  const [copies, setCopies] = useState<1 | 2 | 3>(2);
+  const [guiaMode, setGuiaMode] = useState<GuiaMode>("both"); // Padrão Sempre 2 Guias
+  const [copies, setCopies] = useState<1 | 2>(2);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filterMode, setFilterMode] = useState<"all" | "pending" | "printed">("all");
   const [printedIds, setPrintedIds] = useState<string[]>([]);
@@ -67,7 +66,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
         setFormat(storedFormat as any);
       }
       const storedGuia = localStorage.getItem("spa_print_guia_mode");
-      if (storedGuia) {
+      if (storedGuia === "both" || storedGuia === "production" || storedGuia === "customer") {
         setGuiaMode(storedGuia as any);
       }
     } catch (_e) {}
@@ -182,7 +181,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
 
   const handleGuiaModeChange = (newGuiaMode: GuiaMode) => {
     setGuiaMode(newGuiaMode);
-    setCopies(newGuiaMode === "all" ? 3 : newGuiaMode === "prod_and_client" ? 2 : 1);
+    setCopies(newGuiaMode === "both" ? 2 : 1);
     try {
       localStorage.setItem("spa_print_guia_mode", newGuiaMode);
     } catch (_e) {}
@@ -247,7 +246,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 </span>
               </div>
               <p className="text-[11px] text-sky-200/80 font-medium">
-                Guias independentes: Produção (Chão de Fábrica), Via do Cliente e Certificado de Garantia.
+                Impressão em 2 Guias A4: Guia 1 (Produção / Ficha Técnica) + Guia 2 (Comprovante Completo & Termo de Garantia).
               </p>
             </div>
           </div>
@@ -276,28 +275,18 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
               </button>
             </div>
 
-            {/* SELETOR DE GUIAS INDEPENDENTES */}
+            {/* SELETOR DE GUIAS: 2 GUIAS (PADRÃO) */}
             <div className="inline-flex rounded-xl bg-slate-800/80 p-1 border border-slate-700/60 text-[11px] font-black">
               <button
                 type="button"
-                onClick={() => handleGuiaModeChange("prod_and_client")}
+                onClick={() => handleGuiaModeChange("both")}
                 className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  guiaMode === "prod_and_client" ? "bg-sky-500 text-white shadow" : "text-slate-400 hover:text-white"
+                  guiaMode === "both" ? "bg-sky-500 text-white shadow" : "text-slate-400 hover:text-white"
                 }`}
-                title="Imprime Guia 1 (Produção) e Guia 2 (Via do Cliente) em folhas A4 separadas"
+                title="Imprime as 2 guias em folhas A4 separadas: Guia 1 (Produção) e Guia 2 (Comprovante + Garantia)"
               >
                 <Layers className="h-3 w-3" />
-                <span>2 Guias (Produção + Cliente)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleGuiaModeChange("all")}
-                className={`px-2.5 py-1.5 rounded-lg transition-all ${
-                  guiaMode === "all" ? "bg-emerald-600 text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-                title="Imprime as 3 folhas: Produção + Cliente + Certificado Oficial de Garantia"
-              >
-                3 Guias (+ Garantia)
+                <span>2 Guias (Produção + Cliente/Garantia)</span>
               </button>
               <button
                 type="button"
@@ -305,9 +294,9 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 className={`px-2.5 py-1.5 rounded-lg transition-all ${
                   guiaMode === "production" ? "bg-sky-500 text-white shadow" : "text-slate-400 hover:text-white"
                 }`}
-                title="Apenas Guia 1: Ordem de Produção (Chão de Fábrica, sem valores)"
+                title="Apenas Guia 1: Ordem de Produção & Ficha Técnica (Chão de Fábrica, sem valores)"
               >
-                Produção
+                Guia 1 (Produção)
               </button>
               <button
                 type="button"
@@ -315,20 +304,9 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 className={`px-2.5 py-1.5 rounded-lg transition-all ${
                   guiaMode === "customer" ? "bg-sky-500 text-white shadow" : "text-slate-400 hover:text-white"
                 }`}
-                title="Apenas Guia 2: Via do Cliente (Valores & Canhoto)"
+                title="Apenas Guia 2: Comprovante de tudo que foi feito + Termo de Garantia + Canhoto"
               >
-                Cliente
-              </button>
-              <button
-                type="button"
-                onClick={() => handleGuiaModeChange("warranty")}
-                className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                  guiaMode === "warranty" ? "bg-amber-600 text-white shadow" : "text-slate-400 hover:text-white"
-                }`}
-                title="Apenas Guia 3: Certificado Oficial & Termo de Garantia Spa do Colchão"
-              >
-                <ShieldCheck className="h-3 w-3" />
-                <span>Garantia</span>
+                Guia 2 (Cliente & Garantia)
               </button>
             </div>
 
@@ -353,15 +331,11 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
               <Printer className="h-4 w-4" />
               {isPrintingNow
                 ? "Abrindo Impressão..."
-                : guiaMode === "prod_and_client"
+                : guiaMode === "both"
                 ? "Imprimir 2 Guias A4"
-                : guiaMode === "all"
-                ? "Imprimir 3 Folhas A4"
                 : guiaMode === "production"
-                ? "Imprimir Guia Produção"
-                : guiaMode === "customer"
-                ? "Imprimir Guia Cliente"
-                : "Imprimir Termo de Garantia"}
+                ? "Imprimir Guia 1 (Produção)"
+                : "Imprimir Guia 2 (Cliente & Garantia)"}
             </Button>
           </div>
         </div>
@@ -534,7 +508,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                           className="h-7 text-[10px] font-black rounded-lg gap-1 bg-[#02213f] hover:bg-slate-900 text-white"
                         >
                           <Printer className="h-3 w-3" />
-                          Imprimir {guiaMode === "all" ? "3 Folhas" : guiaMode === "prod_and_client" ? "2 Guias" : "Guia"}
+                          Imprimir {guiaMode === "both" ? "2 Guias" : "Guia"}
                         </Button>
                       </div>
                     </div>
@@ -555,15 +529,11 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                   Pré-visualização
                 </span>
                 <span className="text-[9px] font-black bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full uppercase">
-                  {guiaMode === "prod_and_client"
-                    ? "2 Folhas A4 (Produção + Cliente)"
-                    : guiaMode === "all"
-                    ? "3 Folhas A4 (Produção + Cliente + Termo de Garantia)"
+                  {guiaMode === "both"
+                    ? "2 Folhas A4 (Produção + Cliente/Garantia)"
                     : guiaMode === "production"
                     ? "Folha 1 (Apenas Produção)"
-                    : guiaMode === "customer"
-                    ? "Folha 2 (Apenas Via do Cliente)"
-                    : "Folha 3 (Apenas Certificado de Garantia)"}
+                    : "Folha 2 (Apenas Cliente/Garantia)"}
                 </span>
               </div>
               <h2 className="text-base font-black text-slate-900 mt-0.5">
@@ -581,11 +551,11 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
               <Printer className="h-4 w-4" />
               {isPrintingNow
                 ? "Imprimindo..."
-                : guiaMode === "prod_and_client"
+                : guiaMode === "both"
                 ? "Imprimir 2 Guias A4 (Ctrl + P)"
-                : guiaMode === "all"
-                ? "Imprimir 3 Folhas A4 (Ctrl + P)"
-                : "Imprimir Esta Guia (Ctrl + P)"}
+                : guiaMode === "production"
+                ? "Imprimir Guia 1 (Ctrl + P)"
+                : "Imprimir Guia 2 (Ctrl + P)"}
             </Button>
           </div>
 
@@ -603,7 +573,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 <FileText className="h-14 w-14 stroke-[1.5] mb-2 text-slate-300" />
                 <p className="text-sm font-bold text-slate-600">Nenhum pedido selecionado.</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Clique em qualquer pedido da fila ao lado para carregar as guias para impressão.
+                  Clique em qualquer pedido da fila ao lado para carregar as 2 guias para impressão.
                 </p>
               </div>
             )}
