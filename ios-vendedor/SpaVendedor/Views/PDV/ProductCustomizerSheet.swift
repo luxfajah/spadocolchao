@@ -34,6 +34,12 @@ public struct ProductCustomizerSheet: View {
         _options = State(initialValue: initialOptions)
     }
 
+    private var isReforma: Bool {
+        product.isReforma ||
+        product.name.localizedCaseInsensitiveContains("reforma") ||
+        (product.category?.localizedCaseInsensitiveContains("reforma") ?? false)
+    }
+
     private var isConjunto: Bool {
         product.isConjunto
     }
@@ -46,10 +52,10 @@ public struct ProductCustomizerSheet: View {
         product.isOnlyColchao
     }
 
-    // Preço de tabela sugerido (base + opcionais de espuma do colchão se houver)
+    // Preço de tabela sugerido
     private var suggestedPrice: Double {
         if isOnlyBox {
-            // Em BOX NUNCA existe espuma extra
+            // Em BOX NUNCA existe espuma extra ou vibro
             return product.defaultPrice
         }
         return product.defaultPrice + options.extraPrice
@@ -79,14 +85,14 @@ public struct ProductCustomizerSheet: View {
                             Spacer()
                         }
 
-                        // Tags informativas de Categoria e Medida do Produto
+                        // Tags informativas
                         HStack(spacing: 8) {
-                            Text(product.categoryDisplayName)
+                            Text(isReforma ? "Reforma" : "Linha Nova")
                                 .font(.caption2.bold())
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 3)
-                                .background(Color.blue.opacity(0.12))
-                                .foregroundStyle(Color.blue)
+                                .background(isReforma ? Color.orange.opacity(0.12) : Color.blue.opacity(0.12))
+                                .foregroundStyle(isReforma ? Color.orange : Color.blue)
                                 .clipShape(Capsule())
 
                             if let sizeName = product.detectedSize {
@@ -102,29 +108,50 @@ public struct ProductCustomizerSheet: View {
                             Spacer()
                         }
 
-                        if let desc = product.description, !desc.isEmpty {
-                            Text(desc)
-                                .font(.caption)
-                                .foregroundStyle(Color.secondary)
-                        }
-
-                        HStack {
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.caption)
-                                .foregroundStyle(Color.emerald)
-                            Text("Padrão Ficha Técnica Spa do Colchão")
-                                .font(.caption2.bold())
-                                .foregroundStyle(Color.emerald)
+                        if !isReforma && (isOnlyColchao || isConjunto) {
+                            HStack(alignment: .top, spacing: 6) {
+                                Image(systemName: "info.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.blue)
+                                Text("Padrão da Linha Homologado: densidade, molas e camadas de conforto seguem a ficha técnica original deste modelo novo. Personalize as opções de tecido.")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.secondary)
+                            }
+                            .padding(.vertical, 2)
                         }
                     }
                     .padding(.vertical, 4)
                 }
 
-                // MARK: - 1. COLCHÃO: Espuma Extra e Tampo (Apenas para Colchão ou Conjunto)
-                // REGRA: EM BOX NUNCA EXISTE ESPUMA EXTRA!
-                if isConjunto || isOnlyColchao {
-                    Section {
-                        Picker("Camada de Conforto", selection: $options.extraFoam) {
+                // ==========================================
+                // CASO 1: REFORMA DE COLCHÃO OU CONJUNTO
+                // ==========================================
+                if isReforma && (isOnlyColchao || isConjunto) {
+                    // 1. Tampo de Cima
+                    Section("1. Tampo de Cima (Superfície Superior)") {
+                        Picker("Tampo de Cima", selection: $options.topFabric) {
+                            Text("Matelassê Branco Acolchoado (Padrão)").tag("Matelassê Branco Acolchoado")
+                            Text("Matelassê Bege Linho (Requinte)").tag("Matelassê Bege Linho")
+                            Text("Matelassê Cinza Grafite (Moderno)").tag("Matelassê Cinza Grafite")
+                            Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    // 2. Tampo de Baixo
+                    Section("2. Tampo de Baixo (Superfície Inferior)") {
+                        Picker("Tampo de Baixo", selection: $options.bottomFabric) {
+                            Text("TNT Antiderrapante Preto 100g (Padrão 1 Face)").tag("TNT Antiderrapante Preto 100g")
+                            Text("Matelassê Branco Acolchoado (Dupla Face)").tag("Matelassê Branco Acolchoado (Dupla Face)")
+                            Text("Matelassê Bege Linho (Dupla Face)").tag("Matelassê Bege Linho (Dupla Face)")
+                            Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    // 3. Camada Adicional de Espuma (SÓ DE 5 CM)
+                    Section("3. Camada Adicional de Espuma (Apenas 5 cm)") {
+                        Picker("Camada de Espuma", selection: $options.extraFoam) {
                             ForEach(ExtraFoamType.allCases, id: \.self) { foam in
                                 HStack {
                                     Text(foam.rawValue)
@@ -136,70 +163,66 @@ public struct ProductCustomizerSheet: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .onChange(of: options.extraFoam) { _, _ in
-                            // Se o preço negociado estiver vazio, atualiza o texto com o novo sugerido
-                            if negotiatedPriceText.isEmpty {
-                                negotiatedPriceText = String(format: "%.2f", suggestedPrice).replacingOccurrences(of: ".", with: ",")
-                            }
-                        }
 
                         if options.extraFoam != .none {
-                            HStack(spacing: 8) {
-                                Image(systemName: "sparkles")
-                                    .foregroundStyle(Color.purple)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(options.extraFoam.badge)
-                                        .font(.caption.bold())
-                                        .foregroundStyle(Color.purple)
-                                    Text("Espuma de alta densidade certificada cortada sob medida na fábrica.")
-                                        .font(.caption2)
-                                        .foregroundStyle(Color.secondary)
-                                }
-                            }
-                            .padding(.vertical, 2)
+                            Text("Espuma de alta resiliência cortada sob medida na fábrica para conforto ou firmeza.")
+                                .font(.caption2)
+                                .foregroundStyle(Color.secondary)
                         }
-                    } header: {
-                        Text(isConjunto ? "1. Colchão: Camada Extra de Espuma (Pillow Top)" : "1. Camada Extra de Espuma (Pillow Top)")
                     }
 
-                    // Tecido do Tampo Superior do Colchão
-                    Section {
+                    // 4. Conversão para Vibroterapia
+                    Section("4. Conversão para Vibroterapia (Massagem)") {
+                        Toggle(isOn: $options.isVibroConversion) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Instalar Vibroterapia c/ Controle")
+                                    .font(.subheadline.bold())
+                                Text("Cápsulas de massagem eletrônica e controle (+R$ 850,00)")
+                                    .font(.caption2)
+                                    .foregroundStyle(Color.secondary)
+                            }
+                        }
+                        .tint(Color.purple)
+                    }
+
+                    // 5. Fitilho de Fechamento (Debrum)
+                    Section("5. Fitilho de Fechamento (Debrum)") {
+                        Picker("Modelo do Fitilho", selection: $options.fitilho) {
+                            Text("Fitilho Tom sobre Tom (Harmônico)").tag("Fitilho Tom sobre Tom")
+                            Text("Fitilho Branco Clássico (Contraste)").tag("Fitilho Branco Clássico")
+                            Text("Fitilho Bege Linho (Neutro)").tag("Fitilho Bege Linho")
+                            Text("Fitilho Cinza Grafite (Moderno)").tag("Fitilho Cinza Grafite")
+                            Text("Fitilho Preto Ônix (Marcante)").tag("Fitilho Preto Ônix")
+                        }
+                        .pickerStyle(.menu)
+                    }
+                }
+
+                // ==========================================
+                // CASO 2: COLCHÃO NOVO (PADRÃO DA LINHA)
+                // "os novos devem seguir o padrão da linha e as unicas personalizações são as opções de tecido"
+                // ==========================================
+                if !isReforma && (isOnlyColchao || isConjunto) {
+                    Section("Opção de Tecido do Tampo (Colchão)") {
                         Picker("Tecido do Tampo", selection: $options.topFabric) {
-                            Text("Matelassê Branco Acolchoado (Padrão de Fábrica)").tag("Matelassê Branco Acolchoado")
+                            Text("Matelassê Branco Acolchoado (Padrão Linha)").tag("Matelassê Branco Acolchoado")
                             Text("Matelassê Bege Linho (Requinte)").tag("Matelassê Bege Linho")
                             Text("Matelassê Cinza Grafite (Moderno)").tag("Matelassê Cinza Grafite")
-                            Text("Mesmo Tecido da Faixa Lateral (Monocromático)").tag("Mesmo Tecido da Faixa Lateral")
+                            Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
                         }
                         .pickerStyle(.menu)
-                    } header: {
-                        Text(isConjunto ? "2. Colchão: Tecido do Tampo Superior" : "2. Tecido do Tampo Superior")
                     }
                 }
 
-                // MARK: - 2. CAMA BOX: Pés do Box (Apenas para Box ou Conjunto)
-                // REGRA: EM COLCHÃO AVULSO NÃO EXISTE PÉS DE BOX!
-                if isConjunto || isOnlyBox {
-                    Section {
-                        Picker("Modelo dos Pés", selection: $options.feetType) {
-                            Text("Pé Plástico 12cm Preto (Padrão Box)").tag("Pé Plástico 12cm Preto")
-                            Text("Pé Plástico 6cm Rebaixado (Ideal p/ Baú)").tag("Pé Plástico 6cm Rebaixado")
-                            Text("Pé Madeira Maciça 12cm (Elegance)").tag("Pé Madeira Maciça 12cm")
-                            Text("Pés c/ Rodízio Móvel (Praticidade)").tag("Pés c/ Rodízio Móvel")
-                            Text("Sem Pés (Embutido / Alvenaria)").tag("Sem Pés")
-                        }
-                        .pickerStyle(.menu)
-                    } header: {
-                        Text(isConjunto ? "3. Cama Box: Modelo dos Pés" : "1. Cama Box: Modelo dos Pés")
-                    }
-                }
-
-                // MARK: - 3. REVESTIMENTO COORDENADO: VELUDO & FITILHO
-                Section {
+                // ==========================================
+                // REVESTIMENTO LATERAL (FAIXA VELUDO / FORRAGEM)
+                // ==========================================
+                Section(header: Text(isOnlyBox ? "Tecido de Forragem do Box" : "Tecido Lateral (Faixa de Veludo)")) {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Cor Selecionada: \(options.fabricColor)")
                             .font(.subheadline.bold())
 
-                        // Cartela visual de cores com chips
+                        // Cartela visual de cores
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 70))], spacing: 10) {
                             ForEach(FabricColorOption.standardColors) { colorOpt in
                                 Button(action: {
@@ -234,33 +257,40 @@ public struct ProductCustomizerSheet: View {
                         }
                         .padding(.vertical, 4)
                     }
-                } header: {
-                    if isConjunto {
-                        Text("4. Revestimento Coordenado (Faixas Colchão & Box)")
-                    } else if isOnlyBox {
-                        Text("2. Revestimento do Box (Veludo)")
-                    } else {
-                        Text("3. Revestimento Lateral (Veludo)")
+                }
+
+                // ==========================================
+                // CASO BOX: TNT DE CIMA E PEZINHOS
+                // "e o box: tnt de cima, tecido de forragem e pezinho"
+                // ==========================================
+                if isOnlyBox || isConjunto {
+                    // TNT de Cima do Box
+                    Section("TNT de Cima do Box (Superfície de Apoio)") {
+                        Picker("TNT de Cima", selection: $options.topTNT) {
+                            Text("TNT Antiderrapante Preto 100g/150g (Padrão)").tag("TNT Antiderrapante Preto 100g/150g")
+                            Text("TNT Branco Reforçado").tag("TNT Branco Reforçado")
+                            Text("TNT Bege Linho").tag("TNT Bege Linho")
+                        }
+                        .pickerStyle(.menu)
+                    }
+
+                    // Pezinhos do Box
+                    Section("Pezinhos do Box") {
+                        Picker("Modelo dos Pés", selection: $options.feetType) {
+                            Text("Pé Madeira Maciça 12cm Tabaco (Padrão)").tag("Pé Madeira Maciça 12cm Tabaco")
+                            Text("Pé Madeira Maciça 12cm Mel").tag("Pé Madeira Maciça 12cm Mel")
+                            Text("Pé Plástico 12cm Preto").tag("Pé Plástico 12cm Preto")
+                            Text("Pé Plástico 6cm Rebaixado (Ideal p/ Baú)").tag("Pé Plástico 6cm Rebaixado")
+                            Text("Pé Alumínio Cromado 12cm").tag("Pé Alumínio Cromado 12cm")
+                            Text("Pés c/ Rodízio Móvel (Praticidade)").tag("Pés c/ Rodízio Móvel")
+                            Text("Sem Pés (Embutido / Alvenaria)").tag("Sem Pés")
+                        }
+                        .pickerStyle(.menu)
                     }
                 }
 
-                // Fitilho de Acabamento (Debrum)
-                Section {
-                    Picker("Modelo do Fitilho", selection: $options.fitilho) {
-                        Text("Fitilho Tom sobre Tom (Harmônico)").tag("Fitilho Tom sobre Tom")
-                        Text("Fitilho Branco Clássico (Contraste)").tag("Fitilho Branco Clássico")
-                        Text("Fitilho Bege Linho (Neutro)").tag("Fitilho Bege Linho")
-                        Text("Fitilho Cinza Grafite (Moderno)").tag("Fitilho Cinza Grafite")
-                        Text("Fitilho Preto Ônix (Marcante)").tag("Fitilho Preto Ônix")
-                        Text("Fitim Colméia Especial (Linha Especial)").tag("Fitim Colméia Especial")
-                    }
-                    .pickerStyle(.menu)
-                } header: {
-                    Text("Fitilho de Fechamento (Debrum)")
-                }
-
-                // MARK: - 4. PREÇO UNITÁRIO NEGOCIADO & DESCONTO (EDITÁVEL PELO VENDEDOR)
-                Section {
+                // MARK: - PREÇO UNITÁRIO NEGOCIADO & DESCONTO
+                Section("Preço Unitário & Negociação") {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
                             Text("Preço de Tabela Sugerido:")
@@ -272,7 +302,7 @@ public struct ProductCustomizerSheet: View {
                                 .foregroundStyle(Color.secondary)
                         }
 
-                        // Campo de Preço Unitário Digitável
+                        // Campo Digitável
                         HStack {
                             Text("Preço Unitário Negociado:")
                                 .font(.subheadline.bold())
@@ -329,10 +359,10 @@ public struct ProductCustomizerSheet: View {
                         // Justificativa Comercial
                         if effectiveUnitPrice != suggestedPrice {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Justificativa da Negociação:")
+                                Text("Justificativa Comercial:")
                                     .font(.caption2.bold())
                                     .foregroundStyle(Color.secondary)
-                                TextField("Ex: Fechado à vista, autorizado pela gerência...", text: $priceJustification)
+                                TextField("Ex: Fechamento à vista, autorizado pela gerência...", text: $priceJustification)
                                     .font(.caption)
                                     .textFieldStyle(.roundedBorder)
                             }
@@ -340,71 +370,27 @@ public struct ProductCustomizerSheet: View {
                         }
                     }
                     .padding(.vertical, 4)
-                } header: {
-                    Text("Preço Unitário & Negociação")
                 }
 
-                // MARK: - Observações Técnicas
+                // Observações Técnicas
                 Section("Observações Técnicas do Pedido") {
-                    TextField("Ex: Reforço lateral, zíper duplo, cliente alérgico...", text: $options.observations)
+                    TextField("Ex: Reforço especial, zíper duplo, cliente alérgico...", text: $options.observations)
                 }
 
                 // MARK: - Quantidade
                 Section("Quantidade") {
-                    Stepper(value: $quantity, in: 1...20) {
-                        HStack {
-                            Text("Quantidade")
-                            Spacer()
-                            Text("\(quantity)")
-                                .font(.headline.bold())
-                        }
-                    }
-                }
-
-                // MARK: - Resumo Financeiro do Item
-                Section {
-                    VStack(spacing: 8) {
-                        HStack {
-                            Text("Preço Unitário Praticado")
-                                .foregroundStyle(Color.secondary)
-                            Spacer()
-                            Text(formatCurrency(effectiveUnitPrice))
-                                .bold()
-                        }
-
-                        if !isOnlyBox && options.extraPrice > 0 {
-                            HStack {
-                                Text("Opcional: \(options.extraFoam.badge)")
-                                    .foregroundStyle(Color.blue)
-                                Spacer()
-                                Text("+\(formatCurrency(options.extraPrice))")
-                                    .foregroundStyle(Color.blue)
-                            }
-                        }
-
-                        Divider()
-
-                        HStack {
-                            Text("Valor Total (\(quantity)x)")
-                                .font(.headline)
-                            Spacer()
-                            Text(formatCurrency(computedTotal))
-                                .font(.title3.bold())
-                                .foregroundStyle(Color.blue)
-                        }
-                    }
+                    Stepper("Unidades: \(quantity)", value: $quantity, in: 1...99)
                 }
             }
-            .navigationTitle(isConjunto ? "Personalizar Conjunto" : (isOnlyBox ? "Personalizar Box" : "Personalizar Colchão"))
+            .navigationTitle("Personalização")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancelar") { dismiss() }
                 }
-
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(action: handleAdd) {
-                        Text("Adicionar")
+                    Button(action: handleConfirm) {
+                        Text("Adicionar • \(formatCurrency(computedTotal))")
                             .bold()
                     }
                 }
@@ -412,12 +398,12 @@ public struct ProductCustomizerSheet: View {
         }
     }
 
-    private func handleAdd() {
+    private func handleConfirm() {
         onAddToCart(
             options,
             quantity,
             effectiveUnitPrice,
-            priceJustification.isEmpty ? nil : priceJustification.trimmingCharacters(in: .whitespacesAndNewlines)
+            priceJustification.isEmpty ? nil : priceJustification
         )
         dismiss()
     }
@@ -427,32 +413,5 @@ public struct ProductCustomizerSheet: View {
         formatter.numberStyle = .currency
         formatter.locale = Locale(identifier: "pt_BR")
         return formatter.string(from: NSNumber(value: value)) ?? "R$ \(value)"
-    }
-}
-
-// Extensão segura de cor hex
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3:
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6:
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8:
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }

@@ -136,6 +136,7 @@ public struct CartView: View {
 
     // Entrada no Ato (Sinal)
     @State private var hasDownPayment = false
+    @State private var isDownPaymentPaid = true
     @State private var downPaymentPercent: Int? = 10
     @State private var downPaymentAmount: Double = 0.0
     @State private var downPaymentCustomText = ""
@@ -154,6 +155,8 @@ public struct CartView: View {
     @State private var lastSaleTotal: Double = 0.0
     @State private var lastSaleCommission: Double = 0.0
     @State private var lastCustomerName: String = ""
+    @State private var lastDownPaymentAmount: Double = 0.0
+    @State private var lastDownPaymentMethod: String = ""
 
     public init() {}
 
@@ -253,6 +256,10 @@ public struct CartView: View {
                         customerName: lastCustomerName.isEmpty ? (appState.selectedCustomer?.fullName ?? "Cliente") : lastCustomerName,
                         totalAmount: lastSaleTotal,
                         estimatedCommission: lastSaleCommission,
+                        downPaymentAmount: lastDownPaymentAmount,
+                        downPaymentMethod: lastDownPaymentMethod,
+                        remainingBalance: max(0.0, lastSaleTotal - lastDownPaymentAmount),
+                        deliveryPaymentMethod: selectedPaymentMethod,
                         onDismiss: {
                             dismiss()
                         }
@@ -627,6 +634,28 @@ public struct CartView: View {
 
                         Divider()
 
+                        // Status da Entrada (Paga no Ato / Hoje vs Pendente)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Status da Entrada:")
+                                    .font(.caption.bold())
+                                    .foregroundStyle(Color.secondary)
+                                HStack(spacing: 6) {
+                                    Image(systemName: isDownPaymentPaid ? "checkmark.circle.fill" : "clock.fill")
+                                        .foregroundStyle(isDownPaymentPaid ? Color.emerald : Color.orange)
+                                    Text(isDownPaymentPaid ? "Entrada Paga no Ato (Hoje)" : "Entrada Pendente")
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(isDownPaymentPaid ? Color.emerald : Color.orange)
+                                }
+                            }
+                            Spacer()
+                            Toggle("", isOn: $isDownPaymentPaid)
+                                .labelsHidden()
+                        }
+                        .padding(10)
+                        .background(isDownPaymentPaid ? Color.emerald.opacity(0.12) : Color.orange.opacity(0.12))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+
                         // Forma de pagamento da Entrada
                         VStack(alignment: .leading, spacing: 6) {
                             Text("Forma de Pagamento da Entrada:")
@@ -642,62 +671,94 @@ public struct CartView: View {
                             .pickerStyle(.segmented)
                         }
 
-                        // Detalhamento Entrada vs Saldo
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Entrada no Ato:")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.secondary)
-                                Text(formatCurrency(downPaymentAmount))
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(Color.emerald)
+                        // Detalhamento Entrada Paga vs Saldo na Entrega
+                        VStack(spacing: 6) {
+                            HStack {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "checkmark.seal.fill")
+                                        .foregroundStyle(Color.emerald)
+                                    Text("Entrada Paga no Ato (Hoje):")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(Color.secondary)
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 1) {
+                                    Text(formatCurrency(downPaymentAmount))
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(Color.emerald)
+                                    Text("Quitada via \(selectedDownPaymentMethod)")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(Color.secondary)
+                                }
                             }
-                            Spacer()
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text("Saldo na Entrega:")
-                                    .font(.caption)
-                                    .foregroundStyle(Color.secondary)
-                                Text(formatCurrency(max(0.0, appState.cartTotal - downPaymentAmount)))
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(Color.blue)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color.emerald.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+
+                            HStack {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "truck.box.badge.clock.fill")
+                                        .foregroundStyle(Color.blue)
+                                    Text("Saldo a Pagar na Entrega:")
+                                        .font(.caption.bold())
+                                        .foregroundStyle(Color.secondary)
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 1) {
+                                    let remainingBal = max(0.0, appState.cartTotal - downPaymentAmount)
+                                    Text(formatCurrency(remainingBal))
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(Color.blue)
+                                    Text("A receber no ato da entrega")
+                                        .font(.system(size: 10).bold())
+                                        .foregroundStyle(Color.blue)
+                                }
                             }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.08))
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
                         }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                        .background(Color(uiColor: .secondarySystemGroupedBackground))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
                     }
                 }
             }
         }
     }
 
-    // Seção 5: Pagamento do Saldo
+    // Seção 5: Pagamento do Saldo Restante na Entrega
     private var paymentSection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(alignment: .leading, spacing: 12) {
                 Label(
                     hasDownPayment ? "Pagamento do Saldo na Entrega" : "Forma de Pagamento",
-                    systemImage: "creditcard.fill"
+                    systemImage: hasDownPayment ? "truck.box.fill" : "creditcard.fill"
                 )
                 .font(.headline)
 
-                Picker("Forma", selection: $selectedPaymentMethod) {
-                    Text("PIX (À Vista)").tag("PIX")
-                    Text("Cartão de Crédito").tag("Cartão de Crédito")
-                    Text("Cartão de Débito").tag("Cartão de Débito")
+                if hasDownPayment {
+                    let remainingBal = max(0.0, appState.cartTotal - downPaymentAmount)
+                    Text("Como o cliente pagará o saldo restante de \(formatCurrency(remainingBal)) na entrega?")
+                        .font(.caption)
+                        .foregroundStyle(Color.secondary)
+                }
+
+                Picker("Forma de Pagamento", selection: $selectedPaymentMethod) {
+                    Text(hasDownPayment ? "Cartão de Crédito (na Entrega)" : "Cartão de Crédito").tag("Cartão de Crédito")
+                    Text(hasDownPayment ? "Cartão de Débito (na Entrega)" : "Cartão de Débito").tag("Cartão de Débito")
+                    Text(hasDownPayment ? "PIX (na Entrega)" : "PIX (À Vista)").tag("PIX")
+                    Text(hasDownPayment ? "Dinheiro (na Entrega)" : "Dinheiro").tag("Dinheiro")
                     Text("Boleto Bancário").tag("Boleto")
-                    Text("Dinheiro").tag("Dinheiro")
                 }
                 .pickerStyle(.menu)
 
                 if selectedPaymentMethod == "Cartão de Crédito" {
-                    Stepper("Parcelamento: \(installments)x sem juros", value: $installments, in: 1...12)
+                    Stepper("Parcelamento do saldo: \(installments)x", value: $installments, in: 1...12)
                         .font(.subheadline)
                     let baseAmount = hasDownPayment ? max(0.0, appState.cartTotal - downPaymentAmount) : appState.cartTotal
-                    Text("Valor de cada parcela: \(formatCurrency(baseAmount / Double(installments)))")
-                        .font(.caption)
-                        .foregroundStyle(Color.secondary)
+                    Text("Valor de cada parcela: \(formatCurrency(baseAmount / Double(installments))) no ato da entrega")
+                        .font(.caption.bold())
+                        .foregroundStyle(Color.blue)
                 }
             }
         }
@@ -956,7 +1017,7 @@ public struct CartView: View {
                 } else {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.headline)
-                    Text("Confirmar Pedido")
+                    Text(hasDownPayment ? "Confirmar Venda (Entrada Paga • Saldo na Entrega)" : "Confirmar Pedido")
                         .font(.headline.bold())
                 }
             }
@@ -990,6 +1051,8 @@ public struct CartView: View {
         let currentTotal = appState.cartTotal
         let currentCommission = appState.estimatedCommission
         let custName = customer.fullName
+        let downAmount = hasDownPayment ? downPaymentAmount : 0.0
+        let downMethod = hasDownPayment ? selectedDownPaymentMethod : ""
 
         let isBothOrPickup = (scheduleMode == "both" || scheduleMode == "pickup")
         let isBothOrDelivery = (scheduleMode == "both" || scheduleMode == "delivery")
@@ -1008,9 +1071,11 @@ public struct CartView: View {
                     freight: appState.freightAmount,
                     total: currentTotal,
                     paymentMethodName: selectedPaymentMethod,
+                    installments: installments,
                     hasDownPayment: hasDownPayment,
-                    downPaymentAmount: hasDownPayment ? downPaymentAmount : 0.0,
-                    downPaymentMethod: hasDownPayment ? selectedDownPaymentMethod : selectedPaymentMethod,
+                    isDownPaymentPaid: isDownPaymentPaid,
+                    downPaymentAmount: downAmount,
+                    downPaymentMethod: downMethod,
                     scheduleMode: scheduleMode,
                     pickupDate: pickupDateString,
                     pickupTime: isBothOrPickup ? pickupTime : nil,
@@ -1024,6 +1089,8 @@ public struct CartView: View {
                     self.lastSaleTotal = currentTotal
                     self.lastSaleCommission = currentCommission
                     self.lastCustomerName = custName
+                    self.lastDownPaymentAmount = downAmount
+                    self.lastDownPaymentMethod = downMethod
                     self.completedSaleNumber = result.saleNumber
                     self.isSubmitting = false
                     self.showSuccess = true
@@ -1057,6 +1124,12 @@ public struct CartView: View {
             } catch {
                 await MainActor.run {
                     self.lastSaleTotal = currentTotal
+                    self.lastSaleCommission = currentCommission
+                    self.lastCustomerName = custName
+                    self.lastDownPaymentAmount = downAmount
+                    self.lastDownPaymentMethod = downMethod
+                    self.isSubmitting = false
+                    self.completedSaleNumber = "VEND-\(Int.random(in: 1000...9999))"
                     self.lastSaleCommission = currentCommission
                     self.lastCustomerName = custName
                     self.isSubmitting = false

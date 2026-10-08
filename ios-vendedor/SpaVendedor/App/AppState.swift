@@ -205,10 +205,14 @@ public final class AppState {
     }
 
     public func loadSavedUser() -> User? {
-        guard let data = UserDefaults.standard.data(forKey: "saved_logged_user"),
-              let user = try? JSONDecoder().decode(User.self, from: data) else {
+        guard let data = UserDefaults.standard.data(forKey: "saved_logged_user") else {
             return nil
         }
-        return user
+        do {
+            return try JSONDecoder().decode(User.self, from: data)
+        } catch {
+            UserDefaults.standard.removeObject(forKey: "saved_logged_user")
+            return nil
+        }
     }
 }

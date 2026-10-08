@@ -36,7 +36,13 @@ public struct CustomizationOptions: Codable, Hashable {
     // Tecido Tampo Superior (Colchão)
     public var topFabric: String = "Matelassê Branco Acolchoado"
 
-    // Revestimento Faixa Lateral / Box (Veludo)
+    // Tecido Tampo Inferior (Colchão - Reforma)
+    public var bottomFabric: String = "TNT Antiderrapante Preto 100g"
+
+    // TNT de Cima (Box)
+    public var topTNT: String = "TNT Antiderrapante Preto 100g/150g"
+
+    // Revestimento Faixa Lateral / Forragem Box (Veludo / Suede)
     public var fabricType: String = "Veludo Nobre"
     public var fabricColor: String = "Bege Areia"
     public var fabricColorHex: String = "#D4C4B5"
@@ -44,29 +50,40 @@ public struct CustomizationOptions: Codable, Hashable {
     // Fitilho de Fechamento (Debrum)
     public var fitilho: String = "Fitilho Tom sobre Tom"
 
-    // Camada Extra de Espuma (Pillow Top)
+    // Camada Extra de Espuma (Exclusivamente 5cm na Reforma de Colchão)
     public var extraFoam: ExtraFoamType = .none
     public var extraFoamHeight: Double = 0.0
 
+    // Conversão para Vibroterapia (Reforma)
+    public var isVibroConversion: Bool = false
+    public var vibroPrice: Double = 850.0
+
     // Pés do Box
-    public var feetType: String = "Pé Plástico 12cm Preto"
+    public var feetType: String = "Pé Madeira Maciça 12cm Tabaco"
 
     // Observações Técnicas
     public var observations: String = ""
 
     public var extraPrice: Double {
-        extraFoam.price
+        extraFoam.price + (isVibroConversion ? vibroPrice : 0.0)
     }
 
     public var summaryText: String {
         var parts: [String] = []
         parts.append(size.rawValue)
-        if extraFoam != .none {
-            parts.append(extraFoam.badge)
+        parts.append("Tampo: \(topFabric)")
+        if !bottomFabric.isEmpty && bottomFabric != "TNT Antiderrapante Preto 100g" {
+            parts.append("Fundo: \(bottomFabric)")
         }
         parts.append("Tecido: \(fabricColor)")
         if !fitilho.isEmpty && fitilho != "Fitilho Tom sobre Tom" {
             parts.append(fitilho)
+        }
+        if extraFoam != .none {
+            parts.append(extraFoam.badge)
+        }
+        if isVibroConversion {
+            parts.append("Vibroterapia (+R$ 850)")
         }
         return parts.joined(separator: " • ")
     }
@@ -93,16 +110,14 @@ public enum MattressSize: String, CaseIterable, Codable {
 }
 
 public enum ExtraFoamType: String, CaseIterable, Codable {
-    case none = "Sem Camada Extra (Padrão de Fábrica)"
-    case d28_3cm = "Camada Extra +3cm Espuma D-28 Soft"
-    case d28_5cm = "Camada Extra +5cm Espuma D-28 Conforto"
-    case r26_5cm = "Camada Extra +5cm Ortopédica Firme (R-26)"
+    case none = "Sem Camada Extra (0 cm)"
+    case d33_5cm = "Camada Adicional +5cm Espuma D-33 Conforto"
+    case r26_5cm = "Camada Adicional +5cm Ortopédica Firme (R-26)"
 
     public var badge: String {
         switch self {
         case .none: return "Padrão"
-        case .d28_3cm: return "+3cm Macio"
-        case .d28_5cm: return "+5cm Conforto"
+        case .d33_5cm: return "+5cm Conforto"
         case .r26_5cm: return "+5cm Firme"
         }
     }
@@ -110,8 +125,7 @@ public enum ExtraFoamType: String, CaseIterable, Codable {
     public var price: Double {
         switch self {
         case .none: return 0.0
-        case .d28_3cm: return 180.0
-        case .d28_5cm: return 280.0
+        case .d33_5cm: return 280.0
         case .r26_5cm: return 320.0
         }
     }

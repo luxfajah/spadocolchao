@@ -118,7 +118,9 @@ export async function POST(req: NextRequest) {
       total,
       paymentMethodId,
       paymentMethodName,
+      installments,
       hasDownPayment,
+      isDownPaymentPaid,
       downPaymentAmount,
       downPaymentMethod,
       scheduleMode,
@@ -167,7 +169,8 @@ export async function POST(req: NextRequest) {
     const finalFreight = Number(freight || 0)
     const effectiveDownPaymentAmount = hasDownPayment ? Number(downPaymentAmount || 0) : 0
     const finalTotal = Number(total)
-    const initialPaid = effectiveDownPaymentAmount > 0 ? effectiveDownPaymentAmount : 0
+    const isEntryPaid = isDownPaymentPaid !== false
+    const initialPaid = hasDownPayment && isEntryPaid ? effectiveDownPaymentAmount : 0
     const isFullyPaid = initialPaid >= finalTotal - 0.05
     const isPartiallyPaid = initialPaid > 0 && !isFullyPaid
     const financialStatus = isFullyPaid ? "PAID" : isPartiallyPaid ? "PARTIALLY_PAID" : "PENDING"
@@ -264,7 +267,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (hasDownPayment && effectiveDownPaymentAmount > 0) {
-        // Parcela 1: Entrada paga hoje
+        // Parcela 1: Entrada paga hoje (ou pendente se não paga)
         let downMethod = method
         if (downPaymentMethod) {
           const found = await tx.paymentMethod.findFirst({
@@ -280,42 +283,72 @@ export async function POST(req: NextRequest) {
             installmentNumber: 1,
             dueDate: new Date(),
             amount: effectiveDownPaymentAmount,
-            status: "PAID",
-            paidAmount: effectiveDownPaymentAmount,
-            paidAt: new Date(),
+            status: isEntryPaid ? "PAID" : "PENDING",
+            paidAmount: isEntryPaid ? effectiveDownPaymentAmount : 0,
+            paidAt: isEntryPaid ? new Date() : null,
           },
         })
 
-        // Parcela 2: Saldo na entrega
+        // Parcela 2+: Saldo a receber na entrega
         const remainingBalance = Math.max(0, finalTotal - effectiveDownPaymentAmount)
         if (remainingBalance > 0.05) {
+          const numInst = Number(installments) > 1 ? Number(installments) : 1
+          const instAmount = Number((remainingBalance / numInst).toFixed(2))
+          const baseDueDate = parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000))
+
+          for (let i = 1; i <= numInst; i++) {
+            const instDueDate = new Date(baseDueDate)
+            if (i > 1) {
+              instDueDate.setMonth(instDueDate.getMonth() + (i - 1))
+            }
+            const isLast = i === numInst
+            const finalInstAmount = isLast
+              ? Number((remainingBalance - instAmount * (numInst - 1)).toFixed(2))
+              : instAmount
+
+            await tx.saleInstallment.create({
+              data: {
+                saleId: sale.id,
+                paymentMethodId: method?.id || "",
+                installmentNumber: 1 + i,
+                dueDate: instDueDate,
+                amount: finalInstAmount,
+                status: "PENDING",
+                paidAmount: 0,
+                paidAt: null,
+              },
+            })
+          }
+        }
+      } else {
+        // Sem entrada: parcelamento iniciando na entrega
+        const numInst = Number(installments) > 1 ? Number(installments) : 1
+        const instAmount = Number((finalTotal / numInst).toFixed(2))
+        const baseDueDate = parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000))
+
+        for (let i = 1; i <= numInst; i++) {
+          const instDueDate = new Date(baseDueDate)
+          if (i > 1) {
+            instDueDate.setMonth(instDueDate.getMonth() + (i - 1))
+          }
+          const isLast = i === numInst
+          const finalInstAmount = isLast
+            ? Number((finalTotal - instAmount * (numInst - 1)).toFixed(2))
+            : instAmount
+
           await tx.saleInstallment.create({
             data: {
               saleId: sale.id,
               paymentMethodId: method?.id || "",
-              installmentNumber: 2,
-              dueDate: parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000)),
-              amount: remainingBalance,
+              installmentNumber: i,
+              dueDate: instDueDate,
+              amount: finalInstAmount,
               status: "PENDING",
               paidAmount: 0,
               paidAt: null,
             },
           })
         }
-      } else {
-        // Sem entrada: parcela única para a entrega
-        await tx.saleInstallment.create({
-          data: {
-            saleId: sale.id,
-            paymentMethodId: method?.id || "",
-            installmentNumber: 1,
-            dueDate: parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000)),
-            amount: finalTotal,
-            status: "PENDING",
-            paidAmount: 0,
-            paidAt: null,
-          },
-        })
       }
 
       // Cria o Pedido (Order)

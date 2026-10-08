@@ -5,6 +5,10 @@ public struct SaleSuccessSheet: View {
     public let customerName: String
     public let totalAmount: Double
     public let estimatedCommission: Double
+    public let downPaymentAmount: Double
+    public let downPaymentMethod: String
+    public let remainingBalance: Double
+    public let deliveryPaymentMethod: String
     public let onDismiss: () -> Void
 
     public init(
@@ -12,12 +16,20 @@ public struct SaleSuccessSheet: View {
         customerName: String,
         totalAmount: Double,
         estimatedCommission: Double,
+        downPaymentAmount: Double = 0.0,
+        downPaymentMethod: String = "",
+        remainingBalance: Double = 0.0,
+        deliveryPaymentMethod: String = "",
         onDismiss: @escaping () -> Void
     ) {
         self.saleNumber = saleNumber
         self.customerName = customerName
         self.totalAmount = totalAmount
         self.estimatedCommission = estimatedCommission
+        self.downPaymentAmount = downPaymentAmount
+        self.downPaymentMethod = downPaymentMethod
+        self.remainingBalance = remainingBalance
+        self.deliveryPaymentMethod = deliveryPaymentMethod
         self.onDismiss = onDismiss
     }
 
@@ -26,25 +38,25 @@ public struct SaleSuccessSheet: View {
             Color(uiColor: .systemBackground)
                 .ignoresSafeArea()
 
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 Spacer()
 
                 // Sucesso com Animação
                 ZStack {
                     Circle()
                         .fill(Color.emerald.opacity(0.15))
-                        .frame(width: 100, height: 100)
+                        .frame(width: 90, height: 90)
 
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 68))
+                        .font(.system(size: 60))
                         .foregroundStyle(Color.emerald)
                 }
 
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     Text("Venda Confirmada!")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
 
-                    Text("Pedido enviado para a linha de produção")
+                    Text("Pedido registrado e enviado para produção")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
@@ -82,6 +94,61 @@ public struct SaleSuccessSheet: View {
                                 .foregroundStyle(Color.blue)
                         }
 
+                        // Seção de Entrada Paga no Ato e Saldo na Entrega
+                        if downPaymentAmount > 0 {
+                            VStack(spacing: 6) {
+                                HStack {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .foregroundStyle(Color.emerald)
+                                        Text("Entrada Paga no Ato:")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.secondary)
+                                    }
+                                    Spacer()
+                                    VStack(alignment: .trailing, spacing: 1) {
+                                        Text(formatCurrency(downPaymentAmount))
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.emerald)
+                                        if !downPaymentMethod.isEmpty {
+                                            Text("via \(downPaymentMethod)")
+                                                .font(.system(size: 9))
+                                                .foregroundStyle(Color.secondary)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.emerald.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
+                                HStack {
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "truck.box.badge.clock.fill")
+                                            .foregroundStyle(Color.blue)
+                                        Text("Saldo na Entrega:")
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.secondary)
+                                    }
+                                    Spacer()
+                                    VStack(alignment: .trailing, spacing: 1) {
+                                        Text(formatCurrency(remainingBalance > 0 ? remainingBalance : max(0.0, totalAmount - downPaymentAmount)))
+                                            .font(.caption.bold())
+                                            .foregroundStyle(Color.blue)
+                                        if !deliveryPaymentMethod.isEmpty {
+                                            Text("a receber via \(deliveryPaymentMethod)")
+                                                .font(.system(size: 9).bold())
+                                                .foregroundStyle(Color.blue)
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color.blue.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                            }
+                        }
+
                         // Badge de Comissão
                         HStack {
                             Image(systemName: "sparkles")
@@ -115,7 +182,7 @@ public struct SaleSuccessSheet: View {
                         }
                         .frame(maxWidth: .infinity)
                         .frame(height: 52)
-                        .background(Color(red: 37/255, green: 211/255, blue: 102/255)) // WhatsApp Green
+                        .background(Color(red: 37/255, green: 211/255, blue: 102/255))
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                     }
@@ -138,11 +205,22 @@ public struct SaleSuccessSheet: View {
     }
 
     private func shareViaWhatsApp() {
+        var financeText = ""
+        if downPaymentAmount > 0 {
+            let saldo = remainingBalance > 0 ? remainingBalance : max(0.0, totalAmount - downPaymentAmount)
+            financeText = """
+            
+            *Condição de Pagamento:*
+            ✅ Entrada Paga no Ato: \(formatCurrency(downPaymentAmount)) (\(downPaymentMethod))
+            🚚 Saldo Restante na Entrega: \(formatCurrency(saldo))
+            """
+        }
+
         let text = """
         *Spa do Colchão - Comprovante de Pedido* 🛏️
         Pedido: *\(saleNumber)*
         Cliente: \(customerName)
-        Valor Total: \(formatCurrency(totalAmount))
+        Valor Total: \(formatCurrency(totalAmount))\(financeText)
         Status: Confirmado e em Produção!
         
         Obrigado pela preferência!

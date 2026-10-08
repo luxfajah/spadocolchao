@@ -96,6 +96,9 @@ export function detectMattressDimensions(
   return { sizeKey: "CASAL", label: cfg.label, width: cfg.width, length: cfg.length, areaM2: Number((cfg.width * cfg.length).toFixed(4)) }
 }
 
+export const VIBRO_CONVERSION_PRICE = 850;
+export const VIBRO_CONVERSION_COST = 450;
+
 /**
  * Matriz de Precificação Oficial de Camada Extra de Espuma
  * Retorna custo de matéria-prima, volume em m³ e preço sugerido de venda com 30% de margem líquida
@@ -114,28 +117,22 @@ export function getExtraFoamPricing(
       additionalPrice: 0,
       minimumFloorPrice: 0,
       priceBadge: "Incluso",
-    }
+    };
   }
 
   const dim = MATTRESS_SIZE_CONFIG[sizeKey] || MATTRESS_SIZE_CONFIG.CASAL
   const area = dim.width * dim.length
 
   let heightCm = 5
-  let costPerM3 = 950 // D28 default
-  let foamName = "Camada Extra de Espuma"
+  let costPerM3 = 1050 // D33 / D28 conforto
+  let foamName = "Camada Extra de Espuma 5cm"
   let laborMin = 20
   let glueBaseKg = 0.22
 
-  if (foamId === "extra_d28_3cm") {
-    heightCm = 3
-    costPerM3 = 950
-    foamName = "Camada Extra +3cm Espuma D-28 Soft"
-    laborMin = 15
-    glueBaseKg = 0.15
-  } else if (foamId === "extra_d28_5cm") {
+  if (foamId === "extra_d33_5cm" || foamId === "extra_d28_5cm") {
     heightCm = 5
-    costPerM3 = 950
-    foamName = "Camada Extra +5cm Espuma D-28 Conforto"
+    costPerM3 = 1050
+    foamName = "Camada Extra +5cm Espuma D-33 Conforto"
     laborMin = 20
     glueBaseKg = 0.22
   } else if (foamId === "extra_r26_5cm") {

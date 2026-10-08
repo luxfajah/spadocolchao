@@ -6,27 +6,36 @@ import Observation
 public final class LocationManager: NSObject, CLLocationManagerDelegate {
     public static let shared = LocationManager()
 
-    private let manager = CLLocationManager()
+    private var manager: CLLocationManager?
     public var lastLocation: CLLocation?
     public var authorizationStatus: CLAuthorizationStatus = .notDetermined
 
     override private init() {
         super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
-        authorizationStatus = manager.authorizationStatus
+    }
+
+    private func getManager() -> CLLocationManager {
+        if let existing = manager {
+            return existing
+        }
+        let mgr = CLLocationManager()
+        mgr.delegate = self
+        mgr.desiredAccuracy = kCLLocationAccuracyHundredMeters
+        self.authorizationStatus = mgr.authorizationStatus
+        self.manager = mgr
+        return mgr
     }
 
     public func requestAuthorization() {
-        manager.requestWhenInUseAuthorization()
+        getManager().requestWhenInUseAuthorization()
     }
 
     public func startUpdating() {
-        manager.startUpdatingLocation()
+        getManager().startUpdatingLocation()
     }
 
     public func stopUpdating() {
-        manager.stopUpdatingLocation()
+        manager?.stopUpdatingLocation()
     }
 
     // MARK: - Delegate
