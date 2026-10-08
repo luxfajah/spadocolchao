@@ -19,16 +19,23 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
   if (!product) return null;
 
   const handleAdd = (details: any, finalPrice: number, quantity: number = 1) => {
+    const extraFoamPrice = Number(details?.extraFoamPrice) || 0;
+    const extraFoamCost = Number(details?.extraFoamCost) || 0;
+    const basePrice = Number(product.price) || 0;
+    const baseMinPrice = Number(product.minimumPrice) || 0;
+    const effectiveOriginalPrice = basePrice + extraFoamPrice;
+    const effectiveMinPrice = baseMinPrice > 0 ? (baseMinPrice + (details?.minimumFloorPrice || extraFoamCost)) : 0;
+
     addItem({
       id: Math.random().toString(),
       productServiceId: product.id,
       name: product.name,
       type: product.category,
-      originalPrice: product.price,
-      minimumPrice: product.minimumPrice || 0,
+      originalPrice: effectiveOriginalPrice,
+      minimumPrice: effectiveMinPrice,
       unitPrice: finalPrice,
       quantity: quantity,
-      discountAmount: Math.max(0, (product.price - finalPrice) * quantity),
+      discountAmount: Math.max(0, (effectiveOriginalPrice - finalPrice) * quantity),
       totalAmount: finalPrice * quantity,
       allowPriceChangeInPDV: product.allowPriceChangeInPDV ?? true,
       requirePriceChangeJustification: product.requirePriceChangeJustification ?? false,

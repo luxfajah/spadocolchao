@@ -58,7 +58,15 @@ export async function getInitialPdvData() {
     }),
     prisma.supplyItem.findMany({ 
       where: { isActive: true },
-      select: { id: true, name: true, currentStock: true, unit: true, category: { select: { name: true } } },
+      select: { 
+        id: true, 
+        name: true, 
+        code: true, 
+        currentStock: true, 
+        averageCost: true, 
+        unit: true, 
+        category: { select: { name: true } } 
+      },
       orderBy: { name: 'asc' }
     })
   ])
@@ -484,10 +492,26 @@ export async function finalizeSale(payload: any) {
             }
 
             // Se o colchão teve Camada Extra de Espuma selecionada
-            if (item.details?.hasExtraFoam && item.details?.extraFoamSupplyItemId) {
-              const extraFoamSupply = await tx.supplyItem.findUnique({
-                where: { id: item.details.extraFoamSupplyItemId }
-              })
+            if (item.details?.hasExtraFoam) {
+              let extraFoamSupply = item.details?.extraFoamSupplyItemId
+                ? await tx.supplyItem.findUnique({
+                    where: { id: item.details.extraFoamSupplyItemId }
+                  })
+                : null
+
+              if (!extraFoamSupply) {
+                const isR26 = item.details?.extraFoamOption?.includes("R-26") || item.details?.extraFoamOption?.includes("R26")
+                const targetCode = isR26 ? "INS-ESP-R26-5CM" : "INS-ESP-D28"
+                extraFoamSupply = await tx.supplyItem.findFirst({
+                  where: {
+                    OR: [
+                      { code: targetCode },
+                      { name: isR26 ? "Espuma Aglomerada R-26 (5 cm)" : "Espuma Poliuretano D-28 Bloco" }
+                    ]
+                  }
+                })
+              }
+
               if (extraFoamSupply) {
                 const addedHeightCm = Number(item.details.addedFoamHeight) || 5
                 const mattressDim = detectMattressDimensions(
@@ -503,6 +527,7 @@ export async function finalizeSale(payload: any) {
                   itemQty
                 )
                 const foamQty = extraFoamSupply.unit === 'M3' ? foamVolumeM3 : itemQty
+                const foamDirectCost = (extraFoamSupply.averageCost || 0) * foamQty
 
                 await tx.saleItemMaterialRequirement.create({
                   data: {
@@ -513,8 +538,8 @@ export async function finalizeSale(payload: any) {
                     quantityCalculated: foamQty,
                     unit: extraFoamSupply.unit,
                     unitCostSnapshot: extraFoamSupply.averageCost || 0,
-                    totalCostSnapshot: (extraFoamSupply.averageCost || 0) * foamQty,
-                    notes: `Pillow / Camada Extra: ${item.details.extraFoamOption || extraFoamSupply.name}`
+                    totalCostSnapshot: foamDirectCost,
+                    notes: `Pillow / Camada Extra: ${item.details.extraFoamOption || extraFoamSupply.name} (${mattressDim.label})`
                   }
                 })
 

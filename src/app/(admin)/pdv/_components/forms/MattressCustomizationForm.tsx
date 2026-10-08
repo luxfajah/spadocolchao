@@ -180,7 +180,13 @@ export function MattressCustomizationForm({
   const matelasseSupply = supplyItems.find((s: any) => s.code === "INS-TEC-MAT" || s.name?.toLowerCase().includes("matelassê"));
   const fitilhoPadraoSupply = supplyItems.find((s: any) => s.code === "INS-FIT-035");
   const fitilhoColmeiaSupply = supplyItems.find((s: any) => s.code === "INS-FIT-COL");
-  const foamSupply = selectedFoam.code ? supplyItems.find((s: any) => s.code === selectedFoam.code) : null;
+  const foamSupply = selectedFoam.code
+    ? supplyItems.find(
+        (s: any) =>
+          s.code === selectedFoam.code ||
+          (selectedFoam.code?.includes("R26") ? s.name?.includes("R-26") : s.name?.includes("D-28"))
+      )
+    : null;
 
   // Atualização dinâmica do preço ao trocar a camada de espuma
   const handleSelectFoam = (f: typeof EXTRA_FOAM_OPTIONS[0]) => {
