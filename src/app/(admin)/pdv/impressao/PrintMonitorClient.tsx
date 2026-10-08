@@ -52,9 +52,13 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
   const [lastCheck, setLastCheck] = useState<Date>(new Date());
   const [showKioskGuide, setShowKioskGuide] = useState<boolean>(false);
   const [isPrintingNow, setIsPrintingNow] = useState<boolean>(false);
+  const [onlineUrl, setOnlineUrl] = useState<string>("https://spadocolchao.vercel.app/pdv/impressao");
 
-  // Armazenar IDs já impressos no localStorage
+  // Armazenar IDs já impressos no localStorage e capturar URL online
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOnlineUrl(`${window.location.origin}/pdv/impressao`);
+    }
     try {
       const stored = localStorage.getItem("spa_printed_order_ids");
       if (stored) {
@@ -642,14 +646,21 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 Passo 1: Criar atalho no Windows
               </p>
               <ol className="list-decimal pl-4 space-y-1 text-slate-600">
-                <li>Clique com o botão direito na Área de Trabalho do Windows e vá em <strong>Novo &gt; Atalho</strong>.</li>
-                <li>No campo de destino, insira o comando abaixo:</li>
+                <li>No seu computador Windows, clique com o botão direito na Área de Trabalho e vá em <strong>Novo &gt; Atalho</strong>.</li>
+                <li>No campo de destino do atalho, insira o comando abaixo:</li>
               </ol>
-              <div className="rounded-xl bg-slate-900 text-sky-300 p-3 font-mono text-[11px] overflow-x-auto">
-                chrome.exe --kiosk-printing &quot;http://localhost:3000/pdv/impressao&quot;
+              <div className="rounded-xl bg-slate-900 text-sky-300 p-3 font-mono text-[11px] overflow-x-auto flex flex-wrap items-center justify-between gap-2">
+                <code className="text-emerald-400">chrome.exe --kiosk-printing &quot;{onlineUrl}&quot;</code>
+                <button
+                  type="button"
+                  onClick={() => navigator.clipboard.writeText(`chrome.exe --kiosk-printing "${onlineUrl}"`)}
+                  className="rounded-lg bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2.5 py-1 text-[10px] font-bold hover:bg-sky-500 hover:text-white transition-colors"
+                >
+                  Copiar Comando
+                </button>
               </div>
               <p className="text-[10px] text-slate-500">
-                * Para o Edge, substitua <code>chrome.exe</code> por <code>msedge.exe</code>.
+                * Para o Microsoft Edge, use: <code>msedge.exe --kiosk-printing &quot;{onlineUrl}&quot;</code>
               </p>
             </div>
 
