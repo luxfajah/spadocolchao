@@ -266,6 +266,12 @@ public final class APIClient: Sendable {
         hasDownPayment: Bool = false,
         downPaymentAmount: Double = 0.0,
         downPaymentMethod: String = "PIX",
+        scheduleMode: String = "both",
+        pickupDate: String? = nil,
+        pickupTime: String? = nil,
+        deliveryDate: String? = nil,
+        deliveryTime: String? = nil,
+        logisticsNotes: String? = nil,
         notes: String
     ) async throws -> (saleNumber: String, orderId: String) {
         let endpoint = "\(baseURLString)/api/vendedor/pedidos"
@@ -294,7 +300,7 @@ public final class APIClient: Sendable {
             ]
         }
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "customerId": customerId,
             "sellerId": sellerId ?? "",
             "subtotal": subtotal,
@@ -305,9 +311,16 @@ public final class APIClient: Sendable {
             "hasDownPayment": hasDownPayment,
             "downPaymentAmount": downPaymentAmount,
             "downPaymentMethod": downPaymentMethod,
+            "scheduleMode": scheduleMode,
             "notes": notes,
             "items": itemsPayload
         ]
+
+        if let pDate = pickupDate { body["pickupDate"] = pDate }
+        if let pTime = pickupTime { body["pickupTime"] = pTime }
+        if let dDate = deliveryDate { body["deliveryDate"] = dDate }
+        if let dTime = deliveryTime { body["deliveryTime"] = dTime }
+        if let lNotes = logisticsNotes { body["logisticsNotes"] = lNotes }
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 

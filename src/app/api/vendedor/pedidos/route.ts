@@ -121,8 +121,15 @@ export async function POST(req: NextRequest) {
       hasDownPayment,
       downPaymentAmount,
       downPaymentMethod,
-      notes,
+      scheduleMode,
+      pickupDate,
+      pickupTime,
       deliveryDate,
+      deliveryTime,
+      recipientName,
+      recipientPhone,
+      logisticsNotes,
+      notes,
     } = body
 
     if (!customerId) {
@@ -165,17 +172,30 @@ export async function POST(req: NextRequest) {
     const isPartiallyPaid = initialPaid > 0 && !isFullyPaid
     const financialStatus = isFullyPaid ? "PAID" : isPartiallyPaid ? "PARTIALLY_PAID" : "PENDING"
 
+    const parsedDelivery = deliveryDate
+      ? new Date(deliveryDate.includes("T") ? deliveryDate : `${deliveryDate}T${deliveryTime || "00:00"}:00`)
+      : null
+    const parsedPickup = pickupDate
+      ? new Date(pickupDate.includes("T") ? pickupDate : `${pickupDate}T${pickupTime || "00:00"}:00`)
+      : null
+
     const downPaymentNote = hasDownPayment && effectiveDownPaymentAmount > 0
       ? `Entrada no ato: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(effectiveDownPaymentAmount)} (${downPaymentMethod || paymentMethodName || "PIX"}) | Saldo na entrega: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Math.max(0, finalTotal - effectiveDownPaymentAmount))}`
       : null
     const freightNote = finalFreight > 0
       ? `Frete: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(finalFreight)}`
       : null
+    const scheduleNotes = [
+      parsedPickup ? `Retirada agendada: ${parsedPickup.toLocaleDateString("pt-BR")} (${pickupTime || "Comercial"})` : null,
+      parsedDelivery ? `Entrega agendada: ${parsedDelivery.toLocaleDateString("pt-BR")} (${deliveryTime || "Comercial"})` : null,
+      logisticsNotes ? `Logística: ${logisticsNotes}` : null,
+    ].filter(Boolean).join(" | ")
 
     const combinedSaleNotes = [
       notes || "Venda emitida via App iOS Vendedor",
       freightNote,
       downPaymentNote,
+      scheduleNotes,
     ].filter(Boolean).join(" | ")
 
     const result = await prisma.$transaction(async (tx) => {
@@ -259,7 +279,7 @@ export async function POST(req: NextRequest) {
               saleId: sale.id,
               paymentMethodId: method?.id || "",
               installmentNumber: 2,
-              dueDate: deliveryDate ? new Date(deliveryDate) : new Date(Date.now() + 7 * 86400 * 1000),
+              dueDate: parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000)),
               amount: remainingBalance,
               status: "PENDING",
               paidAmount: 0,
@@ -274,7 +294,7 @@ export async function POST(req: NextRequest) {
             saleId: sale.id,
             paymentMethodId: method?.id || "",
             installmentNumber: 1,
-            dueDate: deliveryDate ? new Date(deliveryDate) : new Date(Date.now() + 7 * 86400 * 1000),
+            dueDate: parsedDelivery || (parsedPickup ?? new Date(Date.now() + 7 * 86400 * 1000)),
             amount: finalTotal,
             status: "PENDING",
             paidAmount: 0,
@@ -290,13 +310,39 @@ export async function POST(req: NextRequest) {
           customerId,
           sellerId: sellerId || null,
           currentStatus: "SOLD",
-          deliveryDate: deliveryDate ? new Date(deliveryDate) : null,
-          promisedDate: deliveryDate
-            ? new Date(deliveryDate)
-            : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+          pickupDate: parsedPickup,
+          deliveryDate: parsedDelivery,
+          promisedDate: parsedDelivery
+            ? parsedDelivery
+            : (parsedPickup ? parsedPickup : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000)),
+          recipientName: recipientName || null,
+          recipientPhone: recipientPhone || null,
           notes: combinedSaleNotes,
         },
       })
+
+      if (parsedDelivery) {
+        await tx.orderDelivery.create({
+          data: {
+            orderId: order.id,
+            status: "PENDING",
+            scheduledDate: parsedDelivery,
+            recipientName: recipientName || null,
+            recipientPhone: recipientPhone || null,
+            notes: logisticsNotes || null,
+          },
+        })
+      }
+
+      if (parsedPickup || parsedDelivery || logisticsNotes) {
+        await tx.orderNote.create({
+          data: {
+            orderId: order.id,
+            type: "DELIVERY",
+            content: scheduleNotes || "Agendamento registrado via App iOS",
+          },
+        })
+      }
 
       // Registra Histórico
       await tx.orderStatusHistory.create({

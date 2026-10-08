@@ -71,6 +71,23 @@ public final class AppState {
         cartItems.removeAll { $0.id == id }
     }
 
+    public func itemQuantity(for product: Product) -> Int {
+        cartItems.filter { $0.product.id == product.id }.reduce(0) { $0 + $1.quantity }
+    }
+
+    public func updateQuantity(for product: Product, delta: Int) {
+        if let idx = cartItems.firstIndex(where: { $0.product.id == product.id }) {
+            let newQty = cartItems[idx].quantity + delta
+            if newQty <= 0 {
+                cartItems.remove(at: idx)
+            } else {
+                cartItems[idx].quantity = newQty
+            }
+        } else if delta > 0 {
+            addToCart(product: product, quantity: delta)
+        }
+    }
+
     public func clearCart() {
         cartItems.removeAll()
         globalDiscount = 0.0

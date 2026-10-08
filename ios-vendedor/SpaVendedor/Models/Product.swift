@@ -62,6 +62,50 @@ public struct Product: Codable, Identifiable, Hashable {
         type.localizedCaseInsensitiveContains("box")
     }
 
+    public var isReformaConjunto: Bool {
+        isReforma && (name.localizedCaseInsensitiveContains("conjunto") || (name.localizedCaseInsensitiveContains("colchão") && name.localizedCaseInsensitiveContains("box")))
+    }
+
+    public var isReformaColchao: Bool {
+        isReforma && !isReformaConjunto && (name.localizedCaseInsensitiveContains("colchão") || name.localizedCaseInsensitiveContains("colchao"))
+    }
+
+    public var isReformaBox: Bool {
+        isReforma && !isReformaConjunto && name.localizedCaseInsensitiveContains("box")
+    }
+
+    public var isColchaoNovo: Bool {
+        !isReforma && (name.localizedCaseInsensitiveContains("colchão") || name.localizedCaseInsensitiveContains("colchao"))
+    }
+
+    public var isCamaBox: Bool {
+        !isReforma && name.localizedCaseInsensitiveContains("box")
+    }
+
+    public var isPillowTop: Bool {
+        name.localizedCaseInsensitiveContains("pillow") || name.localizedCaseInsensitiveContains("pilow")
+    }
+
+    public var detectedSize: String? {
+        let lower = name.lowercased()
+        if lower.contains("solteiro") || lower.contains("0,88") || lower.contains("88 x") || lower.contains("88x") { return "Solteiro" }
+        if lower.contains("queen") || lower.contains("1,58") || lower.contains("158 x") || lower.contains("158x") { return "Queen" }
+        if lower.contains("king") || lower.contains("1,93") || lower.contains("193 x") || lower.contains("193x") { return "King" }
+        if lower.contains("casal") || lower.contains("1,38") || lower.contains("138 x") || lower.contains("138x") { return "Casal" }
+        if lower.contains("sob medida") { return "Sob Medida" }
+        return nil
+    }
+
+    public var categoryDisplayName: String {
+        if isReformaConjunto { return "Reforma Conjunto" }
+        if isReformaColchao { return "Reforma de Colchão" }
+        if isReformaBox { return "Reforma de Box" }
+        if isColchaoNovo { return "Colchão Novo" }
+        if isCamaBox { return "Base Cama Box" }
+        if isPillowTop { return "Pillow Top" }
+        return "Acessório"
+    }
+
     public init(
         id: String,
         name: String,

@@ -5,11 +5,28 @@ public struct PDVView: View {
 
     @State private var searchText = ""
     @State private var selectedCategory: String = "Todos"
+    @State private var selectedSize: String = "Todas as Medidas"
     @State private var productToCustomize: Product? = nil
     @State private var showCartSheet = false
     @State private var showCustomerPicker = false
 
-    private let categories = ["Todos", "Colchões Novos", "Reformas Colchão", "Reformas Box", "Acessórios"]
+    private let categories = [
+        "Todos",
+        "Reformas Colchão",
+        "Reformas Box",
+        "Reformas Conjunto",
+        "Colchões Novos",
+        "Camas Box",
+        "Pillow Top & Acessórios"
+    ]
+
+    private let sizeFilters = [
+        "Todas as Medidas",
+        "Solteiro",
+        "Casal",
+        "Queen",
+        "King"
+    ]
 
     public init() {}
 
@@ -20,10 +37,10 @@ public struct PDVView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 14) {
                         // Header com Saudação
                         BrandHeader(
-                            title: "Catálogo & Vendas",
+                            title: "Catálogo de Produtos",
                             subtitle: "Olá, \(appState.currentUser?.name ?? "Vendedor")",
                             isOffline: appState.isOfflineMode
                         )
@@ -42,7 +59,7 @@ public struct PDVView: View {
                                         HStack(spacing: 6) {
                                             Text(cust.fullName)
                                                 .font(.subheadline.bold())
-                                                .foregroundStyle(.primary)
+                                                .foregroundStyle(Color.primary)
                                                 .lineLimit(1)
                                             if cust.isCompany {
                                                 Text("PJ")
@@ -50,21 +67,21 @@ public struct PDVView: View {
                                                     .padding(.horizontal, 4)
                                                     .padding(.vertical, 1)
                                                     .background(Color.purple.opacity(0.12))
-                                                    .foregroundStyle(.purple)
+                                                    .foregroundStyle(Color.purple)
                                                     .clipShape(Capsule())
                                             }
                                         }
                                         Text(cust.phone ?? cust.formattedAddress)
                                             .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.secondary)
                                             .lineLimit(1)
                                     } else {
                                         Text("Selecionar Cliente da Venda")
                                             .font(.subheadline.bold())
-                                            .foregroundStyle(.primary)
-                                        Text("\(appState.customers.count) clientes cadastrados • Toque para pesquisar")
+                                            .foregroundStyle(Color.primary)
+                                        Text("\(appState.customers.count) clientes cadastrados • Toque para selecionar")
                                             .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(Color.secondary)
                                     }
                                 }
 
@@ -75,30 +92,30 @@ public struct PDVView: View {
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
                                     .background(Color.blue.opacity(0.12))
-                                    .foregroundStyle(.blue)
+                                    .foregroundStyle(Color.blue)
                                     .clipShape(Capsule())
                             }
                             .padding(12)
-                            .background(.ultraThinMaterial)
+                            .background(Color(uiColor: .secondarySystemGroupedBackground))
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .padding(.horizontal)
                         }
 
-                        // Barra de Pesquisa
+                        // Barra de Pesquisa Rápida
                         HStack {
                             Image(systemName: "magnifyingglass")
-                                .foregroundStyle(.secondary)
-                            TextField("Buscar colchão, reforma, medida...", text: $searchText)
+                                .foregroundStyle(Color.secondary)
+                            TextField("Buscar colchão, reforma, box, medida...", text: $searchText)
                                 .textFieldStyle(PlainTextFieldStyle())
                             if !searchText.isEmpty {
                                 Button(action: { searchText = "" }) {
                                     Image(systemName: "xmark.circle.fill")
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.secondary)
                                 }
                             }
                         }
                         .padding(12)
-                        .background(.ultraThinMaterial)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                         .padding(.horizontal)
 
@@ -114,7 +131,7 @@ public struct PDVView: View {
                                             .background(
                                                 selectedCategory == cat
                                                 ? Color.blue
-                                                : Color.secondary.opacity(0.12)
+                                                : Color(uiColor: .tertiarySystemFill)
                                             )
                                             .foregroundStyle(selectedCategory == cat ? Color.white : Color.primary)
                                             .clipShape(Capsule())
@@ -124,7 +141,54 @@ public struct PDVView: View {
                             .padding(.horizontal)
                         }
 
-                        // Lista / Grid de Produtos
+                        // Filtros Rápidos de Tamanho (Solteiro, Casal, Queen, King)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(sizeFilters, id: \.self) { sz in
+                                    Button(action: { selectedSize = sz }) {
+                                        HStack(spacing: 4) {
+                                            if sz != "Todas as Medidas" {
+                                                Image(systemName: "ruler")
+                                                    .font(.system(size: 10))
+                                            }
+                                            Text(sz)
+                                                .font(.caption.bold())
+                                        }
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 5)
+                                        .background(
+                                            selectedSize == sz
+                                            ? Color.purple
+                                            : Color(uiColor: .tertiarySystemFill).opacity(0.8)
+                                        )
+                                        .foregroundStyle(selectedSize == sz ? Color.white : Color.secondary)
+                                        .clipShape(Capsule())
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+
+                        // Contagem e Reset de Filtros
+                        HStack {
+                            Text("\(filteredProducts.count) item(ns) encontrado(s)")
+                                .font(.caption2.bold())
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                            if selectedCategory != "Todos" || selectedSize != "Todas as Medidas" || !searchText.isEmpty {
+                                Button("Limpar Filtros") {
+                                    selectedCategory = "Todos"
+                                    selectedSize = "Todas as Medidas"
+                                    searchText = ""
+                                }
+                                .font(.caption2.bold())
+                                .foregroundStyle(Color.blue)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.top, 2)
+
+                        // Lista / Cards de Produtos
                         if filteredProducts.isEmpty {
                             VStack(spacing: 12) {
                                 if appState.isLoading {
@@ -133,22 +197,27 @@ public struct PDVView: View {
                                 } else {
                                     Image(systemName: "shippingbox")
                                         .font(.system(size: 44))
-                                        .foregroundStyle(.secondary)
+                                        .foregroundStyle(Color.secondary)
                                 }
-                                Text(appState.isLoading ? "Sincronizando com Supabase..." : "Nenhum produto encontrado no catálogo")
+                                Text(appState.isLoading ? "Sincronizando com Supabase..." : "Nenhum produto encontrado")
                                     .font(.subheadline)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Color.secondary)
+                                if selectedCategory != "Todos" || selectedSize != "Todas as Medidas" || !searchText.isEmpty {
+                                    Button("Mostrar Todos os Produtos") {
+                                        selectedCategory = "Todos"
+                                        selectedSize = "Todas as Medidas"
+                                        searchText = ""
+                                    }
+                                    .buttonStyle(.bordered)
+                                    .padding(.top, 4)
+                                }
                             }
                             .padding(.top, 48)
                         } else {
                             LazyVStack(spacing: 12) {
                                 ForEach(filteredProducts) { product in
                                     ProductCardView(product: product) {
-                                        if product.isColchao || product.isReforma || product.isBox {
-                                            productToCustomize = product
-                                        } else {
-                                            appState.addToCart(product: product)
-                                        }
+                                        productToCustomize = product
                                     }
                                 }
                             }
@@ -186,24 +255,31 @@ public struct PDVView: View {
         }
     }
 
-    // MARK: - Filtro de Produtos
+    // MARK: - Filtro de Produtos Inteligente
     private var filteredProducts: [Product] {
         appState.products.filter { prod in
             let matchesCategory: Bool = {
                 switch selectedCategory {
-                case "Colchões Novos": return prod.isColchao && !prod.isReforma
-                case "Reformas Colchão": return prod.isReforma && prod.isColchao
-                case "Reformas Box": return prod.isBox
-                case "Acessórios": return !prod.isColchao && !prod.isReforma && !prod.isBox
+                case "Reformas Colchão": return prod.isReformaColchao
+                case "Reformas Box": return prod.isReformaBox
+                case "Reformas Conjunto": return prod.isReformaConjunto
+                case "Colchões Novos": return prod.isColchaoNovo
+                case "Camas Box": return prod.isCamaBox
+                case "Pillow Top & Acessórios": return prod.isPillowTop || (!prod.isColchao && !prod.isReforma && !prod.isBox)
                 default: return true
                 }
+            }()
+
+            let matchesSize: Bool = {
+                if selectedSize == "Todas as Medidas" { return true }
+                return prod.detectedSize == selectedSize
             }()
 
             let matchesSearch = searchText.isEmpty ||
                 prod.name.localizedCaseInsensitiveContains(searchText) ||
                 (prod.description ?? "").localizedCaseInsensitiveContains(searchText)
 
-            return matchesCategory && matchesSearch
+            return matchesCategory && matchesSize && matchesSearch
         }
     }
 
@@ -217,13 +293,13 @@ public struct PDVView: View {
                         .frame(width: 36, height: 36)
                     Text("\(appState.cartItemCount)")
                         .font(.headline.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.white)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Ver Carrinho")
                         .font(.headline.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.white)
                     Text(formatCurrency(appState.cartTotal))
                         .font(.subheadline)
                         .foregroundStyle(Color.white.opacity(0.85))
@@ -232,12 +308,12 @@ public struct PDVView: View {
                 Spacer()
 
                 HStack(spacing: 4) {
-                    Text("Avançar")
+                    Text("Finalizar Compra")
                         .font(.subheadline.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.white)
                     Image(systemName: "chevron.right")
                         .font(.caption.bold())
-                        .foregroundStyle(.white)
+                        .foregroundStyle(Color.white)
                 }
             }
             .padding(.horizontal, 18)
