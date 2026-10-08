@@ -36,8 +36,7 @@ public struct ProductCustomizerSheet: View {
 
     private var isReforma: Bool {
         product.isReforma ||
-        product.name.localizedCaseInsensitiveContains("reforma") ||
-        (product.category?.localizedCaseInsensitiveContains("reforma") ?? false)
+        (product.operationalCategory?.localizedCaseInsensitiveContains("reforma") ?? false)
     }
 
     private var isConjunto: Bool {
