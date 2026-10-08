@@ -10,10 +10,14 @@ export interface OrderPrintDocumentProps {
   companyInfo?: {
     name?: string;
     tradeName?: string;
+    legalName?: string;
     cnpj?: string;
+    stateRegistration?: string;
     phone?: string;
+    whatsapp?: string;
     address?: string;
     email?: string;
+    logoUrl?: string;
   };
 }
 
@@ -624,11 +628,15 @@ export function OrderPrintDocument({
   copies = 2,
   companyInfo = {
     name: "SPA DO COLCHÃO",
-    tradeName: "Indústria & Reforma Especializada de Colchões",
-    cnpj: "00.000.000/0001-00",
-    phone: "(11) 99999-9999",
-    address: "Fábrica e Loja Especializada",
-    email: "contato@spadocolchao.com.br",
+    tradeName: "Spa do Colchão",
+    legalName: "Spa do Colchão LTDA",
+    cnpj: "61.969.615/0001-15",
+    stateRegistration: "91163387-66",
+    phone: "(45) 99937-1901",
+    whatsapp: "(45) 99937-1901",
+    address: "Rua Luiza Wandscheer, 1510 - Panorama, Foz do Iguaçu - PR",
+    email: "contato@spadocolchao.com",
+    logoUrl: "/logo.png",
   },
 }: OrderPrintDocumentProps) {
   if (!order || !order.sale) {
@@ -679,36 +687,56 @@ export function OrderPrintDocument({
   const renderGuiaProducaoA4 = () => {
     return (
       <div
-        className={`guia-page guia-page-1 ${
+        className={`guia-page guia-page-1 relative ${
           showGuia2 ? "guia-has-next-page" : ""
         } w-full max-w-[210mm] h-[284mm] max-h-[284mm] bg-white text-black font-sans mx-auto p-3.5 sm:p-4 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[8px] leading-tight flex flex-col justify-between overflow-hidden`}
       >
-        <div className="flex-1 flex flex-col justify-between">
+        {/* MARCA D'ÁGUA CORPORATIVA CENTRALIZADA */}
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center z-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={companyInfo.logoUrl || "/logo.png"}
+            alt=""
+            className="w-[320px] max-w-[55%] opacity-[0.035] grayscale select-none filter contrast-125"
+          />
+        </div>
+
+        <div className="relative z-10 flex-1 flex flex-col justify-between">
           {/* CABEÇALHO CORPORATIVO DA FÁBRICA */}
           <header className="border-b-2 border-black pb-1.5 mb-1.5">
             <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="bg-black text-white px-2 py-0.5 text-[7.5px] font-black uppercase tracking-widest rounded-none">
-                    GUIA 1 DE 2: ORDEM DE PRODUÇÃO & CHÃO DE FÁBRICA
-                  </span>
-                  <span className="text-[7.5px] font-bold text-neutral-600 uppercase tracking-wider">
-                    EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}
-                  </span>
+              <div className="flex items-center gap-3 flex-1">
+                {/* LOGO DA EMPRESA NO TOPO */}
+                <img
+                  src={companyInfo.logoUrl || "/logo.png"}
+                  alt={companyInfo.name || "Spa do Colchão"}
+                  className="h-12 w-auto max-w-[90px] object-contain shrink-0"
+                />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="bg-black text-white px-2 py-0.5 text-[7.5px] font-black uppercase tracking-widest rounded-none">
+                      GUIA 1 DE 2: ORDEM DE PRODUÇÃO & CHÃO DE FÁBRICA
+                    </span>
+                    <span className="text-[7.5px] font-bold text-neutral-600 uppercase tracking-wider">
+                      EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}
+                    </span>
+                  </div>
+                  <h1 className="text-xl font-black tracking-tight text-black uppercase leading-none">
+                    {companyInfo.name}
+                  </h1>
+                  <p className="text-[8.5px] font-black text-neutral-800 uppercase tracking-wider mt-0.5">
+                    FICHA TÉCNICA INDUSTRIAL & ROTEIRO OPERACIONAL DE FABRICAÇÃO
+                  </p>
+                  <p className="text-[7.5px] text-neutral-600 mt-0.5">
+                    CNPJ: {companyInfo.cnpj} • I.E: {companyInfo.stateRegistration || "91163387-66"} • {companyInfo.address}
+                  </p>
                 </div>
-                <h1 className="text-xl font-black tracking-tight text-black uppercase leading-none">
-                  {companyInfo.name}
-                </h1>
-                <p className="text-[8.5px] font-black text-neutral-800 uppercase tracking-wider mt-0.5">
-                  FICHA TÉCNICA INDUSTRIAL & ROTEIRO OPERACIONAL DE FABRICAÇÃO
-                </p>
-                <p className="text-[7.5px] text-neutral-600 mt-0.5">
-                  CNPJ: {companyInfo.cnpj} • Unidade Fabril & Manufatura Especializada
-                </p>
               </div>
 
               {/* BOX RETANGULAR DO NÚMERO DO PEDIDO */}
-              <div className="border-2 border-black bg-neutral-50 p-1.5 min-w-[190px] text-right rounded-none">
+              <div className="border-2 border-black bg-neutral-50 p-1.5 min-w-[190px] text-right rounded-none shrink-0">
                 <span className="text-[7px] font-black uppercase tracking-widest text-neutral-500 block">
                   Nº UNIFICADO DO PEDIDO
                 </span>
@@ -1269,50 +1297,71 @@ export function OrderPrintDocument({
   const renderGuiaClienteGarantiaA4 = () => {
     return (
       <div
-        className="guia-page guia-page-2 w-full max-w-[210mm] h-[284mm] max-h-[284mm] bg-white text-black font-sans mx-auto p-3 sm:p-3.5 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[7.5px] leading-tight flex flex-col justify-between overflow-hidden"
+        className="guia-page guia-page-2 relative w-full max-w-[210mm] h-[284mm] max-h-[284mm] bg-white text-black font-sans mx-auto p-3 sm:p-3.5 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[7.5px] leading-tight flex flex-col justify-between overflow-hidden"
       >
-        {/* =================================================================== */}
-        {/* METADE SUPERIOR (DADOS DA COMPRA, CLIENTE, PAGAMENTO & RECEBIMENTO) */}
-        {/* =================================================================== */}
-        <div className="h-[136mm] max-h-[136mm] flex flex-col justify-between border-b-2 border-black pb-1 mb-1 overflow-hidden">
-          {/* CABEÇALHO CORPORATIVO DO PEDIDO */}
-          <header className="border-b-2 border-black pb-1 mb-1">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-widest rounded-none">
-                    GUIA 2 DE 2: COMPROVANTE DO CLIENTE & GARANTIA
-                  </span>
-                  <span className="text-[7px] font-bold text-neutral-600 uppercase tracking-wider">
-                    EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}
-                  </span>
-                </div>
-                <h1 className="text-lg font-black tracking-tight text-black uppercase leading-none">
-                  {companyInfo.name}
-                </h1>
-                <p className="text-[8px] font-black text-neutral-800 uppercase tracking-wider mt-0.5">
-                  COMPROVANTE DE PEDIDO & CERTIFICADO DE GARANTIA CONTRATUAL
-                </p>
-                <p className="text-[7px] text-neutral-600 mt-0.5">
-                  CNPJ: {companyInfo.cnpj} • SAC / WhatsApp: {companyInfo.phone} • {companyInfo.address}
-                </p>
-              </div>
+        {/* MARCA D'ÁGUA CORPORATIVA CENTRALIZADA */}
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center z-0 overflow-hidden"
+          aria-hidden="true"
+        >
+          <img
+            src={companyInfo.logoUrl || "/logo.png"}
+            alt=""
+            className="w-[320px] max-w-[55%] opacity-[0.035] grayscale select-none filter contrast-125"
+          />
+        </div>
 
-              {/* BOX RETANGULAR DO NÚMERO DO PEDIDO */}
-              <div className="border-2 border-black bg-neutral-50 p-1.5 min-w-[180px] text-right rounded-none">
-                <span className="text-[6.5px] font-black uppercase tracking-widest text-neutral-500 block">
-                  Nº UNIFICADO DO PEDIDO
-                </span>
-                <span className="text-xl font-black text-black tracking-tight block font-mono leading-none">
-                  {orderNumberInfo.badgeNumber}
-                </span>
-                <div className="mt-1 pt-0.5 border-t border-black/30 flex justify-between text-[7px]">
-                  <span className="font-bold text-neutral-600">Ref: {orderNumberInfo.reference}</span>
-                  <span className="font-black text-black uppercase">{seller?.name || "Balcão / Loja"}</span>
+        <div className="relative z-10 flex-1 flex flex-col justify-between h-full">
+          {/* =================================================================== */}
+          {/* METADE SUPERIOR (DADOS DA COMPRA, CLIENTE, PAGAMENTO & RECEBIMENTO) */}
+          {/* =================================================================== */}
+          <div className="h-[136mm] max-h-[136mm] flex flex-col justify-between border-b-2 border-black pb-1 mb-1 overflow-hidden">
+            {/* CABEÇALHO CORPORATIVO DO PEDIDO */}
+            <header className="border-b-2 border-black pb-1 mb-1">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 flex-1">
+                  {/* LOGO DA EMPRESA NO TOPO */}
+                  <img
+                    src={companyInfo.logoUrl || "/logo.png"}
+                    alt={companyInfo.name || "Spa do Colchão"}
+                    className="h-11 w-auto max-w-[85px] object-contain shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="bg-black text-white px-2 py-0.5 text-[7px] font-black uppercase tracking-widest rounded-none">
+                        GUIA 2 DE 2: COMPROVANTE DO CLIENTE & GARANTIA
+                      </span>
+                      <span className="text-[7px] font-bold text-neutral-600 uppercase tracking-wider">
+                        EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}
+                      </span>
+                    </div>
+                    <h1 className="text-lg font-black tracking-tight text-black uppercase leading-none">
+                      {companyInfo.name}
+                    </h1>
+                    <p className="text-[8px] font-black text-neutral-800 uppercase tracking-wider mt-0.5">
+                      COMPROVANTE DE PEDIDO & CERTIFICADO DE GARANTIA CONTRATUAL
+                    </p>
+                    <p className="text-[7px] text-neutral-600 mt-0.5">
+                      CNPJ: {companyInfo.cnpj} • SAC / WhatsApp: {companyInfo.phone} • {companyInfo.address}
+                    </p>
+                  </div>
+                </div>
+
+                {/* BOX RETANGULAR DO NÚMERO DO PEDIDO */}
+                <div className="border-2 border-black bg-neutral-50 p-1.5 min-w-[180px] text-right rounded-none shrink-0">
+                  <span className="text-[6.5px] font-black uppercase tracking-widest text-neutral-500 block">
+                    Nº UNIFICADO DO PEDIDO
+                  </span>
+                  <span className="text-xl font-black text-black tracking-tight block font-mono leading-none">
+                    {orderNumberInfo.badgeNumber}
+                  </span>
+                  <div className="mt-1 pt-0.5 border-t border-black/30 flex justify-between text-[7px]">
+                    <span className="font-bold text-neutral-600">Ref: {orderNumberInfo.reference}</span>
+                    <span className="font-black text-black uppercase">{seller?.name || "Balcão / Loja"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          </header>
+            </header>
 
           {/* 1. DADOS DO CLIENTE & LOCAL DE ENTREGA */}
           <section className="mb-1 border border-black rounded-none bg-white">
@@ -1683,11 +1732,12 @@ export function OrderPrintDocument({
 
           {/* RODAPÉ DO CERTIFICADO OFICIAL */}
           <div className="mt-1.5 pt-1 border-t-2 border-black flex items-center justify-between text-[7.5px] font-black text-black uppercase">
-            <span>{companyInfo.name} • INDÚSTRIA & REFORMA ESPECIALIZADA • CNPJ: {companyInfo.cnpj}</span>
+            <span>{companyInfo.legalName || companyInfo.name} • INDÚSTRIA & REFORMA ESPECIALIZADA • CNPJ: {companyInfo.cnpj}</span>
             <span>CERTIFICADO VINCULADO AO PEDIDO {orderNumberInfo.badgeNumber} • VALIDADE NACIONAL</span>
           </div>
         </div>
       </div>
+    </div>
     );
   };
 
@@ -1698,11 +1748,16 @@ export function OrderPrintDocument({
     return (
       <div className="w-[80mm] max-w-[80mm] bg-white text-black font-sans mx-auto p-2 text-[10px] leading-tight border border-black rounded-none">
         <div className="text-center border-b-2 border-black pb-2 mb-2">
-          <span className="text-[8px] font-black uppercase text-neutral-600 block">SPA DO COLCHÃO</span>
+          <img
+            src={companyInfo.logoUrl || "/logo.png"}
+            alt={companyInfo.name || "Spa do Colchão"}
+            className="h-9 w-auto mx-auto mb-1 object-contain"
+          />
+          <span className="text-[8px] font-black uppercase text-neutral-600 block">{companyInfo.name}</span>
           <h1 className="text-lg font-black uppercase text-black font-mono">{orderNumberInfo.badgeNumber}</h1>
           <p className="text-[8px] font-bold text-neutral-800 uppercase">Comprovante de Pedido & Garantia</p>
           <p className="text-[8px] text-neutral-500">
-            Ref: {orderNumberInfo.reference} • {formatDateTime(sale.saleDate || order.createdAt)}
+            CNPJ: {companyInfo.cnpj} • Ref: {orderNumberInfo.reference} • {formatDateTime(sale.saleDate || order.createdAt)}
           </p>
         </div>
 
@@ -1812,6 +1867,7 @@ export function OrderPrintDocument({
             margin: 6mm 8mm;
           }
           .guia-page {
+            position: relative !important;
             box-sizing: border-box !important;
             width: 100% !important;
             max-width: 194mm !important;

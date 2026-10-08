@@ -35,6 +35,7 @@ interface PrintMonitorClientProps {
   initialSelectedOrderId?: string;
   initialGuiaMode?: GuiaMode;
   initialAutoPrint?: boolean;
+  companyProfile?: any;
 }
 
 export type GuiaMode = "both" | "production" | "customer";
@@ -44,6 +45,7 @@ export function PrintMonitorClient({
   initialSelectedOrderId,
   initialGuiaMode,
   initialAutoPrint = false,
+  companyProfile,
 }: PrintMonitorClientProps) {
   const [orders, setOrders] = useState<any[]>(initialOrders);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(() => {
@@ -660,6 +662,20 @@ export function PrintMonitorClient({
                 format={format}
                 guiaMode={guiaMode}
                 copies={copies}
+                companyInfo={{
+                  name: companyProfile?.tradeName || "SPA DO COLCHÃO",
+                  tradeName: companyProfile?.tradeName || "Spa do Colchão",
+                  legalName: companyProfile?.legalName || "Spa do Colchão LTDA",
+                  cnpj: companyProfile?.cnpj || "61.969.615/0001-15",
+                  stateRegistration: companyProfile?.stateRegistration || "91163387-66",
+                  phone: companyProfile?.phone || companyProfile?.whatsapp || "(45) 99937-1901",
+                  whatsapp: companyProfile?.whatsapp || companyProfile?.phone || "(45) 99937-1901",
+                  address:
+                    companyProfile?.printAddress ||
+                    `${companyProfile?.street || "Rua Luiza Wandscheer"}, ${companyProfile?.number || "1510"} - ${companyProfile?.neighborhood || "Panorama"}, ${companyProfile?.city || "Foz do Iguaçu"} - ${companyProfile?.state || "PR"}`,
+                  email: companyProfile?.email || "contato@spadocolchao.com",
+                  logoUrl: "/logo.png",
+                }}
               />
             ) : (
               <div className="flex flex-col items-center justify-center p-16 text-center text-slate-400">

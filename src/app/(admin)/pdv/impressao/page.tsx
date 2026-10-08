@@ -122,12 +122,19 @@ export default async function PdvImpressaoPage({
     ? [targetOrder, ...recentOrders.filter((o) => o.id !== targetOrder.id)]
     : recentOrders;
 
+  // Buscar os dados cadastrais da empresa matriz
+  let companyProfile: any = null;
+  try {
+    companyProfile = await prisma.companyProfile.findFirst();
+  } catch (_err) {}
+
   return (
     <PrintMonitorClient
       initialOrders={JSON.parse(JSON.stringify(combinedOrders))}
       initialSelectedOrderId={targetId}
       initialGuiaMode={searchParams?.guia}
       initialAutoPrint={searchParams?.autoprint === "true" || searchParams?.autoprint === "1"}
+      companyProfile={companyProfile ? JSON.parse(JSON.stringify(companyProfile)) : null}
     />
   );
 }
