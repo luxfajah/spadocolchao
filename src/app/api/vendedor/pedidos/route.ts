@@ -114,8 +114,13 @@ export async function POST(req: NextRequest) {
       items,
       subtotal,
       discount,
+      freight,
       total,
       paymentMethodId,
+      paymentMethodName,
+      hasDownPayment,
+      downPaymentAmount,
+      downPaymentMethod,
       notes,
       deliveryDate,
     } = body
@@ -152,6 +157,27 @@ export async function POST(req: NextRequest) {
     }
     const activeLeadSourceId: string = leadSource.id
 
+    const finalFreight = Number(freight || 0)
+    const effectiveDownPaymentAmount = hasDownPayment ? Number(downPaymentAmount || 0) : 0
+    const finalTotal = Number(total)
+    const initialPaid = effectiveDownPaymentAmount > 0 ? effectiveDownPaymentAmount : 0
+    const isFullyPaid = initialPaid >= finalTotal - 0.05
+    const isPartiallyPaid = initialPaid > 0 && !isFullyPaid
+    const financialStatus = isFullyPaid ? "PAID" : isPartiallyPaid ? "PARTIALLY_PAID" : "PENDING"
+
+    const downPaymentNote = hasDownPayment && effectiveDownPaymentAmount > 0
+      ? `Entrada no ato: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(effectiveDownPaymentAmount)} (${downPaymentMethod || paymentMethodName || "PIX"}) | Saldo na entrega: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Math.max(0, finalTotal - effectiveDownPaymentAmount))}`
+      : null
+    const freightNote = finalFreight > 0
+      ? `Frete: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(finalFreight)}`
+      : null
+
+    const combinedSaleNotes = [
+      notes || "Venda emitida via App iOS Vendedor",
+      freightNote,
+      downPaymentNote,
+    ].filter(Boolean).join(" | ")
+
     const result = await prisma.$transaction(async (tx) => {
       const saleNumber = await generateSaleNumber()
 
@@ -161,12 +187,14 @@ export async function POST(req: NextRequest) {
           customerId,
           sellerId: sellerId || null,
           leadSourceId: activeLeadSourceId,
-          subtotalAmount: Number(subtotal || total),
+          subtotalAmount: Number(subtotal || finalTotal),
           discountAmount: Number(discount || 0),
-          totalAmount: Number(total),
+          surchargeAmount: finalFreight,
+          totalAmount: finalTotal,
+          paidAmount: initialPaid,
           status: "CONFIRMED",
-          financialStatus: "PENDING",
-          notes: notes || "Venda emitida via App iOS Vendedor",
+          financialStatus,
+          notes: combinedSaleNotes,
         },
       })
 
@@ -186,6 +214,75 @@ export async function POST(req: NextRequest) {
         })
       }
 
+      // Busca ou seleciona método de pagamento
+      let method = null
+      if (paymentMethodId) {
+        method = await tx.paymentMethod.findUnique({ where: { id: paymentMethodId } })
+      }
+      if (!method && paymentMethodName) {
+        method = await tx.paymentMethod.findFirst({
+          where: { name: { contains: paymentMethodName, mode: "insensitive" } },
+        })
+      }
+      if (!method) {
+        method = await tx.paymentMethod.findFirst()
+      }
+
+      if (hasDownPayment && effectiveDownPaymentAmount > 0) {
+        // Parcela 1: Entrada paga hoje
+        let downMethod = method
+        if (downPaymentMethod) {
+          const found = await tx.paymentMethod.findFirst({
+            where: { name: { contains: downPaymentMethod, mode: "insensitive" } },
+          })
+          if (found) downMethod = found
+        }
+
+        await tx.saleInstallment.create({
+          data: {
+            saleId: sale.id,
+            paymentMethodId: downMethod?.id || method?.id || "",
+            installmentNumber: 1,
+            dueDate: new Date(),
+            amount: effectiveDownPaymentAmount,
+            status: "PAID",
+            paidAmount: effectiveDownPaymentAmount,
+            paidAt: new Date(),
+          },
+        })
+
+        // Parcela 2: Saldo na entrega
+        const remainingBalance = Math.max(0, finalTotal - effectiveDownPaymentAmount)
+        if (remainingBalance > 0.05) {
+          await tx.saleInstallment.create({
+            data: {
+              saleId: sale.id,
+              paymentMethodId: method?.id || "",
+              installmentNumber: 2,
+              dueDate: deliveryDate ? new Date(deliveryDate) : new Date(Date.now() + 7 * 86400 * 1000),
+              amount: remainingBalance,
+              status: "PENDING",
+              paidAmount: 0,
+              paidAt: null,
+            },
+          })
+        }
+      } else {
+        // Sem entrada: parcela única para a entrega
+        await tx.saleInstallment.create({
+          data: {
+            saleId: sale.id,
+            paymentMethodId: method?.id || "",
+            installmentNumber: 1,
+            dueDate: deliveryDate ? new Date(deliveryDate) : new Date(Date.now() + 7 * 86400 * 1000),
+            amount: finalTotal,
+            status: "PENDING",
+            paidAmount: 0,
+            paidAt: null,
+          },
+        })
+      }
+
       // Cria o Pedido (Order)
       const order = await tx.order.create({
         data: {
@@ -197,6 +294,7 @@ export async function POST(req: NextRequest) {
           promisedDate: deliveryDate
             ? new Date(deliveryDate)
             : new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+          notes: combinedSaleNotes,
         },
       })
 

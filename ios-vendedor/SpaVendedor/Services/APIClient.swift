@@ -260,8 +260,12 @@ public final class APIClient: Sendable {
         items: [CartItem],
         subtotal: Double,
         discount: Double,
+        freight: Double = 0.0,
         total: Double,
         paymentMethodName: String,
+        hasDownPayment: Bool = false,
+        downPaymentAmount: Double = 0.0,
+        downPaymentMethod: String = "PIX",
         notes: String
     ) async throws -> (saleNumber: String, orderId: String) {
         let endpoint = "\(baseURLString)/api/vendedor/pedidos"
@@ -295,7 +299,12 @@ public final class APIClient: Sendable {
             "sellerId": sellerId ?? "",
             "subtotal": subtotal,
             "discount": discount,
+            "freight": freight,
             "total": total,
+            "paymentMethodName": paymentMethodName,
+            "hasDownPayment": hasDownPayment,
+            "downPaymentAmount": downPaymentAmount,
+            "downPaymentMethod": downPaymentMethod,
             "notes": notes,
             "items": itemsPayload
         ]

@@ -1,15 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   Building2,
   Calendar,
   CheckCircle2,
   Clock,
+  Coins,
   CreditCard,
   DollarSign,
   Package,
+  Percent,
   QrCode,
   Trash2,
   Truck,
@@ -114,6 +116,16 @@ export function PosSummary() {
     setLogisticsNotes,
     scheduleMode,
     setScheduleMode,
+    freightAmount,
+    setFreightAmount,
+    hasDownPayment,
+    setHasDownPayment,
+    downPaymentPercent,
+    setDownPaymentPercent,
+    downPaymentAmount,
+    setDownPaymentAmount,
+    downPaymentMethod,
+    setDownPaymentMethod,
   } = usePos();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -128,6 +140,13 @@ export function PosSummary() {
   } | null>(null);
   const [currentAmount, setCurrentAmount] = useState<number>(0);
   const [currentInstallments, setCurrentInstallments] = useState<number>(1);
+
+  // Auto-recalcula valor da entrada caso haja porcentagem definida e o total se altere
+  useEffect(() => {
+    if (hasDownPayment && downPaymentPercent && total > 0) {
+      setDownPaymentAmount(Math.round(total * (downPaymentPercent / 100) * 100) / 100);
+    }
+  }, [total, downPaymentPercent, hasDownPayment, setDownPaymentAmount]);
 
   const totalPaid = payments.reduce((accumulator, payment) => accumulator + payment.amount, 0);
   const remaining = Math.max(total - totalPaid, 0);
@@ -287,8 +306,26 @@ export function PosSummary() {
               <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Desconto</label>
               <Input
                 type="number"
+                min="0"
+                step="0.01"
                 value={globalDiscount || ""}
-                onChange={(event) => setGlobalDiscount(Number(event.target.value) || 0)}
+                onChange={(event) => setGlobalDiscount(Math.max(0, Number(event.target.value) || 0))}
+                placeholder="0,00"
+                className="h-11 w-32 rounded-full border-slate-200 bg-white px-4 text-right text-sm font-black text-primary"
+              />
+            </div>
+
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-1.5">
+                <Truck className="h-3.5 w-3.5 text-blue-500" />
+                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Frete</label>
+              </div>
+              <Input
+                type="number"
+                min="0"
+                step="0.01"
+                value={freightAmount || ""}
+                onChange={(event) => setFreightAmount(Math.max(0, Number(event.target.value) || 0))}
                 placeholder="0,00"
                 className="h-11 w-32 rounded-full border-slate-200 bg-white px-4 text-right text-sm font-black text-primary"
               />
@@ -595,6 +632,184 @@ export function PosSummary() {
               />
             </div>
           </div>
+        </div>
+
+        {/* SEÇÃO ENTRADA NO ATO (SINAL DE COMPRA) */}
+        <div className="rounded-[1.75rem] border border-amber-200/80 bg-gradient-to-br from-amber-50/70 via-white to-orange-50/30 p-5 sm:p-6 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-100/80 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-[1.1rem] bg-amber-500 text-white shadow-md shadow-amber-500/20">
+                <Coins className="h-5 w-5" />
+              </div>
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-[0.22em] text-amber-700">
+                  Condições de Venda
+                </span>
+                <h3 className="text-lg font-black tracking-tight text-slate-900">
+                  Entrada no Ato (Sinal)
+                </h3>
+              </div>
+            </div>
+
+            {/* Toggle Habilitar Entrada */}
+            <button
+              type="button"
+              onClick={() => {
+                const nextState = !hasDownPayment;
+                setHasDownPayment(nextState);
+                if (nextState && downPaymentAmount === 0 && total > 0) {
+                  const p10 = Math.round(total * 0.10 * 100) / 100;
+                  setDownPaymentPercent(10);
+                  setDownPaymentAmount(p10);
+                }
+              }}
+              className={`rounded-2xl px-4 py-2 text-xs font-black transition-all ${
+                hasDownPayment
+                  ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                  : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {hasDownPayment ? "✓ Entrada Habilitada" : "+ Habilitar Entrada no Ato"}
+            </button>
+          </div>
+
+          {hasDownPayment && (
+            <div className="mt-4 space-y-4">
+              {/* Presets 10%, 20%, 30% */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Porcentagem da Entrada:
+                  </label>
+                  <span className="text-xs font-bold text-amber-800">
+                    {downPaymentPercent ? `${downPaymentPercent}% do total` : "Valor digitado manualmente"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2">
+                  {[10, 20, 30].map((pct) => (
+                    <button
+                      key={pct}
+                      type="button"
+                      onClick={() => {
+                        const calculated = Math.round(total * (pct / 100) * 100) / 100;
+                        setDownPaymentPercent(pct);
+                        setDownPaymentAmount(calculated);
+                      }}
+                      className={`flex flex-col items-center justify-center rounded-xl py-2 px-1 text-center transition-all ${
+                        downPaymentPercent === pct
+                          ? "bg-[#02213f] text-white shadow font-black"
+                          : "border border-amber-200 bg-white text-slate-700 hover:bg-amber-50/50 font-bold"
+                      }`}
+                    >
+                      <span className="text-sm font-black">{pct}%</span>
+                      <span className="text-[10px] opacity-80">{formatBRL(Math.round(total * (pct / 100) * 100) / 100)}</span>
+                    </button>
+                  ))}
+
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="relative w-full">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="R$ Outro"
+                        value={downPaymentAmount || ""}
+                        onChange={(e) => {
+                          const val = Math.max(0, Number(e.target.value) || 0);
+                          setDownPaymentAmount(val);
+                          setDownPaymentPercent(null);
+                        }}
+                        className="h-[46px] rounded-xl border-amber-200 bg-white text-center text-xs font-black text-slate-900 shadow-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Forma de Pagamento da Entrada */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                  Forma de Pagamento da Entrada:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { key: "PIX", name: "PIX" },
+                    { key: "Dinheiro", name: "Dinheiro" },
+                    { key: "Débito", name: "Débito" },
+                    { key: "Crédito", name: "Crédito" },
+                  ].map((m) => (
+                    <button
+                      key={m.key}
+                      type="button"
+                      onClick={() => setDownPaymentMethod(m.key)}
+                      className={`rounded-xl py-2 px-3 text-xs font-black transition-all ${
+                        downPaymentMethod === m.key
+                          ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                          : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {m.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resumo Entrada vs Saldo Entrega */}
+              <div className="grid grid-cols-2 gap-3 rounded-2xl border border-amber-200/60 bg-amber-100/40 p-3.5">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-amber-900">
+                    Entrada no Ato (Hoje)
+                  </p>
+                  <p className="mt-1 font-outfit text-xl font-black text-amber-800">
+                    {formatBRL(downPaymentAmount)}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-500">
+                    Via {downPaymentMethod}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                    Saldo Restante na Entrega
+                  </p>
+                  <p className="mt-1 font-outfit text-xl font-black text-slate-800">
+                    {formatBRL(Math.max(0, total - downPaymentAmount))}
+                  </p>
+                  <p className="text-[10px] font-bold text-slate-500">
+                    A receber no ato da entrega
+                  </p>
+                </div>
+              </div>
+
+              {/* Botão para Lançar Entrada no Caixa */}
+              <Button
+                type="button"
+                onClick={() => {
+                  if (downPaymentAmount <= 0) {
+                    alert("Informe o valor da entrada.");
+                    return;
+                  }
+                  const methodId = getMethodId(downPaymentMethod);
+                  const cleanPayments = payments.filter((p: any) => !p.isDownPayment);
+                  const entry = {
+                    id: "dp-" + Date.now(),
+                    methodId,
+                    name: `Entrada (${downPaymentMethod})`,
+                    amount: downPaymentAmount,
+                    installments: 1,
+                    isBoleto: false,
+                    isDownPayment: true,
+                  };
+                  setPayments([...cleanPayments, entry]);
+                }}
+                className="w-full h-11 rounded-xl bg-amber-600 text-white font-black hover:bg-amber-700 shadow-md shadow-amber-600/20"
+              >
+                <Coins className="mr-2 h-4 w-4" />
+                Lançar Entrada de {formatBRL(downPaymentAmount)} nos Pagamentos
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-3">

@@ -112,12 +112,33 @@ export async function finalizeSale(payload: any) {
       items, subtotal, globalDiscount, total, 
       payments, notes,
       deliveryDate, pickupDate, recipientName, recipientPhone, logisticsNotes,
-      leadSourceDetail, campaignName, referralName, externalSellerName
+      leadSourceDetail, campaignName, referralName, externalSellerName,
+      surchargeAmount, freightAmount, hasDownPayment, downPaymentAmount, downPaymentMethod
     } = payload
 
     if (!customerId) throw new Error("Selecione um cliente.")
     if (!leadSourceId) throw new Error("Selecione uma origem de venda.")
     if (items.length === 0) throw new Error("Adicione itens à venda.")
+
+    const finalFreight = Number(freightAmount ?? surchargeAmount ?? 0);
+    const effectiveDownPaymentAmount = hasDownPayment ? Number(downPaymentAmount || 0) : 0;
+    const initialPaid = (payments || []).reduce((acc: number, p: any) => acc + (Number(p.amount) || 0), 0);
+    const isFullyPaid = initialPaid >= total - 0.05;
+    const isPartiallyPaid = initialPaid > 0 && !isFullyPaid;
+    const financialStatus = isFullyPaid ? "PAID" : isPartiallyPaid ? "PARTIALLY_PAID" : "PENDING";
+
+    const downPaymentNote = hasDownPayment && effectiveDownPaymentAmount > 0
+      ? `Entrada no ato: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(effectiveDownPaymentAmount)} (${downPaymentMethod || "Não informado"}) | Saldo na entrega: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Math.max(0, total - effectiveDownPaymentAmount))}`
+      : null;
+    const freightNote = finalFreight > 0
+      ? `Frete: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(finalFreight)}`
+      : null;
+
+    const combinedSaleNotes = [
+      notes,
+      freightNote,
+      downPaymentNote
+    ].filter(Boolean).join(" | ") || null;
 
     const result = await prisma.$transaction(async (tx) => {
       // 1. Create the base Sale
@@ -131,10 +152,12 @@ export async function finalizeSale(payload: any) {
           cashRegisterSessionId: sessionId,
           subtotalAmount: subtotal,
           discountAmount: globalDiscount,
+          surchargeAmount: finalFreight,
           totalAmount: total,
+          paidAmount: initialPaid,
           status: "CONFIRMED",
-          financialStatus: "PENDING",
-          notes: notes || null,
+          financialStatus,
+          notes: combinedSaleNotes,
           leadSourceDetail: leadSourceDetail || null,
           campaignName: campaignName || null,
           referralName: referralName || null,
@@ -593,9 +616,11 @@ export async function finalizeSale(payload: any) {
       }
 
       // 3. Create Installments (Parcelamento Multiplo) Múltiplos pagamentos
+      let installmentCounter = 1;
       for (const p of payments) {
         const instCount = Number(p.installments) || 1
         const instAmount = p.amount / instCount
+        const isDown = p.isDownPayment || p.name?.toLowerCase().includes("entrada")
         for (let i = 1; i <= instCount; i++) {
           const dueDate = new Date()
           if (p.isBoleto) {
@@ -608,20 +633,41 @@ export async function finalizeSale(payload: any) {
             data: {
               saleId: sale.id,
               paymentMethodId: p.methodId,
-              installmentNumber: i,
+              installmentNumber: installmentCounter++,
               dueDate,
               amount: instAmount,
-              status: "PENDING", // O pagamento só ocorre na entrega conforme regra
-              paidAmount: 0,
-              paidAt: null
+              status: isDown ? "PAID" : "PENDING",
+              paidAmount: isDown ? instAmount : 0,
+              paidAt: isDown ? new Date() : null
             }
           })
         }
       }
 
+      // Se houver saldo pendente na entrega (ex: quando há entrada no ato e o total não foi 100% quitado):
+      const remainingBalance = Math.max(0, total - initialPaid);
+      if (hasDownPayment && remainingBalance > 0.05) {
+        const defaultMethod = await tx.paymentMethod.findFirst();
+        const deliveryDueDate = deliveryDate ? new Date(deliveryDate) : (pickupDate ? new Date(pickupDate) : new Date(Date.now() + 7 * 86400 * 1000));
+        await tx.saleInstallment.create({
+          data: {
+            saleId: sale.id,
+            paymentMethodId: defaultMethod?.id || (payments[0]?.methodId ?? ""),
+            installmentNumber: installmentCounter++,
+            dueDate: deliveryDueDate,
+            amount: remainingBalance,
+            status: "PENDING",
+            paidAmount: 0,
+            paidAt: null
+          }
+        });
+      }
+
       // 4. Create Order & History
       const combinedOrderNotes = [
         notes,
+        freightNote,
+        downPaymentNote,
         logisticsNotes ? `Logística: ${logisticsNotes}` : null,
         pickupDate ? `Retirada agendada: ${new Date(pickupDate).toLocaleString('pt-BR')}` : null,
       ].filter(Boolean).join(" | ") || null

@@ -14,6 +14,16 @@ public struct CartView: View {
     @State private var completedSaleNumber: String? = nil
     @State private var showSuccess = false
 
+    // Frete digitável
+    @State private var freightText = ""
+
+    // Entrada no Ato
+    @State private var hasDownPayment = false
+    @State private var downPaymentPercent: Int? = 10
+    @State private var downPaymentAmount: Double = 0.0
+    @State private var downPaymentCustomText = ""
+    @State private var selectedDownPaymentMethod = "PIX"
+
     public init() {}
 
     public var body: some View {
@@ -49,13 +59,16 @@ public struct CartView: View {
                             // Seção 2: Itens do Carrinho
                             itemsSection
 
-                            // Seção 3: Pagamento e Condições
+                            // Seção 3: Entrada no Ato (Sinal)
+                            downPaymentSection
+
+                            // Seção 4: Pagamento e Condições
                             paymentSection
 
-                            // Seção 4: Data de Entrega e Observações
+                            // Seção 5: Data de Entrega e Observações
                             deliverySection
 
-                            // Seção 5: Resumo Financeiro & Comissão
+                            // Seção 6: Resumo Financeiro & Comissão
                             financialSummarySection
 
                             // Botão Finalizar
@@ -224,11 +237,143 @@ public struct CartView: View {
         }
     }
 
+    // MARK: - Entrada no Ato (Sinal)
+    private var downPaymentSection: some View {
+        GlassCard(cornerRadius: 16) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Label("Entrada no Ato (Sinal)", systemImage: "banknote.fill")
+                        .font(.headline)
+                        .foregroundStyle(Color.primary)
+                    Spacer()
+                    Toggle("", isOn: $hasDownPayment)
+                        .labelsHidden()
+                        .onChange(of: hasDownPayment) { _, active in
+                            if active && downPaymentAmount == 0.0 {
+                                downPaymentPercent = 10
+                                updateDownPaymentFromPercent()
+                            }
+                        }
+                }
+
+                if hasDownPayment {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Percentual da entrada:")
+                            .font(.caption.bold())
+                            .foregroundStyle(Color.secondary)
+
+                        // Presets 10%, 20%, 30%
+                        HStack(spacing: 8) {
+                            ForEach([10, 20, 30], id: \.self) { pct in
+                                Button(action: {
+                                    downPaymentPercent = pct
+                                    downPaymentCustomText = ""
+                                    updateDownPaymentFromPercent()
+                                }) {
+                                    VStack(spacing: 2) {
+                                        Text("\(pct)%")
+                                            .font(.subheadline.bold())
+                                        Text(formatCurrency(appState.cartTotal * (Double(pct) / 100.0)))
+                                            .font(.system(size: 9))
+                                            .opacity(0.8)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        downPaymentPercent == pct
+                                            ? Color.blue
+                                            : Color(uiColor: .tertiarySystemFill)
+                                    )
+                                    .foregroundStyle(downPaymentPercent == pct ? Color.white : Color.primary)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                                }
+                            }
+                        }
+
+                        // Campo de valor digitável livre para entrada
+                        HStack {
+                            Text("Ou digite o valor da entrada:")
+                                .font(.caption)
+                                .foregroundStyle(Color.secondary)
+                            Spacer()
+                            HStack(spacing: 4) {
+                                Text("R$")
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(Color.secondary)
+                                TextField("Outro", text: $downPaymentCustomText)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.subheadline.bold())
+                                    .frame(width: 90)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color(uiColor: .tertiarySystemFill))
+                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .onChange(of: downPaymentCustomText) { _, newVal in
+                                        if !newVal.isEmpty {
+                                            downPaymentPercent = nil
+                                            let cleaned = newVal.replacingOccurrences(of: ",", with: ".")
+                                            downPaymentAmount = max(0.0, Double(cleaned) ?? 0.0)
+                                        }
+                                    }
+                            }
+                        }
+
+                        Divider()
+
+                        // Forma de pagamento da Entrada
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Forma de Pagamento da Entrada:")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.secondary)
+
+                            Picker("Forma Entrada", selection: $selectedDownPaymentMethod) {
+                                Text("PIX").tag("PIX")
+                                Text("Dinheiro").tag("Dinheiro")
+                                Text("Débito").tag("Cartão de Débito")
+                                Text("Crédito").tag("Cartão de Crédito")
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        // Detalhamento Entrada vs Saldo
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Entrada no Ato:")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.secondary)
+                                Text(formatCurrency(downPaymentAmount))
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(Color.emerald)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("Saldo na Entrega:")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.secondary)
+                                Text(formatCurrency(max(0.0, appState.cartTotal - downPaymentAmount)))
+                                    .font(.subheadline.bold())
+                                    .foregroundStyle(Color.blue)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 8)
+                        .background(Color(uiColor: .secondarySystemGroupedBackground))
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                }
+            }
+        }
+    }
+
     private var paymentSection: some View {
         GlassCard(cornerRadius: 16) {
             VStack(alignment: .leading, spacing: 12) {
-                Label("Forma de Pagamento", systemImage: "creditcard.fill")
-                    .font(.headline)
+                Label(
+                    hasDownPayment ? "Pagamento do Saldo na Entrega" : "Forma de Pagamento",
+                    systemImage: "creditcard.fill"
+                )
+                .font(.headline)
 
                 Picker("Forma", selection: $selectedPaymentMethod) {
                     Text("PIX (À Vista)").tag("PIX")
@@ -242,9 +387,10 @@ public struct CartView: View {
                 if selectedPaymentMethod == "Cartão de Crédito" {
                     Stepper("Parcelamento: \(installments)x sem juros", value: $installments, in: 1...12)
                         .font(.subheadline)
-                    Text("Valor de cada parcela: \(formatCurrency(appState.cartTotal / Double(installments)))")
+                    let baseAmount = hasDownPayment ? max(0.0, appState.cartTotal - downPaymentAmount) : appState.cartTotal
+                    Text("Valor de cada parcela: \(formatCurrency(baseAmount / Double(installments)))")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                 }
             }
         }
@@ -271,7 +417,7 @@ public struct CartView: View {
             VStack(spacing: 10) {
                 HStack {
                     Text("Subtotal")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.secondary)
                     Spacer()
                     Text(formatCurrency(appState.cartSubtotal))
                 }
@@ -279,10 +425,37 @@ public struct CartView: View {
                 if appState.globalDiscount > 0 {
                     HStack {
                         Text("Desconto Concedido")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.red)
                         Spacer()
                         Text("-\(formatCurrency(appState.globalDiscount))")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.red)
+                    }
+                }
+
+                // Frete de Entrega Digitável
+                HStack {
+                    Label("Frete", systemImage: "truck.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.secondary)
+                    Spacer()
+                    HStack(spacing: 4) {
+                        Text("R$")
+                            .font(.subheadline.bold())
+                            .foregroundStyle(Color.secondary)
+                        TextField("0,00", text: $freightText)
+                            .keyboardType(.decimalPad)
+                            .multilineTextAlignment(.trailing)
+                            .font(.subheadline.bold())
+                            .frame(width: 80)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(uiColor: .tertiarySystemFill))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                            .onChange(of: freightText) { _, newValue in
+                                let cleaned = newValue.replacingOccurrences(of: ",", with: ".")
+                                appState.freightAmount = max(0.0, Double(cleaned) ?? 0.0)
+                                updateDownPaymentFromPercent()
+                            }
                     }
                 }
 
@@ -294,7 +467,34 @@ public struct CartView: View {
                     Spacer()
                     Text(formatCurrency(appState.cartTotal))
                         .font(.title2.bold())
-                        .foregroundStyle(.blue)
+                        .foregroundStyle(Color.blue)
+                }
+
+                // Se houver entrada, exibe discriminado o total pago hoje e na entrega
+                if hasDownPayment && downPaymentAmount > 0 {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Entrada (hoje):")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.emerald)
+                            Text(formatCurrency(downPaymentAmount))
+                                .font(.subheadline.bold())
+                                .foregroundStyle(Color.emerald)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Saldo (na entrega):")
+                                .font(.caption.bold())
+                                .foregroundStyle(Color.blue)
+                            Text(formatCurrency(max(0.0, appState.cartTotal - downPaymentAmount)))
+                                .font(.subheadline.bold())
+                                .foregroundStyle(Color.blue)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.blue.opacity(0.06))
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 }
 
                 // Destaque de Comissão do Vendedor
@@ -367,8 +567,12 @@ public struct CartView: View {
                     items: appState.cartItems,
                     subtotal: appState.cartSubtotal,
                     discount: appState.globalDiscount,
+                    freight: appState.freightAmount,
                     total: appState.cartTotal,
                     paymentMethodName: selectedPaymentMethod,
+                    hasDownPayment: hasDownPayment,
+                    downPaymentAmount: hasDownPayment ? downPaymentAmount : 0.0,
+                    downPaymentMethod: hasDownPayment ? selectedDownPaymentMethod : selectedPaymentMethod,
                     notes: notes
                 )
 
@@ -401,6 +605,12 @@ public struct CartView: View {
                     self.showSuccess = true
                 }
             }
+        }
+    }
+
+    private func updateDownPaymentFromPercent() {
+        if let pct = downPaymentPercent {
+            downPaymentAmount = (appState.cartTotal * Double(pct)) / 100.0
         }
     }
 

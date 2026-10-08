@@ -15,6 +15,7 @@ public final class AppState {
     // Carrinho Ativo
     public var cartItems: [CartItem] = []
     public var globalDiscount: Double = 0.0
+    public var freightAmount: Double = 0.0
 
     // Kanban e Pedidos
     public var orders: [Order] = []
@@ -47,7 +48,7 @@ public final class AppState {
     }
 
     public var cartTotal: Double {
-        max(0.0, cartSubtotal - globalDiscount)
+        max(0.0, cartSubtotal - globalDiscount + freightAmount)
     }
 
     public var estimatedCommission: Double {
@@ -73,6 +74,7 @@ public final class AppState {
     public func clearCart() {
         cartItems.removeAll()
         globalDiscount = 0.0
+        freightAmount = 0.0
         selectedCustomer = nil
     }
 

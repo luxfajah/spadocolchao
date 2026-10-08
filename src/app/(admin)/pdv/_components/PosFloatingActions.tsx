@@ -46,6 +46,10 @@ export function PosFloatingActions() {
     setLogisticsNotes,
     scheduleMode,
     setScheduleMode,
+    freightAmount,
+    hasDownPayment,
+    downPaymentAmount,
+    downPaymentMethod,
   } = usePos();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,6 +57,10 @@ export function PosFloatingActions() {
 
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
   const remaining = Math.max(total - totalPaid, 0);
+
+  const isPaymentSatisfied = hasDownPayment && downPaymentAmount > 0
+    ? totalPaid >= downPaymentAmount - 0.05
+    : remaining <= 0.05;
 
   const canGoNext = () => {
     if (currentStep === 1) return !!customer?.id && (!!sellerId || !!initialData?.currentSellerId);
@@ -79,8 +87,16 @@ export function PosFloatingActions() {
     if (!leadSourceId) return alert("Selecione a origem da venda");
     if (items.length === 0) return alert("Adicione produtos a venda");
 
-    if (remaining > 0.05) {
-      return alert("O pagamento ainda não foi concluído. Faltam " + formatBRL(remaining));
+    if (hasDownPayment && downPaymentAmount > 0) {
+      if (totalPaid < downPaymentAmount - 0.05) {
+        return alert(
+          `Você definiu uma entrada no ato de ${formatBRL(downPaymentAmount)}, mas o valor pago até agora é de ${formatBRL(totalPaid)}. Registre o pagamento da entrada para concluir.`
+        );
+      }
+    } else {
+      if (remaining > 0.05) {
+        return alert("O pagamento ainda não foi concluído. Faltam " + formatBRL(remaining));
+      }
     }
 
     if (!deliveryDate && !pickupDate) {
@@ -100,6 +116,11 @@ export function PosFloatingActions() {
         subtotal,
         globalDiscount,
         total,
+        freightAmount: freightAmount || 0,
+        surchargeAmount: freightAmount || 0,
+        hasDownPayment,
+        downPaymentAmount: hasDownPayment ? downPaymentAmount : 0,
+        downPaymentMethod: hasDownPayment ? downPaymentMethod : null,
         payments,
         deliveryDate: deliveryDate ? `${deliveryDate}T${deliveryTime || "00:00"}:00` : null,
         pickupDate: pickupDate ? `${pickupDate}T${pickupTime || "00:00"}:00` : null,
@@ -177,19 +198,21 @@ export function PosFloatingActions() {
               </Button>
             ) : (
               <div className="flex flex-col gap-2">
-                {remaining <= 0.05 ? (
+                {isPaymentSatisfied ? (
                     <div className="hidden items-center justify-center gap-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-emerald-500 backdrop-blur-md lg:flex">
                         <CheckCircle2 className="h-3 w-3" />
-                        Pronto para Gerar Pedido
+                        {hasDownPayment && downPaymentAmount > 0 ? "Entrada Paga • Saldo na Entrega" : "Pronto para Gerar Pedido"}
                     </div>
                 ) : (
                     <div className="hidden items-center justify-center gap-2 rounded-2xl bg-amber-500/10 border border-amber-500/20 px-4 py-2 text-[9px] font-black uppercase tracking-widest text-amber-500 backdrop-blur-md lg:flex">
-                        Faltam {formatBRL(remaining)}
+                        {hasDownPayment && downPaymentAmount > 0
+                          ? `Falta Entrada: ${formatBRL(Math.max(0, downPaymentAmount - totalPaid))}`
+                          : `Faltam ${formatBRL(remaining)}`}
                     </div>
                 )}
                 <Button
                     onClick={handleFinalize}
-                    disabled={isSubmitting || (remaining > 0.05 && items.length > 0)}
+                    disabled={isSubmitting || (!isPaymentSatisfied && items.length > 0)}
                     className="h-12 lg:h-16 rounded-2xl lg:rounded-[1.8rem] bg-[#02213f] px-5 lg:px-8 text-[10px] font-black uppercase tracking-[0.2em] text-white shadow-[0_20px_50px_-12px_rgba(0,34,66,0.5)] hover:bg-slate-900 border border-white/10"
                 >
                     {isSubmitting ? "Processando..." : "Finalizar"}
