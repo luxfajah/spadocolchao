@@ -43,10 +43,15 @@ export async function GET() {
           document: true,
           phone: true,
           whatsapp: true,
-          addressCity: true,
-          addressNeighborhood: true,
-          addressStreet: true,
-          addressNumber: true,
+          addresses: {
+            take: 1,
+            select: {
+              city: true,
+              neighborhood: true,
+              street: true,
+              number: true,
+            },
+          },
         },
         orderBy: { updatedAt: "desc" },
       }),
@@ -94,11 +99,26 @@ export async function GET() {
       item.name.toLowerCase().includes("d45")
     )
 
+    const formattedCustomers = customers.map((c) => {
+      const addr = c.addresses?.[0]
+      return {
+        id: c.id,
+        fullName: c.fullName,
+        document: c.document,
+        phone: c.phone,
+        whatsapp: c.whatsapp,
+        addressCity: addr?.city || null,
+        addressNeighborhood: addr?.neighborhood || null,
+        addressStreet: addr?.street || null,
+        addressNumber: addr?.number || null,
+      }
+    })
+
     return NextResponse.json({
       success: true,
       products,
       paymentMethods,
-      customers,
+      customers: formattedCustomers,
       leadSources,
       customization: {
         fabrics,

@@ -24,10 +24,15 @@ export async function GET(req: NextRequest) {
             fullName: true,
             phone: true,
             whatsapp: true,
-            addressCity: true,
-            addressNeighborhood: true,
-            addressStreet: true,
-            addressNumber: true,
+            addresses: {
+              take: 1,
+              select: {
+                street: true,
+                number: true,
+                neighborhood: true,
+                city: true,
+              },
+            },
           },
         },
         sale: {
@@ -63,14 +68,13 @@ export async function GET(req: NextRequest) {
       saleNumber: o.sale?.number || `PED-${o.id.slice(0, 6)}`,
       customerName: o.customer?.fullName || "Cliente Não Identificado",
       customerPhone: o.customer?.phone || o.customer?.whatsapp || "",
-      customerAddress: [
-        o.customer?.addressStreet,
-        o.customer?.addressNumber,
-        o.customer?.addressNeighborhood,
-        o.customer?.addressCity,
-      ]
-        .filter(Boolean)
-        .join(", "),
+      customerAddress: (() => {
+        const addr = o.customer?.addresses?.[0]
+        if (!addr) return ""
+        return [addr.street, addr.number, addr.neighborhood, addr.city]
+          .filter(Boolean)
+          .join(", ")
+      })(),
       status: o.currentStatus, // SOLD, WAITING_PREPARATION, IN_PRODUCTION, WAITING_DELIVERY, DELIVERED, FINALIZED
       totalAmount: o.sale?.totalAmount || 0,
       createdAt: o.createdAt.toISOString(),
@@ -135,6 +139,16 @@ export async function POST(req: NextRequest) {
     if (!leadSource) {
       leadSource = await prisma.leadSource.findFirst({ where: { isActive: true } })
     }
+    if (!leadSource) {
+      leadSource = await prisma.leadSource.findFirst()
+    }
+    if (!leadSource) {
+      return NextResponse.json(
+        { success: false, error: "Nenhuma origem de venda encontrada no sistema" },
+        { status: 400 }
+      )
+    }
+    const activeLeadSourceId: string = leadSource.id
 
     const result = await prisma.$transaction(async (tx) => {
       const saleNumber = await generateSaleNumber()
@@ -144,7 +158,7 @@ export async function POST(req: NextRequest) {
           number: saleNumber,
           customerId,
           sellerId: sellerId || null,
-          leadSourceId: leadSource?.id || null,
+          leadSourceId: activeLeadSourceId,
           subtotalAmount: Number(subtotal || total),
           discountAmount: Number(discount || 0),
           totalAmount: Number(total),
