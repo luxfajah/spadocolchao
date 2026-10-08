@@ -8,10 +8,14 @@ export type SaleItemType = {
   name: string;
   type: string;
   originalPrice: number;
+  minimumPrice?: number;
   unitPrice: number;
   quantity: number;
   discountAmount: number;
   totalAmount: number;
+  priceJustification?: string;
+  allowPriceChangeInPDV?: boolean;
+  requirePriceChangeJustification?: boolean;
   details?: any;
 };
 
@@ -28,7 +32,7 @@ export type PosContextType = {
   setPayments: (p: any[]) => void;
   addItem: (item: SaleItemType) => void;
   removeItem: (id: string) => void;
-  updateItemPrice: (id: string, newPrice: number) => void;
+  updateItemPrice: (id: string, newPrice: number, justification?: string) => void;
   subtotal: number;
   total: number;
   globalDiscount: number;
@@ -102,8 +106,18 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
 
   const addItem = (item: SaleItemType) => setItems((prev) => [...prev, item]);
   const removeItem = (id: string) => setItems((prev) => prev.filter((i: SaleItemType) => i.id !== id));
-  const updateItemPrice = (id: string, newPrice: number) => {
-    setItems((prev: SaleItemType[]) => prev.map((i: SaleItemType) => i.id === id ? { ...i, unitPrice: newPrice, totalAmount: newPrice * i.quantity } : i));
+  const updateItemPrice = (id: string, newPrice: number, justification?: string) => {
+    setItems((prev: SaleItemType[]) => prev.map((i: SaleItemType) => {
+      if (i.id !== id) return i;
+      const discount = Math.max(0, (i.originalPrice - newPrice) * i.quantity);
+      return {
+        ...i,
+        unitPrice: newPrice,
+        totalAmount: newPrice * i.quantity,
+        discountAmount: discount,
+        priceJustification: justification || i.priceJustification
+      };
+    }));
   };
 
   const resetSale = () => {

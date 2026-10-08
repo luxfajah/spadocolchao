@@ -22,6 +22,13 @@ export function PosCatalog() {
       name: product.name,
       category: product.operationalCategory || product.type || "Produto geral",
       price: product.defaultPrice || 0,
+      minimumPrice: product.minimumPrice || 0,
+      defaultCost: product.defaultCost || 0,
+      allowPriceChangeInPDV: product.allowPriceChangeInPDV ?? true,
+      requirePriceChangeJustification: product.requirePriceChangeJustification ?? false,
+      productionTimeMinutes: product.productionTimeMinutes,
+      estimatedLaborCost: product.estimatedLaborCost,
+      description: product.description,
     })) || [];
 
   const categories = ["Todos", ...Array.from(new Set<string>(dbProducts.map((product: any) => product.category)))];
@@ -128,7 +135,14 @@ export function PosCatalog() {
 
                 <div className="relative flex w-full items-end justify-between gap-2 border-t border-slate-100 lg:border-none pt-2 lg:pt-0">
                   <div>
-                    <p className="text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preço base</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <p className="text-[8px] lg:text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Preço base</p>
+                      {product.minimumPrice > 0 && product.minimumPrice < product.price && (
+                        <span className="text-[8px] lg:text-[9px] font-semibold text-slate-400 font-mono">
+                          (Mín: {formatBRL(product.minimumPrice)})
+                        </span>
+                      )}
+                    </div>
                     <p className="mt-0.5 lg:mt-1 font-outfit text-base lg:text-2xl font-black tracking-tight text-primary">
                       {formatBRL(product.price)}
                     </p>

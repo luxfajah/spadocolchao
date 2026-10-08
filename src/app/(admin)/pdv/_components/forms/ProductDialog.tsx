@@ -25,10 +25,13 @@ export function ProductDialog({ product, onClose }: ProductDialogProps) {
       name: product.name,
       type: product.category,
       originalPrice: product.price,
+      minimumPrice: product.minimumPrice || 0,
       unitPrice: finalPrice,
       quantity: quantity,
-      discountAmount: 0,
+      discountAmount: Math.max(0, (product.price - finalPrice) * quantity),
       totalAmount: finalPrice * quantity,
+      allowPriceChangeInPDV: product.allowPriceChangeInPDV ?? true,
+      requirePriceChangeJustification: product.requirePriceChangeJustification ?? false,
       details,
     });
     onClose();

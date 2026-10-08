@@ -33,7 +33,28 @@ export async function getInitialPdvData() {
       orderBy: { priority: "desc" }
     }),
     prisma.paymentMethod.findMany({ select: { id: true, name: true, code: true, allowsInstallments: true, maxInstallments: true } }),
-    prisma.productService.findMany({ select: { id: true, name: true, type: true, operationalCategory: true, defaultPrice: true, description: true } }),
+    prisma.productService.findMany({ 
+      where: { isActive: true },
+      select: { 
+        id: true, 
+        name: true, 
+        type: true, 
+        operationalCategory: true, 
+        defaultPrice: true, 
+        minimumPrice: true,
+        defaultCost: true,
+        productionTimeMinutes: true,
+        estimatedLaborCost: true,
+        allowPriceChangeInPDV: true,
+        requirePriceChangeJustification: true,
+        description: true 
+      },
+      orderBy: [
+        { highlightInPDV: "desc" },
+        { catalogOrder: "asc" },
+        { name: "asc" }
+      ]
+    }),
     prisma.supplyItem.findMany({ 
       where: { isActive: true },
       select: { id: true, name: true, currentStock: true, unit: true, category: { select: { name: true } } },
@@ -116,9 +137,12 @@ export async function finalizeSale(payload: any) {
       for (const item of items) {
         const itemCustomizationSummary = item.details?.customizationSummary || null
         const itemTechNotes = item.details?.technicalNotes || null
-        const fullItemNotes = itemCustomizationSummary
-          ? (itemTechNotes ? `${itemCustomizationSummary} | Obs: ${itemTechNotes}` : itemCustomizationSummary)
-          : (itemTechNotes || null)
+        const parts = [
+          itemCustomizationSummary,
+          itemTechNotes ? `Obs: ${itemTechNotes}` : null,
+          item.priceJustification ? `Justificativa Negociação: ${item.priceJustification}` : null
+        ].filter(Boolean)
+        const fullItemNotes = parts.length > 0 ? parts.join(" | ") : null
 
         const saleItem = await tx.saleItem.create({
           data: {
