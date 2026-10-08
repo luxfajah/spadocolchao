@@ -1272,9 +1272,9 @@ export function OrderPrintDocument({
         className="guia-page guia-page-2 w-full max-w-[210mm] h-[284mm] max-h-[284mm] bg-white text-black font-sans mx-auto p-3 sm:p-3.5 border border-black rounded-none print:border-none print:p-0 print:m-0 text-[7.5px] leading-tight flex flex-col justify-between overflow-hidden"
       >
         {/* =================================================================== */}
-        {/* METADE SUPERIOR (50% DO A4): DADOS DA COMPRA, CLIENTE, PAGAMENTO & RECEBIMENTO */}
+        {/* METADE SUPERIOR (DADOS DA COMPRA, CLIENTE, PAGAMENTO & RECEBIMENTO) */}
         {/* =================================================================== */}
-        <div className="h-[138mm] max-h-[138mm] flex flex-col justify-between border-b-2 border-black pb-1.5 mb-1.5 overflow-hidden">
+        <div className="h-[136mm] max-h-[136mm] flex flex-col justify-between border-b-2 border-black pb-1 mb-1 overflow-hidden">
           {/* CABEÇALHO CORPORATIVO DO PEDIDO */}
           <header className="border-b-2 border-black pb-1 mb-1">
             <div className="flex items-start justify-between gap-3">
@@ -1526,174 +1526,163 @@ export function OrderPrintDocument({
         {/* =================================================================== */}
         {/* METADE INFERIOR (PELO MENOS 50% DO A4): CERTIFICADO OFICIAL DE GARANTIA & MANUAL */}
         {/* =================================================================== */}
-        <div className="h-[142mm] min-h-[142mm] flex flex-col justify-between border-2 border-black bg-white p-2 overflow-hidden">
+        <div className="h-[146mm] min-h-[146mm] max-h-[146mm] flex flex-col justify-between border-2 border-black bg-white p-2.5 overflow-hidden">
           {/* CABEÇALHO OFICIAL DO CERTIFICADO DE GARANTIA */}
-          <div className="bg-black text-white p-1 mb-1.5 flex items-center justify-between">
+          <div className="bg-black text-white p-1.5 mb-1.5 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="bg-white text-black font-black text-[7.5px] px-1.5 py-0.2">CERTIFICADO OFICIAL</span>
-              <span className="font-black text-[8px] uppercase tracking-wider">
+              <span className="bg-white text-black font-black text-[9px] px-2 py-0.5 tracking-wider">CERTIFICADO OFICIAL</span>
+              <span className="font-black text-[10.5px] uppercase tracking-wider">
                 TERMO DE GARANTIA & MANUAL DO USUÁRIO — SPA DO COLCHÃO
               </span>
             </div>
-            <span className="text-[7px] font-mono text-neutral-300">
+            <span className="text-[8px] font-mono text-neutral-200">
               ABNT NBR 15413 • VINCULADO AO {orderNumberInfo.badgeNumber}
             </span>
           </div>
 
-          {/* GRID EM 3 COLUNAS OFICIAIS DE GARANTIA (PREENCHENDO A METADE DA PÁGINA) */}
-          <div className="grid grid-cols-3 divide-x-2 divide-black text-[7px] leading-tight flex-1">
+          {/* GRID EM 3 COLUNAS OFICIAIS DE GARANTIA COM TEXTO AMPLIADO E ALTA LEGIBILIDADE */}
+          <div className="grid grid-cols-3 divide-x-2 divide-black text-[8.5px] leading-snug flex-1">
             {/* COLUNA 1: 🛡️ PRAZOS E COBERTURA TÉCNICA */}
-            <div className="pr-2 space-y-1 flex flex-col justify-between">
-              <div>
-                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
-                  <span className="font-black text-black uppercase text-[7.5px] block">
+            <div className="pr-2 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="bg-neutral-100 border-b-2 border-black p-1.5 mb-1">
+                  <span className="font-black text-black uppercase text-[9.5px] block">
                     🛡️ 1. PRAZOS LEGAIS & COBERTURA
                   </span>
-                  <span className="text-[6.5px] text-neutral-600 block">Norma Técnica ABNT NBR 15413 & Código de Defesa do Consumidor</span>
+                  <span className="text-[7.5px] font-bold text-neutral-600 block">Norma Técnica ABNT NBR 15413 & Código de Defesa do Consumidor</span>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Molas & Estrutura de Madeira (1 Ano):</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      Garantia de <strong>12 meses (1 ano)</strong> contra quebra de molas, afundamento anormal do molejo (Pocket Ensacadas ou Bonnel),
-                      rompimento de arames de sustentação e trincas, rachaduras ou empenamento no chassi de madeira tratada da Base Box.
+                <div className="space-y-1.5">
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Molas & Estrutura de Madeira (12 Meses):</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      Garantia de <strong>12 meses (1 ano)</strong> contra quebra de molas, afundamento anormal do molejo (Pocket Ensacadas ou Bonnel), rompimento de arames de sustentação e trincas, rachaduras ou empenamento no chassi de madeira tratada da Base Box.
                     </p>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Espumas & Conforto (1 Ano):</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      Garantia de <strong>12 meses (1 ano)</strong> contra perda de resiliência e deformação excessiva fora dos parâmetros técnicos.
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Espumas & Sustentação (12 Meses):</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      Garantia de <strong>12 meses (1 ano)</strong> contra perda prematura de resiliência, deformação excessiva e esfarelamento fora dos padrões fabris.
                     </p>
                   </div>
 
-                  <div className="border border-black bg-neutral-100 p-1">
-                    <span className="font-black text-black uppercase text-[6.5px] block">⚖️ Tolerância Técnica ABNT NBR 15413:</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      Todo colchão sofre amaciamento natural nas regiões de maior pressão corporal (quadril e ombros).
-                      Acomodação de <strong>até 10% da altura original</strong> é processo físico normal das espumas e fibras,
-                      <strong> não configurando defeito de fabricação</strong>.
+                  <div className="border-2 border-black bg-neutral-100 p-1.5">
+                    <span className="font-black text-black uppercase text-[9px] block">⚖️ Tolerância Técnica ABNT NBR 15413:</span>
+                    <p className="text-[8.5px] text-neutral-950 mt-0.5 leading-snug">
+                      Todo colchão sofre amaciamento natural nas regiões de maior pressão corporal (quadril e ombros). Acomodação de <strong>até 10% da altura original</strong> é processo físico normal das espumas e fibras, <strong>não configurando defeito de fabricação</strong>.
                     </p>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Tecidos & Costuras (90 Dias):</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Tecidos & Costuras (90 Dias):</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
                       Garantia legal de <strong>90 dias</strong> (Art. 26 do CDC) para defeitos de tecelagem, desfiamento espontâneo de costuras e debrum.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
-                Garantia válida mediante apresentação deste certificado vinculado ao {orderNumberInfo.simplified}
+              <div className="pt-1 mt-1 border-t border-neutral-400 text-[7px] font-bold text-neutral-600 uppercase">
+                Garantia vinculada ao {orderNumberInfo.simplified}
               </div>
             </div>
 
             {/* COLUNA 2: 🔄 MANUAL DE CONSERVAÇÃO & CRONOGRAMA DE GIRO */}
-            <div className="px-2 space-y-1 flex flex-col justify-between">
-              <div>
-                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
-                  <span className="font-black text-black uppercase text-[7.5px] block">
+            <div className="px-2 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="bg-neutral-100 border-b-2 border-black p-1.5 mb-1">
+                  <span className="font-black text-black uppercase text-[9.5px] block">
                     🔄 2. CONSERVAÇÃO & GIRO OBRIGATÓRIO
                   </span>
-                  <span className="text-[6.5px] text-neutral-600 block">Procedimentos indispensáveis para preservar a vida útil do produto</span>
+                  <span className="text-[7.5px] font-bold text-neutral-600 block">Procedimentos indispensáveis para preservar a vida útil do produto</span>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="border border-black bg-neutral-100 p-1">
-                    <span className="font-black text-black uppercase text-[6.5px] block">🔄 Cronograma Obrigatório de Rotação (Giro):</span>
-                    <p className="text-[6.5px] text-neutral-900 mt-0.5">
-                      • <strong>Primeiros 90 dias (3 meses):</strong> Girar o colchão no sentido cabeça/pés a cada <strong>15 dias</strong> impreterivelmente.
-                      <br/>
-                      • <strong>Do 4º mês em diante:</strong> Girar em <strong>180° mensalmente</strong>.
-                      <br/>
-                      A rotação equaliza o assentamento do peso corporal e é condição indispensável para a manutenção da garantia.
+                <div className="space-y-1.5">
+                  <div className="border-2 border-black bg-neutral-100 p-1.5">
+                    <span className="font-black text-black uppercase text-[9px] block">🔄 Cronograma Obrigatório de Rotação (Giro):</span>
+                    <div className="text-[8.5px] text-neutral-950 mt-0.5 leading-snug space-y-0.5">
+                      <p>• <strong>Primeiros 90 dias (3 meses):</strong> Girar no sentido cabeça/pés a cada <strong>15 dias</strong> impreterivelmente.</p>
+                      <p>• <strong>Do 4º mês em diante:</strong> Girar em <strong>180° mensalmente</strong>.</p>
+                      <p className="text-[8px] text-neutral-700 italic mt-0.5">A rotação equaliza o peso corporal e é condição indispensável da garantia.</p>
+                    </div>
+                  </div>
+
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Base de Apoio Adequada:</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      O colchão deve repousar exclusivamente sobre base box uniforme ou estrado plano e nivelado, com vão livre máximo de <strong>5 cm entre as ripas</strong>. Estrados arqueados ou ripas quebradas invalidam a garantia.
                     </p>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Base de Apoio Adequada:</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      O colchão deve repousar exclusivamente sobre base box uniforme ou estrado plano e nivelado,
-                      com vão livre máximo de <strong>5 cm entre as ripas</strong>. Estrados arqueados ou ripas quebradas invalidam a garantia.
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Proteção Higiênica Impermeável:</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      É mandatório o <strong>uso permanente de capa protetora impermeável</strong>. A penetração de suor, água ou urina destrói as células da espuma e oxida o molejo.
                     </p>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Proteção Higiênica Impermeável:</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      É mandatório o uso permanente de <strong>capa protetora impermeável</strong>. A penetração de suor, água ou urina
-                      destrói as células da espuma e oxida o molejo.
-                    </p>
-                  </div>
-
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">✦ Ventilação & Proibições:</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      Manter o quarto arejado. Nunca dobrar o colchão, nunca colocar ferro quente sobre o tecido e proibir saltos (pulos).
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">✦ Ventilação & Proibições:</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      Manter o quarto arejado. Proibido dobrar o colchão, nunca colocar ferro quente sobre o tecido e proibir saltos (pulos).
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
-                O não cumprimento do cronograma de giro compromete a durabilidade do núcleo
+              <div className="pt-1 mt-1 border-t border-neutral-400 text-[7px] font-bold text-neutral-600 uppercase">
+                O não cumprimento do giro compromete o núcleo
               </div>
             </div>
 
             {/* COLUNA 3: ⚠️ EXCLUSÕES & ASSISTÊNCIA TÉCNICA (SAC) */}
-            <div className="pl-2 space-y-1 flex flex-col justify-between">
-              <div>
-                <div className="bg-neutral-100 border-b border-black p-1 -mt-0.5 mb-1">
-                  <span className="font-black text-black uppercase text-[7.5px] block">
+            <div className="pl-2 flex flex-col justify-between">
+              <div className="space-y-1.5">
+                <div className="bg-neutral-100 border-b-2 border-black p-1.5 mb-1">
+                  <span className="font-black text-black uppercase text-[9.5px] block">
                     ⚠️ 3. HIPÓTESES DE EXCLUSÃO & SAC
                   </span>
-                  <span className="text-[6.5px] text-neutral-600 block">Condições de perda de cobertura e acionamento da assistência</span>
+                  <span className="text-[7.5px] font-bold text-neutral-600 block">Condições de perda de cobertura e assistência pós-venda</span>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="border border-black bg-rose-50/60 p-1 border-dashed">
-                    <span className="font-black text-rose-950 uppercase text-[6.5px] block">🚫 Hipóteses de Perda da Garantia:</span>
-                    <p className="text-[6.5px] text-neutral-900 mt-0.5 space-y-0.5">
-                      • <strong>Manchas ou Umidade:</strong> Presença de urina, suor excessivo, bebidas, mofo ou produtos químicos (invalida a garantia por norma sanitária).
-                      <br/>
-                      • <strong>Estrado Inadequado:</strong> Deformações causadas por estrados com ripas espaçadas &gt; 5cm ou bases tortas.
-                      <br/>
-                      • <strong>Dano Físico:</strong> Rasgos, furos por objetos pontiagudos, queimaduras ou fios puxados por animais domésticos.
-                      <br/>
-                      • <strong>Etiqueta Removida:</strong> Violação, remoção ou corte da etiqueta de identificação e número de série da fábrica.
-                    </p>
+                <div className="space-y-1.5">
+                  <div className="border-2 border-black bg-rose-50/70 p-1.5 border-dashed">
+                    <span className="font-black text-rose-950 uppercase text-[9px] block">🚫 Hipóteses de Perda da Garantia:</span>
+                    <div className="text-[8.5px] text-neutral-950 mt-0.5 leading-snug space-y-0.5">
+                      <p>• <strong>Manchas ou Umidade:</strong> Presença de urina, suor excessivo, bebidas, mofo ou químicos (invalidação sanitária imediata).</p>
+                      <p>• <strong>Estrado Inadequado:</strong> Deformações causadas por estrados com ripas espaçadas &gt; 5cm ou bases tortas.</p>
+                      <p>• <strong>Dano Físico:</strong> Rasgos, furos por objetos pontiagudos, queimaduras ou animais domésticos.</p>
+                      <p>• <strong>Etiqueta Removida:</strong> Violação, corte ou rasura da etiqueta e série da fábrica.</p>
+                    </div>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">📞 Como Acionar a Assistência Técnica (SAC):</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      1. Entrar em contato via WhatsApp/Telefone: <strong>{companyInfo.phone}</strong> informando o <strong>{orderNumberInfo.badgeNumber}</strong>.
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">📞 Como Acionar a Assistência Técnica (SAC):</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      1. Enviar mensagem para o WhatsApp/SAC: <strong className="font-mono text-black">{companyInfo.phone}</strong> informando o <strong>{orderNumberInfo.badgeNumber}</strong>.
                       <br/>
                       2. Enviar fotos claras do produto e vídeo colocando uma régua rígida sobre a área para aferição da acomodação.
                     </p>
                   </div>
 
-                  <div className="border border-neutral-300 p-1 bg-neutral-50">
-                    <span className="font-black text-black uppercase text-[7px] block">⏱️ Vistoria Técnica no Prazo Legal:</span>
-                    <p className="text-[6.5px] text-neutral-800 mt-0.5">
-                      A Spa do Colchão realizará vistoria técnica domiciliar ou fabril no prazo legal de até <strong>30 dias corridos</strong>,
-                      conforme estipulado no Artigo 18 da Lei Federal nº 8.078/1990 (Código de Defesa do Consumidor).
+                  <div className="border border-black p-1.5 bg-neutral-50">
+                    <span className="font-black text-black uppercase text-[9px] block">⏱️ Vistoria Técnica no Prazo Legal (CDC):</span>
+                    <p className="text-[8.5px] text-neutral-900 mt-0.5 leading-snug">
+                      A Spa do Colchão realizará vistoria técnica domiciliar ou fabril no prazo legal de até <strong>30 dias corridos</strong>, conforme estipulado no Artigo 18 da Lei Federal nº 8.078/1990 (Código de Defesa do Consumidor).
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-1 border-t border-neutral-300 text-[6px] text-neutral-500 uppercase">
+              <div className="pt-1 mt-1 border-t border-neutral-400 text-[7px] font-bold text-neutral-600 uppercase">
                 Atendimento SAC de Segunda a Sexta das 08h às 18h
               </div>
             </div>
           </div>
 
           {/* RODAPÉ DO CERTIFICADO OFICIAL */}
-          <div className="mt-1 pt-1 border-t-2 border-black flex items-center justify-between text-[6.5px] font-bold text-neutral-700 uppercase">
+          <div className="mt-1.5 pt-1 border-t-2 border-black flex items-center justify-between text-[7.5px] font-black text-black uppercase">
             <span>{companyInfo.name} • INDÚSTRIA & REFORMA ESPECIALIZADA • CNPJ: {companyInfo.cnpj}</span>
             <span>CERTIFICADO VINCULADO AO PEDIDO {orderNumberInfo.badgeNumber} • VALIDADE NACIONAL</span>
           </div>
