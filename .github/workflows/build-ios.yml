@@ -56,5 +56,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SpaVendedor-iOS
-          path: build/SpaVendedor.ipa
+          path: SpaVendedor.ipa
           retention-days: 30
