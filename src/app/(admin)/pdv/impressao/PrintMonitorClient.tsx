@@ -197,12 +197,15 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
         @media print {
           @page {
             size: ${format === "a4" ? "A4 portrait" : "80mm auto"};
-            margin: ${format === "a4" ? "8mm" : "0mm"};
+            margin: ${format === "a4" ? "6mm 8mm" : "0mm"};
           }
+          html,
           body {
             background: white !important;
             margin: 0 !important;
             padding: 0 !important;
+            height: auto !important;
+            min-height: 0 !important;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
@@ -214,6 +217,14 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
           .print-hidden {
             display: none !important;
           }
+          main,
+          section {
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+          }
           .order-print-container {
             display: block !important;
             width: 100% !important;
@@ -223,16 +234,31 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
           }
           .guia-page {
             box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 194mm !important;
+            height: 284mm !important;
+            max-height: 284mm !important;
+            overflow: hidden !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
           }
-          .guia-page-1 {
+          .guia-has-next-page {
             page-break-after: always !important;
             break-after: page !important;
           }
           .guia-page-2 {
-            page-break-before: always !important;
-            break-before: page !important;
+            page-break-before: auto !important;
+            break-before: auto !important;
+            page-break-after: auto !important;
+            break-after: auto !important;
           }
           .sheet-page-break {
             page-break-before: always !important;
@@ -317,7 +343,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
                 className={`px-2.5 py-1.5 rounded-lg transition-all ${
                   guiaMode === "customer" ? "bg-sky-500 text-white shadow" : "text-slate-400 hover:text-white"
                 }`}
-                title="Apenas Guia 2: Comprovante de tudo que foi feito + Termo de Garantia + Canhoto"
+                title="Apenas Guia 2: Comprovante de tudo que foi feito + Termo de Garantia"
               >
                 Guia 2 (Cliente & Garantia)
               </button>
@@ -573,7 +599,7 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
           </div>
 
           {/* DOCUMENTO RENDERIZADO */}
-          <div className="bg-slate-200/70 rounded-3xl p-4 sm:p-8 border border-slate-300/80 shadow-inner flex justify-center overflow-x-auto min-h-[600px]">
+          <div className="bg-slate-200/70 rounded-3xl p-4 sm:p-8 border border-slate-300/80 shadow-inner flex justify-center overflow-x-auto min-h-[600px] print:p-0 print:m-0 print:border-none print:shadow-none print:bg-transparent print:min-h-0 print:block print:w-full">
             {selectedOrder ? (
               <OrderPrintDocument
                 order={selectedOrder}

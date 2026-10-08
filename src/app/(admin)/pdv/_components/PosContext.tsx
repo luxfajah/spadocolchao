@@ -62,6 +62,16 @@ export type PosContextType = {
   setRecipientPhone: (p: string) => void;
   logisticsNotes: string;
   setLogisticsNotes: (n: string) => void;
+  freightAmount: number;
+  setFreightAmount: (f: number) => void;
+  hasDownPayment: boolean;
+  setHasDownPayment: (h: boolean) => void;
+  downPaymentPercent: number | null;
+  setDownPaymentPercent: (p: number | null) => void;
+  downPaymentAmount: number;
+  setDownPaymentAmount: (a: number) => void;
+  downPaymentMethod: string;
+  setDownPaymentMethod: (m: string) => void;
   scheduleMode: "both" | "delivery" | "pickup";
   setScheduleMode: (m: "both" | "delivery" | "pickup") => void;
 };
@@ -92,6 +102,13 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
   const [recipientPhone, setRecipientPhone] = useState("");
   const [logisticsNotes, setLogisticsNotes] = useState("");
   const [scheduleMode, setScheduleMode] = useState<"both" | "delivery" | "pickup">("delivery");
+
+  // FRETE E ENTRADA NO ATO
+  const [freightAmount, setFreightAmount] = useState(0);
+  const [hasDownPayment, setHasDownPayment] = useState(false);
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number | null>(null);
+  const [downPaymentAmount, setDownPaymentAmount] = useState(0);
+  const [downPaymentMethod, setDownPaymentMethod] = useState("PIX");
 
   // RECUPERAR RASCUNHO (DRAFT) AO VOLTAR DO CADASTRO
   useEffect(() => {
@@ -166,11 +183,16 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
     setRecipientPhone("");
     setLogisticsNotes("");
     setScheduleMode("delivery");
+    setFreightAmount(0);
+    setHasDownPayment(false);
+    setDownPaymentPercent(null);
+    setDownPaymentAmount(0);
+    setDownPaymentMethod("PIX");
     localStorage.removeItem('pdv_draft');
   };
 
   const subtotal = items.reduce((acc, item) => acc + item.totalAmount, 0);
-  const total = subtotal - globalDiscount;
+  const total = Math.max(0, subtotal - globalDiscount + freightAmount);
 
   return (
     <PosContext.Provider value={{
@@ -194,7 +216,12 @@ export function PosProvider({ children, initialData }: { children: ReactNode, in
       recipientName, setRecipientName,
       recipientPhone, setRecipientPhone,
       logisticsNotes, setLogisticsNotes,
-      scheduleMode, setScheduleMode
+      scheduleMode, setScheduleMode,
+      freightAmount, setFreightAmount,
+      hasDownPayment, setHasDownPayment,
+      downPaymentPercent, setDownPaymentPercent,
+      downPaymentAmount, setDownPaymentAmount,
+      downPaymentMethod, setDownPaymentMethod
     }}>
       {children}
     </PosContext.Provider>

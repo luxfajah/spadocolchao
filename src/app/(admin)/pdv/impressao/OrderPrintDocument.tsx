@@ -286,9 +286,14 @@ export function OrderPrintDocument({
   // =======================================================================
   const renderGuiaProducaoA4 = () => {
     return (
-      <div className="guia-page guia-page-1 w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9.5px] leading-tight">
-        {/* CABEÇALHO DA PRODUÇÃO */}
-        <header className="border-b-2 border-slate-950 pb-2 mb-2">
+      <div
+        className={`guia-page guia-page-1 ${
+          showGuia2 ? "guia-has-next-page" : ""
+        } w-full max-w-[210mm] min-h-[297mm] print:min-h-0 bg-white text-slate-900 font-sans mx-auto p-4 sm:p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9px] leading-tight flex flex-col justify-between`}
+      >
+        <div className="flex-1 flex flex-col">
+          {/* CABEÇALHO DA PRODUÇÃO */}
+          <header className="border-b-2 border-slate-950 pb-1.5 mb-1.5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -577,42 +582,46 @@ export function OrderPrintDocument({
             })}
           </div>
         </section>
+        </div>
 
-        {/* BLOCO 3: ROTEIRO DE CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA) */}
-        <section className="mb-2 border border-slate-400 rounded-xl p-1.5 bg-white">
-          <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
-            <span>3. ROTEIRO DE FABRICAÇÃO & CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA)</span>
-            <span>VISTO OBRIGATÓRIO DOS OPERADORES</span>
-          </div>
+        {/* PARTE INFERIOR: CONTROLE DE QUALIDADE E RODAPÉ */}
+        <div className="mt-1 pt-0.5">
+          {/* BLOCO 3: ROTEIRO DE CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA) */}
+          <section className="mb-1 border border-slate-400 rounded-xl p-1.5 bg-white">
+            <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
+              <span>3. ROTEIRO DE FABRICAÇÃO & CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA)</span>
+              <span>VISTO OBRIGATÓRIO DOS OPERADORES</span>
+            </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[8px]">
-            <div className="border border-slate-200 rounded p-1 bg-slate-50">
-              <span className="font-bold text-slate-800 block">[ ] 1. Marcenaria & Estrutura</span>
-              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[8px]">
+              <div className="border border-slate-200 rounded p-1 bg-slate-50">
+                <span className="font-bold text-slate-800 block">[ ] 1. Marcenaria & Estrutura</span>
+                <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+                <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
+              </div>
+              <div className="border border-slate-200 rounded p-1 bg-slate-50">
+                <span className="font-bold text-slate-800 block">[ ] 2. Corte de Espuma & Bloco</span>
+                <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+                <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
+              </div>
+              <div className="border border-slate-200 rounded p-1 bg-slate-50">
+                <span className="font-bold text-slate-800 block">[ ] 3. Tapeçaria, Costura & Debrum</span>
+                <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+                <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
+              </div>
+              <div className="border border-slate-200 rounded p-1 bg-slate-50">
+                <span className="font-bold text-slate-800 block">[ ] 4. Qualidade Final & Embalagem</span>
+                <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+                <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
+              </div>
             </div>
-            <div className="border border-slate-200 rounded p-1 bg-slate-50">
-              <span className="font-bold text-slate-800 block">[ ] 2. Corte de Espuma & Bloco</span>
-              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
-            </div>
-            <div className="border border-slate-200 rounded p-1 bg-slate-50">
-              <span className="font-bold text-slate-800 block">[ ] 3. Tapeçaria, Costura & Debrum</span>
-              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
-            </div>
-            <div className="border border-slate-200 rounded p-1 bg-slate-50">
-              <span className="font-bold text-slate-800 block">[ ] 4. Qualidade Final & Embalagem</span>
-              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
-            </div>
-          </div>
-        </section>
+          </section>
 
-        {/* RODAPÉ */}
-        <footer className="text-center pt-1 border-t border-slate-300 text-[7.5px] font-bold text-slate-500 uppercase tracking-wider">
-          DOCUMENTO INTERNO DE PRODUÇÃO • NÃO CONTÉM DADOS FINANCEIROS • {companyInfo.name}
-        </footer>
+          {/* RODAPÉ */}
+          <footer className="text-center pt-0.5 border-t border-slate-300 text-[7px] font-bold text-slate-500 uppercase tracking-wider">
+            DOCUMENTO INTERNO DE PRODUÇÃO • NÃO CONTÉM DADOS FINANCEIROS • {companyInfo.name}
+          </footer>
+        </div>
       </div>
     );
   };
@@ -624,9 +633,12 @@ export function OrderPrintDocument({
   // =======================================================================
   const renderGuiaClienteGarantiaA4 = () => {
     return (
-      <div className="guia-page guia-page-2 w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9px] leading-tight">
-        {/* CABEÇALHO DA GUIA DO CLIENTE */}
-        <header className="border-b-2 border-slate-950 pb-2 mb-2">
+      <div
+        className="guia-page guia-page-2 w-full max-w-[210mm] min-h-[297mm] print:min-h-0 bg-white text-slate-900 font-sans mx-auto p-4 sm:p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[8.5px] leading-tight flex flex-col justify-between"
+      >
+        <div className="flex-1 flex flex-col">
+          {/* CABEÇALHO DA GUIA DO CLIENTE */}
+          <header className="border-b-2 border-slate-950 pb-1.5 mb-1.5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
@@ -789,96 +801,100 @@ export function OrderPrintDocument({
             </div>
           </div>
         </section>
+        </div>
 
-        {/* BLOCO 3: CERTIFICADO & TERMO DE GARANTIA INTEGRADO */}
-        <section className="mb-2 border-2 border-slate-900 rounded-xl p-2 bg-white">
-          <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
-            <span>3. CERTIFICADO DE GARANTIA & MANUAL DE CUIDADOS (SPA DO COLCHÃO)</span>
-            <span className="text-slate-600">NORMA TÉCNICA ABNT NBR 15413</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[7.5px] text-slate-700 leading-snug">
-            {/* COLUNA 1: PRAZOS */}
-            <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
-                1. PRAZOS E COBERTURA
-              </p>
-              <p>
-                • <strong>Molas e Estrutura:</strong> 1 (um) ano de garantia contra quebras ou defeitos de fabricação na madeira ou molas.
-              </p>
-              <p>
-                • <strong>Espumas e Sustentação:</strong> 1 (um) ano. Conforme a norma <strong>ABNT NBR 15413</strong>, acomodação natural de até 10% nas áreas de maior peso corporal é processo normal de assentamento das fibras e não é defeito.
-              </p>
-              <p>
-                • <strong>Tecidos e Costuras:</strong> 90 dias legais contra desfiamento espontâneo de costuras.
-              </p>
+        {/* PARTE INFERIOR: TERMO DE GARANTIA E PROTOCOLO DE RECEBIMENTO */}
+        <div className="mt-1 pt-0.5">
+          {/* BLOCO 3: CERTIFICADO & TERMO DE GARANTIA INTEGRADO */}
+          <section className="mb-1 border border-slate-900 rounded-xl p-1.5 bg-white">
+            <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
+              <span>3. CERTIFICADO DE GARANTIA & MANUAL DE CUIDADOS (SPA DO COLCHÃO)</span>
+              <span className="text-slate-600">NORMA TÉCNICA ABNT NBR 15413</span>
             </div>
 
-            {/* COLUNA 2: CUIDADOS */}
-            <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
-                2. MANUAL DE CONSERVAÇÃO
-              </p>
-              <p>
-                • <strong>Giro Obrigatório:</strong> Nos primeiros 3 meses, gire o colchão (cabeça/pés) a cada 15 dias. Após esse período, gire mensalmente.
-              </p>
-              <p>
-                • <strong>Base de Apoio:</strong> Apoiar sobre base plana e nivelada, sem vãos livres maiores que 6 cm.
-              </p>
-              <p>
-                • <strong>Proteção:</strong> Obrigatório o uso de protetor impermeável de colchão. Não molhar e manter o quarto ventilado.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[7.5px] text-slate-700 leading-snug">
+              {/* COLUNA 1: PRAZOS */}
+              <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
+                <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
+                  1. PRAZOS E COBERTURA
+                </p>
+                <p>
+                  • <strong>Molas e Estrutura:</strong> 1 (um) ano de garantia contra quebras ou defeitos de fabricação na madeira ou molas.
+                </p>
+                <p>
+                  • <strong>Espumas e Sustentação:</strong> 1 (um) ano. Conforme a norma <strong>ABNT NBR 15413</strong>, acomodação natural de até 10% nas áreas de maior peso corporal é processo normal de assentamento das fibras e não é defeito.
+                </p>
+                <p>
+                  • <strong>Tecidos e Costuras:</strong> 90 dias legais contra desfiamento espontâneo de costuras.
+                </p>
+              </div>
+
+              {/* COLUNA 2: CUIDADOS */}
+              <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
+                <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
+                  2. MANUAL DE CONSERVAÇÃO
+                </p>
+                <p>
+                  • <strong>Giro Obrigatório:</strong> Nos primeiros 3 meses, gire o colchão (cabeça/pés) a cada 15 dias. Após esse período, gire mensalmente.
+                </p>
+                <p>
+                  • <strong>Base de Apoio:</strong> Apoiar sobre base plana e nivelada, sem vãos livres maiores que 6 cm.
+                </p>
+                <p>
+                  • <strong>Proteção:</strong> Obrigatório o uso de protetor impermeável de colchão. Não molhar e manter o quarto ventilado.
+                </p>
+              </div>
+
+              {/* COLUNA 3: EXCLUSÕES */}
+              <div className="space-y-0.5">
+                <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
+                  3. EXCLUSÕES DA GARANTIA
+                </p>
+                <p>• Danos por umidade, mofo, derramamento de líquidos, urina ou produtos abrasivos.</p>
+                <p>• Deformações decorrentes de estrado inadequado ou peso superior ao limite nominal da densidade.</p>
+                <p>• Rasgos, furos por objetos pontiagudos ou fios puxados por animais domésticos.</p>
+                <p>• Remoção ou violação da etiqueta de identificação da fábrica.</p>
+              </div>
+            </div>
+          </section>
+
+          {/* BLOCO 4: PROTOCOLO INTEGRAL DE RECEBIMENTO & ASSINATURA DO CLIENTE */}
+          <footer className="border-t border-slate-950 pt-1">
+            <div className="flex items-center justify-between text-[7.5px] font-black uppercase tracking-wider text-slate-700 mb-0.5">
+              <span>4. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE</span>
+              <span className="font-mono text-slate-900">{orderNumberInfo.badgeNumber}</span>
             </div>
 
-            {/* COLUNA 3: EXCLUSÕES */}
-            <div className="space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
-                3. EXCLUSÕES DA GARANTIA
-              </p>
-              <p>• Danos por umidade, mofo, derramamento de líquidos, urina ou produtos abrasivos.</p>
-              <p>• Deformações decorrentes de estrado inadequado ou peso superior ao limite nominal da densidade.</p>
-              <p>• Rasgos, furos por objetos pontiagudos ou fios puxados por animais domésticos.</p>
-              <p>• Remoção ou violação da etiqueta de identificação da fábrica.</p>
-            </div>
-          </div>
-        </section>
+            <p className="text-[7.5px] text-slate-600 mb-1 leading-tight">
+              Declaro ter recebido os produtos descritos no <strong>{orderNumberInfo.badgeNumber}</strong> em perfeitas
+              condições de acabamento, medidas e funcionamento, conferi as especificações contratadas e confirmo ciência
+              dos Termos de Garantia e Cuidados estipulados acima.
+            </p>
 
-        {/* BLOCO 4: PROTOCOLO INTEGRAL DE RECEBIMENTO & ASSINATURA DO CLIENTE */}
-        <footer className="border-t-2 border-slate-950 pt-1.5">
-          <div className="flex items-center justify-between text-[7.5px] font-black uppercase tracking-wider text-slate-700 mb-0.5">
-            <span>4. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE</span>
-            <span className="font-mono text-slate-900">{orderNumberInfo.badgeNumber}</span>
-          </div>
-
-          <p className="text-[7.5px] text-slate-600 mb-1 leading-tight">
-            Declaro ter recebido os produtos descritos no <strong>{orderNumberInfo.badgeNumber}</strong> em perfeitas
-            condições de acabamento, medidas e funcionamento, conferi as especificações contratadas e confirmo ciência
-            dos Termos de Garantia e Cuidados estipulados acima.
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end pt-0.5">
-            <div className="border-b border-slate-900 pb-0.5">
-              <span className="text-[6.5px] text-slate-500 uppercase block">Nome do Recebedor:</span>
-              <span className="text-[8px] font-black uppercase text-slate-900 truncate block">
-                {order.recipientName || customer?.fullName || "___________________________"}
-              </span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end pt-0.5">
+              <div className="border-b border-slate-900 pb-0.5">
+                <span className="text-[6.5px] text-slate-500 uppercase block">Nome do Recebedor:</span>
+                <span className="text-[8px] font-black uppercase text-slate-900 truncate block">
+                  {order.recipientName || customer?.fullName || "___________________________"}
+                </span>
+              </div>
+              <div className="border-b border-slate-900 pb-0.5">
+                <span className="text-[6.5px] text-slate-500 uppercase block">Documento (CPF / RG):</span>
+                <span className="text-[8px] font-bold text-slate-900">
+                  {customer?.document || "___________________________"}
+                </span>
+              </div>
+              <div className="border-b border-slate-900 pb-0.5 text-center">
+                <span className="text-[6.5px] text-slate-500 uppercase block">Data e Horário:</span>
+                <span className="text-[8px] font-bold text-slate-900">____ / ____ / 2026 às ____:____</span>
+              </div>
+              <div className="border-b border-slate-900 pb-0.5 text-center">
+                <span className="text-[6.5px] text-slate-500 uppercase block">Assinatura do Recebedor:</span>
+                <span className="text-[7px] text-slate-400">Assinatura</span>
+              </div>
             </div>
-            <div className="border-b border-slate-900 pb-0.5">
-              <span className="text-[6.5px] text-slate-500 uppercase block">Documento (CPF / RG):</span>
-              <span className="text-[8px] font-bold text-slate-900">
-                {customer?.document || "___________________________"}
-              </span>
-            </div>
-            <div className="border-b border-slate-900 pb-0.5 text-center">
-              <span className="text-[6.5px] text-slate-500 uppercase block">Data e Horário:</span>
-              <span className="text-[8px] font-bold text-slate-900">____ / ____ / 2026 às ____:____</span>
-            </div>
-            <div className="border-b border-slate-900 pb-0.5 text-center">
-              <span className="text-[6.5px] text-slate-500 uppercase block">Assinatura do Recebedor:</span>
-              <span className="text-[7px] text-slate-400">Assinatura</span>
-            </div>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </div>
     );
   };
@@ -997,15 +1013,45 @@ export function OrderPrintDocument({
   // =======================================================================
   return (
     <div className="order-print-container w-full space-y-6 print:space-y-0">
+      <style>{`
+        @media print {
+          @page {
+            size: A4 portrait;
+            margin: 6mm 8mm;
+          }
+          .guia-page {
+            box-sizing: border-box !important;
+            width: 100% !important;
+            max-width: 194mm !important;
+            height: 284mm !important;
+            max-height: 284mm !important;
+            overflow: hidden !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            padding: 0 !important;
+            margin: 0 auto !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+          }
+          .guia-has-next-page {
+            page-break-after: always !important;
+            break-after: page !important;
+          }
+          .guia-page-2 {
+            page-break-before: auto !important;
+            break-before: auto !important;
+            page-break-after: auto !important;
+            break-after: auto !important;
+          }
+        }
+      `}</style>
+
       {/* 1. GUIA DE PRODUÇÃO (FOLHA A4 1) */}
-      {showGuia1 && (
-        <div
-          className="guia-page guia-page-1 print:break-after-page"
-          style={{ breakAfter: showGuia2 ? "page" : "auto", pageBreakAfter: showGuia2 ? "always" : "auto" }}
-        >
-          {renderGuiaProducaoA4()}
-        </div>
-      )}
+      {showGuia1 && renderGuiaProducaoA4()}
 
       {/* DIVISOR VISUAL ENTRE FOLHAS NA TELA DO SISTEMA */}
       {showGuia1 && showGuia2 && (
@@ -1019,14 +1065,7 @@ export function OrderPrintDocument({
       )}
 
       {/* 2. GUIA DO CLIENTE COM COMPROVANTE COMPLETO + TERMO DE GARANTIA (FOLHA A4 2) */}
-      {showGuia2 && (
-        <div
-          className="guia-page guia-page-2 print:break-before-page"
-          style={{ breakBefore: showGuia1 ? "page" : "auto", pageBreakBefore: showGuia1 ? "always" : "auto" }}
-        >
-          {renderGuiaClienteGarantiaA4()}
-        </div>
-      )}
+      {showGuia2 && renderGuiaClienteGarantiaA4()}
     </div>
   );
 }
