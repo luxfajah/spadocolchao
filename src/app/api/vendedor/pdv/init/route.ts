@@ -36,7 +36,7 @@ export async function GET() {
         },
       }),
       prisma.customer.findMany({
-        take: 60,
+        where: { isActive: true },
         select: {
           id: true,
           personType: true,
@@ -63,7 +63,7 @@ export async function GET() {
             },
           },
         },
-        orderBy: { updatedAt: "desc" },
+        orderBy: { fullName: "asc" },
       }),
       prisma.supplyItem.findMany({
         where: { isActive: true },

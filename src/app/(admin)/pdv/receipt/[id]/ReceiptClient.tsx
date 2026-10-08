@@ -1,6 +1,6 @@
 "use client";
 
-import { Printer, Eye, ArrowLeft } from "lucide-react";
+import { Printer, Eye, ArrowLeft, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import jsPDF from "jspdf";
@@ -84,7 +84,15 @@ export function ReceiptClient({ order }: ReceiptClientProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Link href="/pdv/impressao">
+            <Button 
+              className="h-12 gap-2 rounded-full bg-emerald-600 px-6 text-xs font-black uppercase tracking-wider text-white shadow-lg shadow-emerald-900/20 hover:bg-emerald-500 transition-all"
+            >
+              <FileText className="h-4 w-4" /> 2 Guias A4 (Produção & Garantia)
+            </Button>
+          </Link>
+
           <Link href={`/vendas-clientes/pedidos/${order.id}`}>
             <Button 
               variant="outline"
