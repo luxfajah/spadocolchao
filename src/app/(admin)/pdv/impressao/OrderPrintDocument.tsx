@@ -281,44 +281,44 @@ export function OrderPrintDocument({
 
   // =======================================================================
   // GUIA 1 DE 2: ORDEM DE PRODUÇÃO & CHÃO DE FÁBRICA
-  // Contém exclusivamente dados técnicos, medidas, tecidos e roteiro operacional.
-  // SEM VALORES FINANCEIROS OU PREÇOS.
+  // 1 FOLHA A4 COMPLETA E DEDICADA PARA A FÁBRICA.
+  // SEM VALORES FINANCEIROS, PREÇOS OU COISAS DE DESTACAR.
   // =======================================================================
   const renderGuiaProducaoA4 = () => {
     return (
-      <div className="w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-6 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[10px] leading-tight">
+      <div className="guia-page guia-page-1 w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9.5px] leading-tight">
         {/* CABEÇALHO DA PRODUÇÃO */}
-        <header className="border-b-2 border-slate-950 pb-2.5 mb-2.5">
-          <div className="flex items-start justify-between gap-4">
+        <header className="border-b-2 border-slate-950 pb-2 mb-2">
+          <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-black uppercase tracking-widest bg-slate-950 text-white px-2 py-0.5 rounded">
+                <span className="text-[8.5px] font-black uppercase tracking-widest bg-slate-950 text-white px-2 py-0.5 rounded">
                   GUIA 1 DE 2: ORDEM DE PRODUÇÃO & CHÃO DE FÁBRICA
                 </span>
-                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                <span className="text-[8.5px] font-bold text-slate-500 uppercase tracking-wider">
                   Emissão: {formatDateTime(sale.saleDate || order.createdAt)}
                 </span>
               </div>
-              <h1 className="text-xl font-black tracking-tight text-slate-950 uppercase mt-1">
+              <h1 className="text-lg font-black tracking-tight text-slate-950 uppercase mt-0.5">
                 {companyInfo.name}
               </h1>
-              <p className="text-[10px] font-bold text-slate-700 uppercase tracking-wide">
+              <p className="text-[9px] font-bold text-slate-700 uppercase tracking-wide">
                 FICHA TÉCNICA DE FABRICAÇÃO & ROTEIRO OPERACIONAL
               </p>
-              <p className="text-[8.5px] text-slate-500 mt-0.5">
+              <p className="text-[8px] text-slate-500 mt-0.5">
                 CNPJ: {companyInfo.cnpj} • Fábrica e Produção Sob Medida
               </p>
             </div>
 
             {/* BOX NÚMERO UNIFICADO DO PEDIDO */}
-            <div className="text-right border-2 border-slate-950 bg-slate-50 rounded-xl p-2 min-w-[200px]">
-              <span className="text-[8.5px] font-black uppercase tracking-widest text-slate-500 block">
+            <div className="text-right border-2 border-slate-950 bg-slate-50 rounded-xl p-2 min-w-[190px]">
+              <span className="text-[8px] font-black uppercase tracking-widest text-slate-500 block">
                 Nº UNIFICADO DO PEDIDO
               </span>
-              <span className="text-2xl font-black text-slate-950 tracking-tight block font-mono">
+              <span className="text-xl font-black text-slate-950 tracking-tight block font-mono">
                 {orderNumberInfo.badgeNumber}
               </span>
-              <div className="mt-1 pt-1 border-t border-slate-300 flex justify-between text-[8.5px]">
+              <div className="mt-0.5 pt-0.5 border-t border-slate-300 flex justify-between text-[8px]">
                 <span className="text-slate-500 font-bold">Ref: {orderNumberInfo.reference}</span>
                 <span className="font-black text-slate-900">{seller?.name || "Balcão / Loja"}</span>
               </div>
@@ -327,32 +327,32 @@ export function OrderPrintDocument({
         </header>
 
         {/* BLOCO 1: CRONOGRAMA DE PRODUÇÃO & LOGÍSTICA AGENDADA */}
-        <section className="mb-2.5 border-2 border-slate-950 rounded-xl overflow-hidden">
-          <div className="bg-slate-950 text-white px-3 py-1 flex items-center justify-between text-[9px] font-black uppercase tracking-wider">
+        <section className="mb-2 border-2 border-slate-950 rounded-xl overflow-hidden">
+          <div className="bg-slate-950 text-white px-2.5 py-0.5 flex items-center justify-between text-[8.5px] font-black uppercase tracking-wider">
             <span>1. CRONOGRAMA DE PRODUÇÃO & LOGÍSTICA AGENDADA</span>
-            <span className="bg-white/20 px-2 py-0.5 rounded text-[8px]">
+            <span className="bg-white/20 px-2 py-0.5 rounded text-[7.5px]">
               Status: {order.currentStatus === "SOLD" ? "Vendido / Em Produção" : order.currentStatus}
             </span>
           </div>
 
-          <div className="p-2.5 grid grid-cols-1 md:grid-cols-2 gap-2.5 bg-slate-50/70">
+          <div className="p-2 grid grid-cols-1 md:grid-cols-2 gap-2 bg-slate-50/70">
             {/* RETIRADA */}
             <div
-              className={`p-2 rounded-lg border ${
+              className={`p-1.5 rounded-lg border ${
                 order.pickupDate ? "bg-amber-50/90 border-amber-300" : "bg-white border-slate-200 opacity-60"
               }`}
             >
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] font-black uppercase text-amber-950">📦 RETIRADA AGENDADA (COLETA)</span>
-                <span className="text-[8px] font-bold text-amber-800">
+                <span className="text-[8.5px] font-black uppercase text-amber-950">📦 RETIRADA AGENDADA (COLETA)</span>
+                <span className="text-[7.5px] font-bold text-amber-800">
                   {order.pickupDate ? "Coleta no Cliente" : "Não aplicável"}
                 </span>
               </div>
-              <p className="text-base font-black text-amber-950">
+              <p className="text-sm font-black text-amber-950">
                 {order.pickupDate ? formatDate(order.pickupDate) : "Sem coleta agendada"}
               </p>
               {order.pickupDate && (
-                <p className="text-[8.5px] font-bold text-amber-900 mt-0.5">
+                <p className="text-[8px] font-bold text-amber-900 mt-0.5">
                   Horário: {formatTimeOnly(order.pickupDate) || "Comercial"}
                 </p>
               )}
@@ -360,30 +360,30 @@ export function OrderPrintDocument({
 
             {/* ENTREGA */}
             <div
-              className={`p-2 rounded-lg border ${
+              className={`p-1.5 rounded-lg border ${
                 order.deliveryDate ? "bg-emerald-50/90 border-emerald-300" : "bg-white border-slate-200 opacity-60"
               }`}
             >
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[9px] font-black uppercase text-emerald-950">
+                <span className="text-[8.5px] font-black uppercase text-emerald-950">
                   🚚 DATA LIMITE DE ENTREGA (EXPEDIÇÃO FÁBRICA)
                 </span>
-                <span className="text-[8px] font-bold text-emerald-800">
+                <span className="text-[7.5px] font-bold text-emerald-800">
                   {order.deliveryDate ? "Prazo Fatal Produção" : "A Definir"}
                 </span>
               </div>
-              <p className="text-base font-black text-emerald-950">
+              <p className="text-sm font-black text-emerald-950">
                 {order.deliveryDate ? formatDate(order.deliveryDate) : "Sem data agendada"}
               </p>
               {order.deliveryDate && (
-                <p className="text-[8.5px] font-bold text-emerald-900 mt-0.5">
+                <p className="text-[8px] font-bold text-emerald-900 mt-0.5">
                   Horário / Turno: {formatTimeOnly(order.deliveryDate) || "Comercial"}
                 </p>
               )}
             </div>
 
             {/* IDENTIFICAÇÃO BÁSICA PARA EXPEDIÇÃO */}
-            <div className="md:col-span-2 pt-1 border-t border-slate-200 text-[9.5px] space-y-1">
+            <div className="md:col-span-2 pt-0.5 border-t border-slate-200 text-[9px] space-y-0.5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <span className="font-bold text-slate-600">Cliente / Destinatário: </span>
@@ -406,11 +406,11 @@ export function OrderPrintDocument({
                 )}
               </div>
               {order.notes && (
-                <div className="bg-white p-1.5 rounded border border-slate-200 text-slate-800">
-                  <span className="font-black text-slate-950 uppercase text-[8.5px] block">
+                <div className="bg-white p-1 rounded border border-slate-200 text-slate-800">
+                  <span className="font-black text-slate-950 uppercase text-[8px] block">
                     Observações de Logística / Rota da Fábrica:
                   </span>
-                  <span className="font-medium">{order.notes}</span>
+                  <span className="font-medium text-[8.5px]">{order.notes}</span>
                 </div>
               )}
             </div>
@@ -418,8 +418,8 @@ export function OrderPrintDocument({
         </section>
 
         {/* BLOCO 2: ESPECIFICAÇÕES TÉCNICAS DOS PRODUTOS (CHÃO DE FÁBRICA) */}
-        <section className="mb-2.5 border-2 border-slate-950 rounded-xl overflow-hidden">
-          <div className="bg-slate-950 text-white px-3 py-1 flex items-center justify-between text-[9px] font-black uppercase tracking-wider">
+        <section className="mb-2 border-2 border-slate-950 rounded-xl overflow-hidden">
+          <div className="bg-slate-950 text-white px-2.5 py-0.5 flex items-center justify-between text-[8.5px] font-black uppercase tracking-wider">
             <span>2. ESPECIFICAÇÕES TÉCNICAS DE FABRICAÇÃO / REFORMA (CHÃO DE FÁBRICA)</span>
             <span>TOTAL DE ITENS: {items.length}</span>
           </div>
@@ -429,46 +429,46 @@ export function OrderPrintDocument({
               const specs = extractTechnicalSpecs(item);
 
               return (
-                <div key={item.id || idx} className="p-2.5 bg-white space-y-2">
+                <div key={item.id || idx} className="p-2 bg-white space-y-1.5">
                   {/* Cabeçalho do Item */}
-                  <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-1">
-                    <div className="flex items-center gap-2">
-                      <span className="bg-slate-950 text-white text-[10px] font-black px-2 py-0.5 rounded">
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-200 pb-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="bg-slate-950 text-white text-[9.5px] font-black px-1.5 py-0.5 rounded">
                         ITEM #{idx + 1}
                       </span>
                       <h3 className="text-xs font-black text-slate-950 uppercase tracking-tight">
                         {item.description}
                       </h3>
-                      <span className="text-[8.5px] font-bold text-slate-500 uppercase">
+                      <span className="text-[8px] font-bold text-slate-500 uppercase">
                         ({item.productService?.type || item.type || "Fabricação Própria"})
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="bg-slate-950 text-white font-black text-xs px-2.5 py-0.5 rounded-lg inline-block">
+                      <span className="bg-slate-950 text-white font-black text-xs px-2 py-0.5 rounded-lg inline-block">
                         QTD: {item.quantity} UN
                       </span>
                     </div>
                   </div>
 
                   {/* GRID TÉCNICA DO CHÃO DE FÁBRICA */}
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2 text-[9.5px]">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-1.5 text-[9px]">
                     {/* MEDIDAS DE CORTE (4 COLUNAS) */}
-                    <div className="md:col-span-4 bg-slate-100 p-2 rounded-lg border border-slate-300">
-                      <span className="font-black text-[8.5px] uppercase tracking-wider text-slate-700 block mb-1">
+                    <div className="md:col-span-4 bg-slate-100 p-1.5 rounded-lg border border-slate-300">
+                      <span className="font-black text-[8px] uppercase tracking-wider text-slate-700 block mb-0.5">
                         📏 MEDIDAS DE CORTE & ESTRUTURA
                       </span>
                       {specs.actualW > 0 || specs.actualL > 0 ? (
                         <div className="space-y-0.5">
-                          <p className="text-base font-black text-slate-950 font-mono tracking-tight">
+                          <p className="text-sm font-black text-slate-950 font-mono tracking-tight">
                             {specs.actualW} x {specs.actualL} {specs.actualH > 0 ? `x ${specs.actualH}` : ""} cm
                           </p>
-                          <p className="text-[8.5px] font-bold text-slate-600">
+                          <p className="text-[8px] font-bold text-slate-600">
                             Largura: {specs.actualW}cm • Comprimento: {specs.actualL}cm{" "}
                             {specs.actualH > 0 ? `• Altura: ${specs.actualH}cm` : ""}
                           </p>
                           {specs.commercialSize && (
-                            <p className="text-[8.5px] font-black text-blue-900 uppercase mt-0.5">
+                            <p className="text-[8px] font-black text-blue-900 uppercase">
                               Padrão: {specs.commercialSize}
                             </p>
                           )}
@@ -479,28 +479,28 @@ export function OrderPrintDocument({
                     </div>
 
                     {/* REVESTIMENTOS ESCOLHIDOS (8 COLUNAS) */}
-                    <div className="md:col-span-8 bg-blue-50/70 p-2 rounded-lg border border-blue-200">
-                      <span className="font-black text-[8.5px] uppercase tracking-wider text-blue-950 block mb-1">
+                    <div className="md:col-span-8 bg-blue-50/70 p-1.5 rounded-lg border border-blue-200">
+                      <span className="font-black text-[8px] uppercase tracking-wider text-blue-950 block mb-0.5">
                         🧵 REVESTIMENTOS ESCOLHIDOS NO PDV
                       </span>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                         {/* Tampo */}
                         <div>
-                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Tecido Tampo</span>
+                          <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Tecido Tampo</span>
                           <span className="font-black text-slate-900">
                             {specs.topFabricName || specs.topColor || "Padrão da Linha"}
                           </span>
                         </div>
                         {/* Faixa Lateral */}
                         <div>
-                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Faixa Lateral</span>
+                          <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Faixa Lateral</span>
                           <span className="font-black text-slate-900">
                             {specs.sideFabricName || specs.sideColor || "Padrão da Linha"}
                           </span>
                         </div>
                         {/* Densidade / Núcleo */}
                         <div>
-                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Densidade / Núcleo</span>
+                          <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Densidade / Núcleo</span>
                           <span className="font-black text-slate-900">
                             {specs.density || specs.mattressType || "Conforme ficha"}
                           </span>
@@ -508,21 +508,21 @@ export function OrderPrintDocument({
                         {/* Tecido Inferior */}
                         {specs.bottomFabricName && (
                           <div>
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Tecido Inferior</span>
+                            <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Tecido Inferior</span>
                             <span className="font-black text-slate-900">{specs.bottomFabricName}</span>
                           </div>
                         )}
                         {/* Fitilho / Debrum */}
                         {specs.tapeName && (
                           <div>
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Fitilho / Debrum</span>
+                            <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Fitilho / Debrum</span>
                             <span className="font-black text-slate-900">{specs.tapeName}</span>
                           </div>
                         )}
                         {/* Camada Extra / Pillow */}
                         {specs.foamService && specs.foamService !== "NENHUM" && (
                           <div className="sm:col-span-2">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Pillow / Conforto</span>
+                            <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Pillow / Conforto</span>
                             <span className="font-black text-emerald-950">
                               ✦ {specs.foamService} {specs.addedFoamHeight ? `(+${specs.addedFoamHeight} cm)` : ""}
                             </span>
@@ -531,7 +531,7 @@ export function OrderPrintDocument({
                         {/* Box / Pés */}
                         {(specs.boxType || specs.feetName) && (
                           <div className="sm:col-span-3 pt-0.5 border-t border-blue-200/80">
-                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Box & Pés</span>
+                            <span className="text-[7.5px] font-bold text-slate-500 uppercase block">Box & Pés</span>
                             <span className="font-black text-amber-950">
                               Tipo: {(specs.boxType || "Comum").toUpperCase()}
                               {specs.hasStructureReinforce ? " • Reforço Estrutural" : ""}
@@ -546,8 +546,8 @@ export function OrderPrintDocument({
 
                   {/* NOTAS TÉCNICAS E ESCOLHAS DIGITADAS NO PDV */}
                   {specs.technicalNotes && (
-                    <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-2 text-[9.5px] text-amber-950">
-                      <span className="font-black uppercase tracking-wider text-[8px] text-amber-900 block mb-0.5">
+                    <div className="bg-amber-50/80 border border-amber-300 rounded-lg p-1.5 text-[9px] text-amber-950">
+                      <span className="font-black uppercase tracking-wider text-[7.5px] text-amber-900 block mb-0.5">
                         📝 NOTAS TÉCNICAS & ESCOLHAS PERSONALIZADAS DO CLIENTE NO PDV:
                       </span>
                       <p className="font-medium whitespace-pre-wrap">{specs.technicalNotes}</p>
@@ -556,8 +556,8 @@ export function OrderPrintDocument({
 
                   {/* HIGIENIZAÇÃO */}
                   {specs.cleaningRows.length > 0 && (
-                    <div className="bg-teal-50/70 border border-teal-300 rounded-lg p-2 text-[8.5px] text-teal-950">
-                      <span className="font-black uppercase tracking-wider text-[8px] text-teal-900 block mb-1">
+                    <div className="bg-teal-50/70 border border-teal-300 rounded-lg p-1.5 text-[8px] text-teal-950">
+                      <span className="font-black uppercase tracking-wider text-[7.5px] text-teal-900 block mb-0.5">
                         🧼 ESPECIFICAÇÃO DE HIGIENIZAÇÃO / IMPERMEABILIZAÇÃO:
                       </span>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
@@ -566,7 +566,7 @@ export function OrderPrintDocument({
                             <span className="font-black text-teal-900">
                               {row.quantity}x {row.objectType}
                             </span>
-                            {row.observation && <p className="text-[7.5px] text-slate-500">{row.observation}</p>}
+                            {row.observation && <p className="text-[7px] text-slate-500">{row.observation}</p>}
                           </div>
                         ))}
                       </div>
@@ -579,38 +579,38 @@ export function OrderPrintDocument({
         </section>
 
         {/* BLOCO 3: ROTEIRO DE CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA) */}
-        <section className="mb-2 border border-slate-400 rounded-xl p-2 bg-white">
-          <div className="text-[8.5px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-1 mb-1.5 flex justify-between">
+        <section className="mb-2 border border-slate-400 rounded-xl p-1.5 bg-white">
+          <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
             <span>3. ROTEIRO DE FABRICAÇÃO & CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA)</span>
             <span>VISTO OBRIGATÓRIO DOS OPERADORES</span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[8.5px]">
-            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[8px]">
+            <div className="border border-slate-200 rounded p-1 bg-slate-50">
               <span className="font-bold text-slate-800 block">[ ] 1. Marcenaria & Estrutura</span>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Data: ___/___/2026</p>
+              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
             </div>
-            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+            <div className="border border-slate-200 rounded p-1 bg-slate-50">
               <span className="font-bold text-slate-800 block">[ ] 2. Corte de Espuma & Bloco</span>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Data: ___/___/2026</p>
+              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
             </div>
-            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+            <div className="border border-slate-200 rounded p-1 bg-slate-50">
               <span className="font-bold text-slate-800 block">[ ] 3. Tapeçaria, Costura & Debrum</span>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Data: ___/___/2026</p>
+              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
             </div>
-            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+            <div className="border border-slate-200 rounded p-1 bg-slate-50">
               <span className="font-bold text-slate-800 block">[ ] 4. Qualidade Final & Embalagem</span>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Resp: ___________________</p>
-              <p className="text-[7.5px] text-slate-500 mt-0.5">Data: ___/___/2026</p>
+              <p className="text-[7px] text-slate-500 mt-0.5">Resp: ___________________</p>
+              <p className="text-[7px] text-slate-500">Data: ___/___/2026</p>
             </div>
           </div>
         </section>
 
         {/* RODAPÉ */}
-        <footer className="text-center pt-1 border-t border-slate-300 text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+        <footer className="text-center pt-1 border-t border-slate-300 text-[7.5px] font-bold text-slate-500 uppercase tracking-wider">
           DOCUMENTO INTERNO DE PRODUÇÃO • NÃO CONTÉM DADOS FINANCEIROS • {companyInfo.name}
         </footer>
       </div>
@@ -619,13 +619,12 @@ export function OrderPrintDocument({
 
   // =======================================================================
   // GUIA 2 DE 2: COMPROVANTE DO CLIENTE & TERMO DE GARANTIA
-  // Contém o comprovante completo de tudo que foi feito (dados do cliente,
-  // itens com medidas/tecidos/valores, totais e parcelas) E o Termo de Garantia
-  // com manual de cuidados e canhoto destacável na mesma folha A4.
+  // 1 FOLHA A4 COMPLETA E DEDICADA PARA O CLIENTE.
+  // SEM COISAS DE DESTACAR OU PICOTES, COM PROTOCOLO DE RECEBIMENTO INTEGRAL.
   // =======================================================================
   const renderGuiaClienteGarantiaA4 = () => {
     return (
-      <div className="w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9.5px] leading-tight">
+      <div className="guia-page guia-page-2 w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-5 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[9px] leading-tight">
         {/* CABEÇALHO DA GUIA DO CLIENTE */}
         <header className="border-b-2 border-slate-950 pb-2 mb-2">
           <div className="flex items-start justify-between gap-3">
@@ -672,7 +671,7 @@ export function OrderPrintDocument({
             <span>DATA DA COMPRA: {formatDate(sale.saleDate || order.createdAt)}</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[9px]">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[8.5px]">
             <div>
               <span className="font-bold text-slate-500 block text-[7.5px] uppercase">Nome Completo</span>
               <span className="font-black text-slate-950 uppercase">{customer?.fullName || "Não informado"}</span>
@@ -716,9 +715,9 @@ export function OrderPrintDocument({
             <span>TOTAL ITENS: {items.length}</span>
           </div>
 
-          <table className="w-full text-left text-[8.5px] border-collapse">
+          <table className="w-full text-left text-[8px] border-collapse">
             <thead>
-              <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[8px] uppercase font-black">
+              <tr className="bg-slate-100 text-slate-700 border-b border-slate-300 text-[7.5px] uppercase font-black">
                 <th className="py-1 px-2">Item</th>
                 <th className="py-1 px-1.5">Descrição do Produto & Escolhas Contratadas</th>
                 <th className="py-1 px-1.5 text-center">Qtd</th>
@@ -734,7 +733,7 @@ export function OrderPrintDocument({
                     <td className="py-1 px-2 font-black text-slate-900 w-7">#{idx + 1}</td>
                     <td className="py-1 px-1.5">
                       <p className="font-black text-slate-950 uppercase">{item.description}</p>
-                      <p className="text-[8px] text-slate-600">
+                      <p className="text-[7.5px] text-slate-600">
                         {specs.actualW > 0 ? `Medidas: ${specs.actualW}x${specs.actualL}x${specs.actualH}cm • ` : ""}
                         {specs.topFabricName ? `Tampo: ${specs.topFabricName} • ` : ""}
                         {specs.sideFabricName ? `Lateral: ${specs.sideFabricName} • ` : ""}
@@ -743,7 +742,7 @@ export function OrderPrintDocument({
                         {specs.boxType ? `Box: ${specs.boxType}` : ""}
                       </p>
                       {specs.technicalNotes && (
-                        <p className="text-[7.5px] text-amber-900 font-medium mt-0.5">
+                        <p className="text-[7px] text-amber-900 font-medium mt-0.5">
                           Obs: {specs.technicalNotes}
                         </p>
                       )}
@@ -758,16 +757,16 @@ export function OrderPrintDocument({
           </table>
 
           {/* TOTALIZADORES E CONDIÇÕES DE PAGAMENTO */}
-          <div className="bg-slate-50 border-t border-slate-300 p-2 flex flex-wrap items-center justify-between gap-2 text-[8.5px]">
+          <div className="bg-slate-50 border-t border-slate-300 p-1.5 flex flex-wrap items-center justify-between gap-2 text-[8px]">
             <div className="space-y-0.5">
-              <span className="font-black text-slate-600 uppercase text-[7.5px] block">Condição Financeira:</span>
+              <span className="font-black text-slate-600 uppercase text-[7px] block">Condição Financeira:</span>
               <p className="font-black text-slate-900">
                 Status: {sale.financialStatus === "PAID" ? "PAGO ANTECIPADO" : "A RECEBER NA ENTREGA"}
               </p>
               {installments.length > 0 && (
-                <div className="flex flex-wrap gap-1 text-[8px] text-slate-800 mt-0.5">
+                <div className="flex flex-wrap gap-1 text-[7.5px] text-slate-800 mt-0.5">
                   {installments.map((inst: any) => (
-                    <span key={inst.id} className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-bold">
+                    <span key={inst.id} className="bg-white px-1 py-0.5 rounded border border-slate-200 font-bold">
                       {inst.installmentNumber}x {inst.paymentMethod?.name || "Pagamento"} ({formatBRL(inst.amount)}) • Venc:{" "}
                       {formatDate(inst.dueDate)}
                     </span>
@@ -777,14 +776,14 @@ export function OrderPrintDocument({
             </div>
 
             <div className="text-right border-l border-slate-300 pl-3 space-y-0.5">
-              <div className="text-[8.5px] text-slate-600 font-bold space-x-2">
+              <div className="text-[8px] text-slate-600 font-bold space-x-2">
                 <span>Subtotal: {formatBRL(sale.subtotalAmount)}</span>
                 {sale.discountAmount > 0 && (
                   <span className="text-emerald-700">Desc: -{formatBRL(sale.discountAmount)}</span>
                 )}
                 {sale.surchargeAmount > 0 && <span>Acrésc: +{formatBRL(sale.surchargeAmount)}</span>}
               </div>
-              <p className="text-base font-black text-slate-950 font-mono">
+              <p className="text-sm font-black text-slate-950 font-mono">
                 TOTAL DO PEDIDO: {formatBRL(sale.totalAmount)}
               </p>
             </div>
@@ -793,15 +792,15 @@ export function OrderPrintDocument({
 
         {/* BLOCO 3: CERTIFICADO & TERMO DE GARANTIA INTEGRADO */}
         <section className="mb-2 border-2 border-slate-900 rounded-xl p-2 bg-white">
-          <div className="text-[8.5px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1.5 flex justify-between">
+          <div className="text-[8px] font-black uppercase tracking-wider text-slate-950 border-b border-slate-200 pb-0.5 mb-1 flex justify-between">
             <span>3. CERTIFICADO DE GARANTIA & MANUAL DE CUIDADOS (SPA DO COLCHÃO)</span>
             <span className="text-slate-600">NORMA TÉCNICA ABNT NBR 15413</span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[8px] text-slate-700 leading-snug">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[7.5px] text-slate-700 leading-snug">
             {/* COLUNA 1: PRAZOS */}
             <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8.5px] mb-0.5">
+              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
                 1. PRAZOS E COBERTURA
               </p>
               <p>
@@ -817,7 +816,7 @@ export function OrderPrintDocument({
 
             {/* COLUNA 2: CUIDADOS */}
             <div className="border-r border-slate-200 pr-1.5 space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8.5px] mb-0.5">
+              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
                 2. MANUAL DE CONSERVAÇÃO
               </p>
               <p>
@@ -833,7 +832,7 @@ export function OrderPrintDocument({
 
             {/* COLUNA 3: EXCLUSÕES */}
             <div className="space-y-0.5">
-              <p className="font-black text-slate-950 uppercase text-[8.5px] mb-0.5">
+              <p className="font-black text-slate-950 uppercase text-[8px] mb-0.5">
                 3. EXCLUSÕES DA GARANTIA
               </p>
               <p>• Danos por umidade, mofo, derramamento de líquidos, urina ou produtos abrasivos.</p>
@@ -844,39 +843,39 @@ export function OrderPrintDocument({
           </div>
         </section>
 
-        {/* BLOCO 4: CANHOTO DESTACÁVEL DE RECEBIMENTO */}
-        <footer className="border-t-2 border-dashed border-slate-900 pt-1.5">
-          <div className="flex items-center justify-between text-[7.5px] font-black uppercase tracking-widest text-slate-500 mb-0.5">
-            <span>✂ DESTACAR NO ATO DA ENTREGA (OBRIGATÓRIO DEVOLVER À EXPEDIÇÃO ASSINADO)</span>
-            <span>PROTOCOLO DE ENTREGA & RECEBIMENTO DO CLIENTE</span>
+        {/* BLOCO 4: PROTOCOLO INTEGRAL DE RECEBIMENTO & ASSINATURA DO CLIENTE */}
+        <footer className="border-t-2 border-slate-950 pt-1.5">
+          <div className="flex items-center justify-between text-[7.5px] font-black uppercase tracking-wider text-slate-700 mb-0.5">
+            <span>4. PROTOCOLO DE RECEBIMENTO & ASSINATURA DO CLIENTE</span>
+            <span className="font-mono text-slate-900">{orderNumberInfo.badgeNumber}</span>
           </div>
 
-          <p className="text-[8px] text-slate-700 mb-1.5 leading-tight">
+          <p className="text-[7.5px] text-slate-600 mb-1 leading-tight">
             Declaro ter recebido os produtos descritos no <strong>{orderNumberInfo.badgeNumber}</strong> em perfeitas
-            condições de acabamento, higiene e funcionamento, conferi as medidas e tecidos solicitados e concordo com os
-            Termos de Garantia e Cuidados estipulados acima.
+            condições de acabamento, medidas e funcionamento, conferi as especificações contratadas e confirmo ciência
+            dos Termos de Garantia e Cuidados estipulados acima.
           </p>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 items-end pt-0.5">
             <div className="border-b border-slate-900 pb-0.5">
-              <span className="text-[7px] text-slate-500 uppercase block">Nome Legível do Recebedor:</span>
-              <span className="text-[8.5px] font-black uppercase text-slate-900 truncate block">
+              <span className="text-[6.5px] text-slate-500 uppercase block">Nome do Recebedor:</span>
+              <span className="text-[8px] font-black uppercase text-slate-900 truncate block">
                 {order.recipientName || customer?.fullName || "___________________________"}
               </span>
             </div>
             <div className="border-b border-slate-900 pb-0.5">
-              <span className="text-[7px] text-slate-500 uppercase block">Documento (CPF / RG):</span>
-              <span className="text-[8.5px] font-bold text-slate-900">
+              <span className="text-[6.5px] text-slate-500 uppercase block">Documento (CPF / RG):</span>
+              <span className="text-[8px] font-bold text-slate-900">
                 {customer?.document || "___________________________"}
               </span>
             </div>
             <div className="border-b border-slate-900 pb-0.5 text-center">
-              <span className="text-[7px] text-slate-500 uppercase block">Data e Horário:</span>
-              <span className="text-[8.5px] font-bold text-slate-900">____ / ____ / 2026 às ____:____</span>
+              <span className="text-[6.5px] text-slate-500 uppercase block">Data e Horário:</span>
+              <span className="text-[8px] font-bold text-slate-900">____ / ____ / 2026 às ____:____</span>
             </div>
             <div className="border-b border-slate-900 pb-0.5 text-center">
-              <span className="text-[7px] text-slate-500 uppercase block">Assinatura do Recebedor:</span>
-              <span className="text-[7.5px] text-slate-400">Assinatura</span>
+              <span className="text-[6.5px] text-slate-500 uppercase block">Assinatura do Recebedor:</span>
+              <span className="text-[7px] text-slate-400">Assinatura</span>
             </div>
           </div>
         </footer>
@@ -972,9 +971,9 @@ export function OrderPrintDocument({
           <p>• 90 dias para costuras e tecidos. Giro quinzenal nos primeiros 3 meses.</p>
         </div>
 
-        {/* CANHOTO */}
+        {/* ASSINATURA */}
         <div className="pt-2 text-center text-[8px] text-slate-500">
-          <p className="mb-3">Recebi os produtos em perfeitas condições e concordo com os termos.</p>
+          <p className="mb-2">Recebi os produtos em perfeitas condições e concordo com os termos.</p>
           <div className="border-t border-slate-900 pt-1">
             <p className="font-bold text-slate-800 uppercase">{customer?.fullName || "Assinatura do Cliente"}</p>
           </div>
@@ -992,40 +991,39 @@ export function OrderPrintDocument({
   }
 
   // =======================================================================
-  // FORMATO A4 COM EXATAMENTE AS DUAS GUIAS SEPARADAS
-  // GUIA 1: PRODUÇÃO (FICHA TÉCNICA)
-  // GUIA 2: CLIENTE (COMPROVANTE DE TUDO + TERMO DE GARANTIA + CANHOTO)
+  // FORMATO A4 COM EXATAMENTE UMA FOLHA A4 PARA CADA GUIA
+  // GUIA 1 (FOLHA A4 1): PRODUÇÃO / FICHA TÉCNICA
+  // GUIA 2 (FOLHA A4 2): COMPROVANTE DO CLIENTE & TERMO DE GARANTIA
   // =======================================================================
   return (
-    <div className="order-print-container w-full space-y-8 print:space-y-0">
-      {/* 1. GUIA DE PRODUÇÃO */}
+    <div className="order-print-container w-full space-y-6 print:space-y-0">
+      {/* 1. GUIA DE PRODUÇÃO (FOLHA A4 1) */}
       {showGuia1 && (
-        <div className="guia-producao-page">
+        <div
+          className="guia-page guia-page-1 print:break-after-page"
+          style={{ breakAfter: showGuia2 ? "page" : "auto", pageBreakAfter: showGuia2 ? "always" : "auto" }}
+        >
           {renderGuiaProducaoA4()}
         </div>
       )}
 
-      {/* DIVISOR DE PÁGINA (QUEBRA AUTOMÁTICA DE PÁGINA NA IMPRESSÃO) */}
+      {/* DIVISOR VISUAL ENTRE FOLHAS NA TELA DO SISTEMA */}
       {showGuia1 && showGuia2 && (
-        <>
-          <div className="no-print my-6 flex items-center justify-center gap-3 text-slate-400">
-            <div className="h-px bg-slate-300 flex-1 max-w-[210mm]" />
-            <span className="text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-900 border border-blue-300 px-3 py-1 rounded-full shadow-sm">
-              ✂ DIVISOR DE FOLHA A4 • PRÓXIMA PÁGINA: GUIA 2 (CLIENTE & TERMO DE GARANTIA)
-            </span>
-            <div className="h-px bg-slate-300 flex-1 max-w-[210mm]" />
-          </div>
-
-          <div
-            className="sheet-page-break print:break-before-page"
-            style={{ pageBreakBefore: "always", breakBefore: "page" }}
-          />
-        </>
+        <div className="no-print my-6 flex items-center justify-center gap-3 text-slate-400">
+          <div className="h-px bg-slate-300 flex-1 max-w-[210mm]" />
+          <span className="text-[10px] font-black uppercase tracking-widest bg-slate-800 text-white px-3.5 py-1 rounded-full shadow-sm">
+            FOLHA 2 (A4): GUIA DO CLIENTE & TERMO DE GARANTIA
+          </span>
+          <div className="h-px bg-slate-300 flex-1 max-w-[210mm]" />
+        </div>
       )}
 
-      {/* 2. GUIA DO CLIENTE COM COMPROVANTE COMPLETO + TERMO DE GARANTIA */}
+      {/* 2. GUIA DO CLIENTE COM COMPROVANTE COMPLETO + TERMO DE GARANTIA (FOLHA A4 2) */}
       {showGuia2 && (
-        <div className="guia-cliente-garantia-page">
+        <div
+          className="guia-page guia-page-2 print:break-before-page"
+          style={{ breakBefore: showGuia1 ? "page" : "auto", pageBreakBefore: showGuia1 ? "always" : "auto" }}
+        >
           {renderGuiaClienteGarantiaA4()}
         </div>
       )}

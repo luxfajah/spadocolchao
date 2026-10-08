@@ -221,6 +221,19 @@ export function PrintMonitorClient({ initialOrders = [] }: PrintMonitorClientPro
             margin: 0 !important;
             padding: 0 !important;
           }
+          .guia-page {
+            box-sizing: border-box !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+          }
+          .guia-page-1 {
+            page-break-after: always !important;
+            break-after: page !important;
+          }
+          .guia-page-2 {
+            page-break-before: always !important;
+            break-before: page !important;
+          }
           .sheet-page-break {
             page-break-before: always !important;
             break-before: page !important;
