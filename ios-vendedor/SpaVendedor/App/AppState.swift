@@ -8,8 +8,8 @@ public final class AppState {
     public var isAuthenticated: Bool = false
 
     // PDV / Catálogo
-    public var products: [Product] = Product.sampleProducts
-    public var customers: [Customer] = Customer.sampleCustomers
+    public var products: [Product] = []
+    public var customers: [Customer] = []
     public var selectedCustomer: Customer? = nil
 
     // Carrinho Ativo
@@ -17,13 +17,13 @@ public final class AppState {
     public var globalDiscount: Double = 0.0
 
     // Kanban e Pedidos
-    public var orders: [Order] = Order.sampleOrders
+    public var orders: [Order] = []
 
     // Metas & Saldo
-    public var goalStats: GoalStats = GoalStats.sample
+    public var goalStats: GoalStats = GoalStats()
 
     // Visitas
-    public var visits: [Visit] = Visit.sampleVisits
+    public var visits: [Visit] = []
 
     // Estado Operacional
     public var isLoading: Bool = false
@@ -31,7 +31,6 @@ public final class AppState {
     public var isOfflineMode: Bool = false
 
     public init() {
-        // Inicializa com dados demo ou sessão salva
         if let savedUser = loadSavedUser() {
             self.currentUser = savedUser
             self.isAuthenticated = true
@@ -81,29 +80,44 @@ public final class AppState {
     @MainActor
     public func loadData() async {
         isLoading = true
+        errorMessage = nil
         defer { isLoading = false }
 
         do {
-            let (fetchedProducts, fetchedCustomers) = try await APIClient.shared.fetchPDVInit()
-            if !fetchedProducts.isEmpty {
-                self.products = fetchedProducts
-            }
-            if !fetchedCustomers.isEmpty {
-                self.customers = fetchedCustomers
-            }
+            async let pdvTask = APIClient.shared.fetchPDVInit()
+            let isAdmin = currentUser?.isAdmin == true
+            async let ordersTask = APIClient.shared.fetchOrders(sellerId: currentUser?.sellerId, isAdmin: isAdmin)
+            async let statsTask = APIClient.shared.fetchGoalStats(sellerId: currentUser?.sellerId)
+            async let visitsTask = APIClient.shared.fetchVisits(sellerId: currentUser?.sellerId)
 
-            let fetchedOrders = try await APIClient.shared.fetchOrders(sellerId: currentUser?.sellerId)
-            if !fetchedOrders.isEmpty {
-                self.orders = fetchedOrders
-            }
+            let ((fetchedProducts, fetchedCustomers), fetchedOrders, fetchedStats, fetchedVisits) = try await (pdvTask, ordersTask, statsTask, visitsTask)
 
-            let fetchedStats = try await APIClient.shared.fetchGoalStats(sellerId: currentUser?.sellerId)
+            self.products = fetchedProducts
+            self.customers = fetchedCustomers
+            self.orders = fetchedOrders
             self.goalStats = fetchedStats
-
+            self.visits = fetchedVisits
             self.isOfflineMode = false
         } catch {
-            // Em caso de falha de conexão, opera em modo offline suavemente
             self.isOfflineMode = true
+            self.errorMessage = "Falha ao sincronizar com Supabase: \(error.localizedDescription)"
+        }
+    }
+
+    @MainActor
+    public func createVisit(newVisit: Visit) async {
+        do {
+            let created = try await APIClient.shared.createVisit(
+                sellerId: currentUser?.sellerId,
+                clientName: newVisit.clientName,
+                clientPhone: newVisit.clientPhone,
+                clientAddress: newVisit.clientAddress,
+                visitDate: newVisit.visitDate,
+                notes: newVisit.notes
+            )
+            self.visits.insert(created, at: 0)
+        } catch {
+            self.visits.insert(newVisit, at: 0)
         }
     }
 
@@ -127,7 +141,7 @@ public final class AppState {
         }
     }
 
-    private func loadSavedUser() -> User? {
+    public func loadSavedUser() -> User? {
         guard let data = UserDefaults.standard.data(forKey: "saved_logged_user"),
               let user = try? JSONDecoder().decode(User.self, from: data) else {
             return nil

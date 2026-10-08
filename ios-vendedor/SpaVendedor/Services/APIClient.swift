@@ -60,89 +60,141 @@ public final class APIClient: Sendable {
     public func fetchPDVInit() async throws -> ([Product], [Customer]) {
         let endpoint = "\(baseURLString)/api/vendedor/pdv/init"
         guard let url = URL(string: endpoint) else {
-            return (Product.sampleProducts, Customer.sampleCustomers)
+            return ([], [])
         }
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = 10.0
+        request.timeoutInterval = 12.0
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return (Product.sampleProducts, Customer.sampleCustomers)
-            }
-
-            struct PDVInitResponse: Codable {
-                let success: Bool
-                let products: [Product]
-                let customers: [Customer]
-            }
-
-            let res = try jsonDecoder.decode(PDVInitResponse.self, from: data)
-            return (res.products, res.customers)
-        } catch {
-            // Fallback transparente para o modo offline/demonstração
-            return (Product.sampleProducts, Customer.sampleCustomers)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
         }
+
+        struct PDVInitResponse: Codable {
+            let success: Bool
+            let products: [Product]
+            let customers: [Customer]
+        }
+
+        let res = try jsonDecoder.decode(PDVInitResponse.self, from: data)
+        return (res.products, res.customers)
     }
 
     // MARK: - Pedidos / Kanban
-    public func fetchOrders(sellerId: String?) async throws -> [Order] {
+    public func fetchOrders(sellerId: String?, isAdmin: Bool = false) async throws -> [Order] {
         var components = URLComponents(string: "\(baseURLString)/api/vendedor/pedidos")
-        if let sId = sellerId {
-            components?.queryItems = [URLQueryItem(name: "sellerId", value: sId)]
+        var queryItems: [URLQueryItem] = []
+        if let sId = sellerId, !sId.isEmpty {
+            queryItems.append(URLQueryItem(name: "sellerId", value: sId))
+        }
+        if isAdmin {
+            queryItems.append(URLQueryItem(name: "isAdmin", value: "true"))
+        }
+        if !queryItems.isEmpty {
+            components?.queryItems = queryItems
         }
 
         guard let url = components?.url else {
-            return Order.sampleOrders
+            return []
         }
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = 10.0
+        request.timeoutInterval = 12.0
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return Order.sampleOrders
-            }
-
-            struct OrdersResponse: Codable {
-                let success: Bool
-                let orders: [Order]
-            }
-
-            let res = try jsonDecoder.decode(OrdersResponse.self, from: data)
-            return res.orders
-        } catch {
-            return Order.sampleOrders
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
         }
+
+        struct OrdersResponse: Codable {
+            let success: Bool
+            let orders: [Order]
+        }
+
+        let res = try jsonDecoder.decode(OrdersResponse.self, from: data)
+        return res.orders
     }
 
     // MARK: - Metas e Saldo
     public func fetchGoalStats(sellerId: String?) async throws -> GoalStats {
         var components = URLComponents(string: "\(baseURLString)/api/vendedor/metas")
-        if let sId = sellerId {
+        if let sId = sellerId, !sId.isEmpty {
             components?.queryItems = [URLQueryItem(name: "sellerId", value: sId)]
         }
 
         guard let url = components?.url else {
-            return GoalStats.sample
+            return GoalStats()
         }
 
         var request = URLRequest(url: url)
-        request.timeoutInterval = 10.0
+        request.timeoutInterval = 12.0
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                return GoalStats.sample
-            }
-
-            let res = try jsonDecoder.decode(GoalResponse.self, from: data)
-            return res.stats ?? GoalStats.sample
-        } catch {
-            return GoalStats.sample
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return GoalStats()
         }
+
+        let res = try jsonDecoder.decode(GoalResponse.self, from: data)
+        return res.stats ?? GoalStats()
+    }
+
+    // MARK: - Visitas
+    public func fetchVisits(sellerId: String?) async throws -> [Visit] {
+        var components = URLComponents(string: "\(baseURLString)/api/visitas")
+        if let sId = sellerId, !sId.isEmpty {
+            components?.queryItems = [URLQueryItem(name: "sellerId", value: sId)]
+        }
+
+        guard let url = components?.url else {
+            return []
+        }
+
+        var request = URLRequest(url: url)
+        request.timeoutInterval = 12.0
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            return []
+        }
+
+        return (try? jsonDecoder.decode([Visit].self, from: data)) ?? []
+    }
+
+    public func createVisit(
+        sellerId: String?,
+        clientName: String,
+        clientPhone: String?,
+        clientAddress: String?,
+        visitDate: String,
+        notes: String?
+    ) async throws -> Visit {
+        let endpoint = "\(baseURLString)/api/visitas"
+        guard let url = URL(string: endpoint) else {
+            throw URLError(.badURL)
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 15.0
+
+        let body: [String: Any] = [
+            "sellerId": sellerId ?? "",
+            "clientName": clientName,
+            "clientPhone": clientPhone ?? "",
+            "clientAddress": clientAddress ?? "",
+            "visitDate": visitDate,
+            "notes": notes ?? ""
+        ]
+        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (httpResponse.statusCode == 200 || httpResponse.statusCode == 201) else {
+            throw URLError(.badServerResponse)
+        }
+
+        return try jsonDecoder.decode(Visit.self, from: data)
     }
 
     // MARK: - Finalizar Venda / Criar Pedido
@@ -194,27 +246,23 @@ public final class APIClient: Sendable {
 
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
-        do {
-            let (data, response) = try await URLSession.shared.data(for: request)
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                // Modo offline: simula número de venda
-                let fallbackNumber = "VEND-\(Int(Date().timeIntervalSince1970).description.suffix(6))"
-                return (fallbackNumber, UUID().uuidString)
-            }
-
-            struct CreateOrderResponse: Codable {
-                let success: Bool
-                let saleNumber: String?
-                let orderId: String?
-                let error: String?
-            }
-
-            let res = try jsonDecoder.decode(CreateOrderResponse.self, from: data)
-            return (res.saleNumber ?? "VEND-LOCAL", res.orderId ?? UUID().uuidString)
-        } catch {
-            let fallbackNumber = "VEND-\(Int(Date().timeIntervalSince1970).description.suffix(6))"
-            return (fallbackNumber, UUID().uuidString)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
         }
+
+        struct CreateOrderResponse: Codable {
+            let success: Bool
+            let saleNumber: String?
+            let orderId: String?
+            let error: String?
+        }
+
+        let res = try jsonDecoder.decode(CreateOrderResponse.self, from: data)
+        guard res.success, let saleNum = res.saleNumber, let ordId = res.orderId else {
+            throw NSError(domain: "PDVError", code: 400, userInfo: [NSLocalizedDescriptionKey: res.error ?? "Erro ao salvar pedido no servidor"])
+        }
+        return (saleNum, ordId)
     }
 
     // MARK: - Envio de Localização

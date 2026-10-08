@@ -146,7 +146,7 @@ public struct LoginView: View {
                             .padding(.top, 6)
 
                             // Biometria (Face ID / Touch ID)
-                            if BiometricManager.shared.canEvaluateBiometrics {
+                            if BiometricManager.shared.canEvaluateBiometrics && appState.loadSavedUser() != nil {
                                 Button(action: handleBiometrics) {
                                     HStack(spacing: 8) {
                                         Image(systemName: "faceid")
@@ -161,15 +161,6 @@ public struct LoginView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                                 }
                             }
-
-                            // Modo Demo
-                            Button(action: enterDemoMode) {
-                                Text("Acessar em Modo Demonstração")
-                                    .font(.subheadline)
-                                    .foregroundStyle(Color.white.opacity(0.7))
-                                    .underline()
-                            }
-                            .padding(.top, 4)
                         }
                         .padding(24)
                         .background(.ultraThinMaterial.opacity(0.35))
@@ -253,17 +244,18 @@ public struct LoginView: View {
     }
 
     private func handleBiometrics() {
+        guard let savedUser = appState.loadSavedUser() else {
+            errorMessage = "Entre com usuário e senha para cadastrar o acesso biométrico."
+            return
+        }
+
         Task {
             let success = await BiometricManager.shared.authenticate(reason: "Acesse o PDV Spa do Colchão")
             if success {
                 await MainActor.run {
-                    appState.setUser(User.demo)
+                    appState.setUser(savedUser)
                 }
             }
         }
-    }
-
-    private func enterDemoMode() {
-        appState.setUser(User.demo)
     }
 }

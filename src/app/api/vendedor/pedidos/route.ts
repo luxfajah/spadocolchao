@@ -9,9 +9,11 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const sellerId = searchParams.get("sellerId")
+    const isAdmin = searchParams.get("isAdmin") === "true"
+    const all = searchParams.get("all") === "true"
 
     const whereClause: any = {}
-    if (sellerId && sellerId !== "__NONE__" && sellerId !== "null") {
+    if (sellerId && sellerId !== "__NONE__" && sellerId !== "null" && !isAdmin && !all) {
       whereClause.sellerId = sellerId
     }
 

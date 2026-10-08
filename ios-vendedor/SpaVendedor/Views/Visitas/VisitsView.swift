@@ -64,11 +64,16 @@ public struct VisitsView: View {
                     }
                     .padding(.bottom, 24)
                 }
+                .refreshable {
+                    await appState.loadData()
+                }
             }
             .navigationBarHidden(true)
             .sheet(isPresented: $showNewVisitSheet) {
                 NewVisitSheet { newVisit in
-                    appState.visits.insert(newVisit, at: 0)
+                    Task {
+                        await appState.createVisit(newVisit: newVisit)
+                    }
                 }
             }
             .alert("Check-in de Visita", isPresented: $showCheckInAlert) {

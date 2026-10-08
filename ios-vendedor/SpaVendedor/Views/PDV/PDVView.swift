@@ -70,19 +70,36 @@ public struct PDVView: View {
                         }
 
                         // Lista / Grid de Produtos
-                        LazyVStack(spacing: 12) {
-                            ForEach(filteredProducts) { product in
-                                ProductCardView(product: product) {
-                                    if product.isColchao || product.isReforma || product.isBox {
-                                        productToCustomize = product
-                                    } else {
-                                        appState.addToCart(product: product)
+                        if filteredProducts.isEmpty {
+                            VStack(spacing: 12) {
+                                if appState.isLoading {
+                                    ProgressView()
+                                        .padding()
+                                } else {
+                                    Image(systemName: "shippingbox")
+                                        .font(.system(size: 44))
+                                        .foregroundStyle(.secondary)
+                                }
+                                Text(appState.isLoading ? "Sincronizando com Supabase..." : "Nenhum produto encontrado no catálogo")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.top, 48)
+                        } else {
+                            LazyVStack(spacing: 12) {
+                                ForEach(filteredProducts) { product in
+                                    ProductCardView(product: product) {
+                                        if product.isColchao || product.isReforma || product.isBox {
+                                            productToCustomize = product
+                                        } else {
+                                            appState.addToCart(product: product)
+                                        }
                                     }
                                 }
                             }
+                            .padding(.horizontal)
+                            .padding(.bottom, appState.cartItemCount > 0 ? 90 : 20)
                         }
-                        .padding(.horizontal)
-                        .padding(.bottom, appState.cartItemCount > 0 ? 90 : 20)
                     }
                 }
                 .refreshable {

@@ -46,36 +46,5 @@ public struct Visit: Codable, Identifiable, Hashable {
         return visitDate
     }
 
-    public static let sampleVisits: [Visit] = [
-        Visit(
-            id: "vis_01",
-            clientName: "Pousada Morada dos Pássaros",
-            clientPhone: "(11) 98877-6655",
-            clientAddress: "Rua das Hortênsias, 240, Atibaia - SP",
-            visitDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(3600 * 2)),
-            status: "SCHEDULED",
-            notes: "Avaliação técnica de 12 colchões para reforma e troca de tecido impermeável.",
-            customerId: nil
-        ),
-        Visit(
-            id: "vis_02",
-            clientName: "Dr. Gustavo Arantes (Clínica)",
-            clientPhone: "(11) 97766-5544",
-            clientAddress: "Av. Brigadeiro Faria Lima, 2000, Sala 84, São Paulo - SP",
-            visitDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(86400 * 1)),
-            status: "SCHEDULED",
-            notes: "Orçamento para 3 macas ortopédicas personalizadas com espuma D45.",
-            customerId: nil
-        ),
-        Visit(
-            id: "vis_03",
-            clientName: "Cláudia & Fernando Rezende",
-            clientPhone: "(11) 96655-4433",
-            clientAddress: "Alameda dos Anapurus, 750, Moema, São Paulo - SP",
-            visitDate: ISO8601DateFormatter().string(from: Date().addingTimeInterval(-86400 * 2)),
-            status: "COMPLETED",
-            notes: "Visita residencial concluída. Fecharam reforma de 1 Queen e 2 travesseiros.",
-            customerId: "cust_01"
-        )
-    ]
+    public static let sampleVisits: [Visit] = []
 }

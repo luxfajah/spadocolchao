@@ -60,6 +60,13 @@ export async function POST(req: NextRequest) {
       },
     })
 
+    const isUserAdmin = Boolean(
+      user.isSuperAdmin ||
+      user.primaryRole?.name?.toLowerCase().includes("admin") ||
+      user.jobTitle?.toLowerCase().includes("ceo") ||
+      user.jobTitle?.toLowerCase().includes("gerente")
+    )
+
     return NextResponse.json({
       success: true,
       token: user.id, // Token de sessão simplificado para o app
@@ -68,10 +75,11 @@ export async function POST(req: NextRequest) {
         name: user.name,
         email: user.email,
         username: user.username,
-        role: user.primaryRole?.name || "VENDEDOR",
+        role: isUserAdmin ? "ADMIN" : (user.primaryRole?.name || "VENDEDOR"),
         sellerId: seller?.id || null,
         sellerCode: seller?.code || null,
         commissionRate: seller?.defaultCommissionRate || 0.05,
+        isAdmin: isUserAdmin,
       },
     })
   } catch (error: any) {

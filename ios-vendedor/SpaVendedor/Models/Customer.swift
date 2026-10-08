@@ -38,41 +38,7 @@ public struct Customer: Codable, Identifiable, Hashable {
         return parts.isEmpty ? "Endereço não informado" : parts.join(", ")
     }
 
-    public static let sampleCustomers: [Customer] = [
-        Customer(
-            id: "cust_01",
-            fullName: "Mariana Alencar Guimarães",
-            document: "123.456.789-00",
-            phone: "(11) 98765-4321",
-            whatsapp: "11987654321",
-            addressCity: "São Paulo",
-            addressNeighborhood: "Moema",
-            addressStreet: "Av. Moema",
-            addressNumber: "450"
-        ),
-        Customer(
-            id: "cust_02",
-            fullName: "Roberto Mendes Silva",
-            document: "987.654.321-11",
-            phone: "(11) 97654-3210",
-            whatsapp: "11976543210",
-            addressCity: "São Paulo",
-            addressNeighborhood: "Jardins",
-            addressStreet: "Rua Oscar Freire",
-            addressNumber: "1280"
-        ),
-        Customer(
-            id: "cust_03",
-            fullName: "Hotel Vila Primavera (Pousada)",
-            document: "12.345.678/0001-90",
-            phone: "(11) 3210-9876",
-            whatsapp: "11999887766",
-            addressCity: "Campos do Jordão",
-            addressNeighborhood: "Capivari",
-            addressStreet: "Av. Macedo Soares",
-            addressNumber: "100"
-        )
-    ]
+    public static let sampleCustomers: [Customer] = []
 }
 
 extension Sequence where Element == String {
