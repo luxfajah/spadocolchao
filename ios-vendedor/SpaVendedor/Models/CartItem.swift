@@ -1,33 +1,74 @@
 import Foundation
 
+public struct FabricColorOption: Identifiable, Codable, Hashable {
+    public let id: String
+    public let name: String
+    public let hex: String
+    public let desc: String
+    public let isLight: Bool
+
+    public init(id: String, name: String, hex: String, desc: String, isLight: Bool) {
+        self.id = id
+        self.name = name
+        self.hex = hex
+        self.desc = desc
+        self.isLight = isLight
+    }
+
+    public static let standardColors: [FabricColorOption] = [
+        FabricColorOption(id: "bege", name: "Bege Areia", hex: "#D4C4B5", desc: "Clássico, neutro e suave", isLight: true),
+        FabricColorOption(id: "grafite", name: "Cinza Grafite", hex: "#4A4E51", desc: "Moderno e sofisticado", isLight: false),
+        FabricColorOption(id: "preto", name: "Preto Ônix", hex: "#1A1A1A", desc: "Elegante e resistente", isLight: false),
+        FabricColorOption(id: "marrom", name: "Marrom Café", hex: "#5A3825", desc: "Rústico e acolhedor", isLight: false),
+        FabricColorOption(id: "marinho", name: "Azul Marinho", hex: "#1B2A4A", desc: "Tom nobre e contemporâneo", isLight: false),
+        FabricColorOption(id: "cinza", name: "Cinza Prata", hex: "#A9ACB0", desc: "Iluminado e acetinado", isLight: true),
+        FabricColorOption(id: "offwhite", name: "Off-White Pérola", hex: "#EDEBE6", desc: "Requinte e sofisticação", isLight: true),
+        FabricColorOption(id: "bordo", name: "Bordô Vinho", hex: "#5E1926", desc: "Personalidade marcante", isLight: false)
+    ]
+}
+
 public struct CustomizationOptions: Codable, Hashable {
     public var size: MattressSize = .casal
     public var customWidth: Double = 138.0
     public var customLength: Double = 188.0
     public var customHeight: Double = 25.0
 
-    public var fabricType: String = "Malha Belga Especial"
-    public var fabricColor: String = "Branco com Fios Prata"
+    // Tecido Tampo Superior (Colchão)
+    public var topFabric: String = "Matelassê Branco Acolchoado"
 
+    // Revestimento Faixa Lateral / Box (Veludo)
+    public var fabricType: String = "Veludo Nobre"
+    public var fabricColor: String = "Bege Areia"
+    public var fabricColorHex: String = "#D4C4B5"
+
+    // Fitilho de Fechamento (Debrum)
+    public var fitilho: String = "Fitilho Tom sobre Tom"
+
+    // Camada Extra de Espuma (Pillow Top)
     public var extraFoam: ExtraFoamType = .none
     public var extraFoamHeight: Double = 0.0
 
-    public var feetType: String = "Madeira Tabaco 12cm"
+    // Pés do Box
+    public var feetType: String = "Pé Plástico 12cm Preto"
+
+    // Observações Técnicas
     public var observations: String = ""
 
     public var extraPrice: Double {
-        var extra = 0.0
-        switch extraFoam {
-        case .none:
-            break
-        case .d28:
-            extra += 280.0
-        case .d33:
-            extra += 390.0
-        case .d45:
-            extra += 540.0
+        extraFoam.price
+    }
+
+    public var summaryText: String {
+        var parts: [String] = []
+        parts.append(size.rawValue)
+        if extraFoam != .none {
+            parts.append(extraFoam.badge)
         }
-        return extra
+        parts.append("Tecido: \(fabricColor)")
+        if !fitilho.isEmpty && fitilho != "Fitilho Tom sobre Tom" {
+            parts.append(fitilho)
+        }
+        return parts.joined(separator: " • ")
     }
 
     public init() {}
@@ -52,17 +93,26 @@ public enum MattressSize: String, CaseIterable, Codable {
 }
 
 public enum ExtraFoamType: String, CaseIterable, Codable {
-    case none = "Sem Camada Extra"
-    case d28 = "Espuma D28 (+5cm Conforto)"
-    case d33 = "Espuma D33 (+5cm Firmeza)"
-    case d45 = "Espuma D45 Ortopédica (+7cm Extra)"
+    case none = "Sem Camada Extra (Padrão de Fábrica)"
+    case d28_3cm = "Camada Extra +3cm Espuma D-28 Soft"
+    case d28_5cm = "Camada Extra +5cm Espuma D-28 Conforto"
+    case r26_5cm = "Camada Extra +5cm Ortopédica Firme (R-26)"
+
+    public var badge: String {
+        switch self {
+        case .none: return "Padrão"
+        case .d28_3cm: return "+3cm Macio"
+        case .d28_5cm: return "+5cm Conforto"
+        case .r26_5cm: return "+5cm Firme"
+        }
+    }
 
     public var price: Double {
         switch self {
         case .none: return 0.0
-        case .d28: return 280.0
-        case .d33: return 390.0
-        case .d45: return 540.0
+        case .d28_3cm: return 180.0
+        case .d28_5cm: return 280.0
+        case .r26_5cm: return 320.0
         }
     }
 }

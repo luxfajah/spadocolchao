@@ -292,8 +292,12 @@ public final class APIClient: Sendable {
                 "price": item.unitPrice,
                 "customization": [
                     "size": item.customization.size.rawValue,
+                    "topFabric": item.customization.topFabric,
                     "fabric": item.customization.fabricType,
                     "color": item.customization.fabricColor,
+                    "colorHex": item.customization.fabricColorHex,
+                    "fitilho": item.customization.fitilho,
+                    "feet": item.customization.feetType,
                     "extraFoam": item.customization.extraFoam.rawValue,
                     "observations": item.customization.observations
                 ]

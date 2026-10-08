@@ -220,11 +220,27 @@ export async function POST(req: NextRequest) {
 
       // Cria os itens
       for (const item of items) {
+        let itemDescription = item.name
+        if (item.customization) {
+          const parts = [
+            item.customization.size,
+            item.customization.extraFoam && !item.customization.extraFoam.includes("Sem Camada") ? item.customization.extraFoam : null,
+            item.customization.topFabric ? `Tampo: ${item.customization.topFabric}` : null,
+            item.customization.color ? `Tecido: ${item.customization.color}` : null,
+            item.customization.fitilho && item.customization.fitilho !== "Fitilho Tom sobre Tom" ? item.customization.fitilho : null,
+            item.customization.feet ? `Pés: ${item.customization.feet}` : null,
+            item.customization.observations ? `Obs: ${item.customization.observations}` : null,
+          ].filter(Boolean)
+          if (parts.length > 0) {
+            itemDescription = `${item.name} (${parts.join(" • ")})`
+          }
+        }
+
         await tx.saleItem.create({
           data: {
             saleId: sale.id,
             productServiceId: item.productId,
-            description: item.name,
+            description: itemDescription,
             quantity: Number(item.quantity || 1),
             originalPrice: Number(item.price),
             unitPrice: Number(item.price),
