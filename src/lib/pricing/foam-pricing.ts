@@ -129,16 +129,16 @@ export function getExtraFoamPricing(
   let laborMin = 20
   let glueBaseKg = 0.22
 
-  if (foamId === "extra_d33_5cm" || foamId === "extra_d28_5cm") {
+  if (foamId === "extra_d33_5cm" || foamId === "extra_d28_5cm" || foamId === "extra_conforto_5cm") {
     heightCm = 5
     costPerM3 = 1050
-    foamName = "Camada Extra +5cm Espuma D-33 Conforto"
+    foamName = "Camada Extra +5cm Espuma Conforto"
     laborMin = 20
     glueBaseKg = 0.22
-  } else if (foamId === "extra_r26_5cm") {
+  } else if (foamId === "extra_r26_5cm" || foamId === "extra_firme_5cm") {
     heightCm = 5
     costPerM3 = 920
-    foamName = "Camada Extra +5cm Ortopédica Firme (R-26)"
+    foamName = "Camada Extra +5cm Espuma Firme (Ortopédica)"
     laborMin = 20
     glueBaseKg = 0.22
   }

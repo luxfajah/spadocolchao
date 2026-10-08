@@ -112,7 +112,7 @@ public struct ProductCustomizerSheet: View {
                                 Image(systemName: "info.circle.fill")
                                     .font(.caption)
                                     .foregroundStyle(Color.blue)
-                                Text("Padrão da Linha Homologado: densidade, molas e camadas de conforto seguem a ficha técnica original deste modelo novo. Personalize as opções de tecido.")
+                                Text("Padrão da Linha: o núcleo e estrutura seguem a ficha técnica original do modelo. Você pode personalizar os tecidos e adicionar uma camada extra de 5cm de espuma.")
                                     .font(.caption2)
                                     .foregroundStyle(Color.secondary)
                             }
@@ -123,11 +123,11 @@ public struct ProductCustomizerSheet: View {
                 }
 
                 // ==========================================
-                // CASO 1: REFORMA DE COLCHÃO OU CONJUNTO
+                // PERSONALIZAÇÃO DE COLCHÃO OU CONJUNTO
                 // ==========================================
-                if isReforma && (isOnlyColchao || isConjunto) {
-                    // 1. Tampo de Cima
-                    Section("1. Tampo de Cima (Superfície Superior)") {
+                if isOnlyColchao || isConjunto {
+                    // 1. Tampo de Cima (Superfície Superior)
+                    Section(isReforma ? "1. Tampo de Cima (Superfície Superior)" : "Tecido do Tampo (Superfície Superior)") {
                         Picker("Tampo de Cima", selection: $options.topFabric) {
                             Text("Matelassê Branco Acolchoado (Padrão)").tag("Matelassê Branco Acolchoado")
                             Text("Matelassê Bege Linho (Requinte)").tag("Matelassê Bege Linho")
@@ -137,19 +137,21 @@ public struct ProductCustomizerSheet: View {
                         .pickerStyle(.menu)
                     }
 
-                    // 2. Tampo de Baixo
-                    Section("2. Tampo de Baixo (Superfície Inferior)") {
-                        Picker("Tampo de Baixo", selection: $options.bottomFabric) {
-                            Text("TNT Antiderrapante Preto 100g (Padrão 1 Face)").tag("TNT Antiderrapante Preto 100g")
-                            Text("Matelassê Branco Acolchoado (Dupla Face)").tag("Matelassê Branco Acolchoado (Dupla Face)")
-                            Text("Matelassê Bege Linho (Dupla Face)").tag("Matelassê Bege Linho (Dupla Face)")
-                            Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
+                    // 2. Tampo de Baixo (Exclusivo para Reforma)
+                    if isReforma {
+                        Section("2. Tampo de Baixo (Superfície Inferior)") {
+                            Picker("Tampo de Baixo", selection: $options.bottomFabric) {
+                                Text("TNT Antiderrapante Preto 100g (Padrão 1 Face)").tag("TNT Antiderrapante Preto 100g")
+                                Text("Matelassê Branco Acolchoado (Dupla Face)").tag("Matelassê Branco Acolchoado (Dupla Face)")
+                                Text("Matelassê Bege Linho (Dupla Face)").tag("Matelassê Bege Linho (Dupla Face)")
+                                Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
+                            }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
                     }
 
-                    // 3. Camada Adicional de Espuma (SÓ DE 5 CM)
-                    Section("3. Camada Adicional de Espuma (Apenas 5 cm)") {
+                    // 3. Camada Adicional de Espuma (5 cm - DISPONÍVEL P/ REFORMAS E NOVOS)
+                    Section(isReforma ? "3. Camada Adicional de Espuma (Apenas 5 cm)" : "Camada Adicional de Espuma (5 cm Opcional)") {
                         Picker("Camada de Espuma", selection: $options.extraFoam) {
                             ForEach(ExtraFoamType.allCases, id: \.self) { foam in
                                 HStack {
@@ -164,52 +166,38 @@ public struct ProductCustomizerSheet: View {
                         .pickerStyle(.menu)
 
                         if options.extraFoam != .none {
-                            Text("Espuma de alta resiliência cortada sob medida na fábrica para conforto ou firmeza.")
+                            Text("Lâmina inteiriça de 5cm cortada sob medida na fábrica para conforto macio ou firmeza postural.")
                                 .font(.caption2)
                                 .foregroundStyle(Color.secondary)
                         }
                     }
 
-                    // 4. Conversão para Vibroterapia
-                    Section("4. Conversão para Vibroterapia (Massagem)") {
-                        Toggle(isOn: $options.isVibroConversion) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Instalar Vibroterapia c/ Controle")
-                                    .font(.subheadline.bold())
-                                Text("Cápsulas de massagem eletrônica e controle (+R$ 850,00)")
-                                    .font(.caption2)
-                                    .foregroundStyle(Color.secondary)
+                    // 4. Conversão para Vibroterapia (Exclusivo para Reforma)
+                    if isReforma {
+                        Section("4. Conversão para Vibroterapia (Massagem)") {
+                            Toggle(isOn: $options.isVibroConversion) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Instalar Vibroterapia c/ Controle")
+                                        .font(.subheadline.bold())
+                                    Text("Cápsulas de massagem eletrônica e controle (+R$ 850,00)")
+                                        .font(.caption2)
+                                        .foregroundStyle(Color.secondary)
+                                }
                             }
+                            .tint(Color.purple)
                         }
-                        .tint(Color.purple)
-                    }
 
-                    // 5. Fitilho de Fechamento (Debrum)
-                    Section("5. Fitilho de Fechamento (Debrum)") {
-                        Picker("Modelo do Fitilho", selection: $options.fitilho) {
-                            Text("Fitilho Tom sobre Tom (Harmônico)").tag("Fitilho Tom sobre Tom")
-                            Text("Fitilho Branco Clássico (Contraste)").tag("Fitilho Branco Clássico")
-                            Text("Fitilho Bege Linho (Neutro)").tag("Fitilho Bege Linho")
-                            Text("Fitilho Cinza Grafite (Moderno)").tag("Fitilho Cinza Grafite")
-                            Text("Fitilho Preto Ônix (Marcante)").tag("Fitilho Preto Ônix")
+                        // 5. Fitilho de Fechamento (Debrum - Exclusivo para Reforma)
+                        Section("5. Fitilho de Fechamento (Debrum)") {
+                            Picker("Modelo do Fitilho", selection: $options.fitilho) {
+                                Text("Fitilho Tom sobre Tom (Harmônico)").tag("Fitilho Tom sobre Tom")
+                                Text("Fitilho Branco Clássico (Contraste)").tag("Fitilho Branco Clássico")
+                                Text("Fitilho Bege Linho (Neutro)").tag("Fitilho Bege Linho")
+                                Text("Fitilho Cinza Grafite (Moderno)").tag("Fitilho Cinza Grafite")
+                                Text("Fitilho Preto Ônix (Marcante)").tag("Fitilho Preto Ônix")
+                            }
+                            .pickerStyle(.menu)
                         }
-                        .pickerStyle(.menu)
-                    }
-                }
-
-                // ==========================================
-                // CASO 2: COLCHÃO NOVO (PADRÃO DA LINHA)
-                // "os novos devem seguir o padrão da linha e as unicas personalizações são as opções de tecido"
-                // ==========================================
-                if !isReforma && (isOnlyColchao || isConjunto) {
-                    Section("Opção de Tecido do Tampo (Colchão)") {
-                        Picker("Tecido do Tampo", selection: $options.topFabric) {
-                            Text("Matelassê Branco Acolchoado (Padrão Linha)").tag("Matelassê Branco Acolchoado")
-                            Text("Matelassê Bege Linho (Requinte)").tag("Matelassê Bege Linho")
-                            Text("Matelassê Cinza Grafite (Moderno)").tag("Matelassê Cinza Grafite")
-                            Text("Mesmo Tecido da Faixa Lateral").tag("Mesmo Tecido da Faixa Lateral")
-                        }
-                        .pickerStyle(.menu)
                     }
                 }
 

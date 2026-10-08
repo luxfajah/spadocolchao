@@ -16,31 +16,31 @@ interface SetCustomizationFormProps {
   onCancel: () => void;
 }
 
-// 1. Camada Extra de Espuma para Reforma do Colchão do Conjunto (EXCLUSIVAMENTE 5 CM)
-const REFORM_EXTRA_FOAM_OPTIONS = [
+// 1. Camada Extra de Espuma para o Colchão do Conjunto (EXCLUSIVAMENTE 5 CM - REFORMAS E NOVOS)
+const EXTRA_FOAM_OPTIONS = [
   {
     id: "sem_extra",
     code: null,
     height: 0,
     name: "Sem Camada Extra (0 cm)",
     badge: "Padrão",
-    desc: "Mantém a densidade e estrutura original da ficha técnica do colchão",
+    desc: "Mantém a estrutura original da ficha técnica do colchão",
   },
   {
     id: "extra_d33_5cm",
     code: "INS-ESP-D33",
     height: 5,
-    name: "Camada Adicional +5cm Espuma D-33 Conforto",
+    name: "Camada Adicional +5cm Espuma Conforto",
     badge: "+5cm Conforto",
-    desc: "Lâmina inteiriça de 5cm de densidade D33 para conforto intermediário superior",
+    desc: "Lâmina inteiriça de 5cm para conforto macio e acolhedor",
   },
   {
     id: "extra_r26_5cm",
     code: "INS-ESP-R26-5CM",
     height: 5,
-    name: "Camada Adicional +5cm Ortopédica Firme (R-26)",
+    name: "Camada Adicional +5cm Espuma Firme (Ortopédica)",
     badge: "+5cm Firme",
-    desc: "Lâmina inteiriça de 5cm aglomerado de alta sustentação para firmeza postural",
+    desc: "Lâmina inteiriça de 5cm de alta sustentação para firmeza postural",
   },
 ];
 
@@ -260,7 +260,7 @@ export function SetCustomizationForm({
   const [selectedFitilho, setSelectedFitilho] = useState(FITILHO_OPTIONS[0]);
   const [customFitilhoName, setCustomFitilhoName] = useState("");
 
-  const [selectedFoam, setSelectedFoam] = useState(REFORM_EXTRA_FOAM_OPTIONS[0]);
+  const [selectedFoam, setSelectedFoam] = useState(EXTRA_FOAM_OPTIONS[0]);
   const [customFoamNotes, setCustomFoamNotes] = useState("");
 
   const [hasVibroConversion, setHasVibroConversion] = useState(false);
@@ -275,10 +275,8 @@ export function SetCustomizationForm({
   const [quantity, setQuantity] = useState(1);
   const [technicalNotes, setTechnicalNotes] = useState("");
 
-  // Cálculos de Preço Adicional
-  const activeFoamPricing = isReforma
-    ? getExtraFoamPricing(selectedFoam.id, mattressDim.sizeKey)
-    : { additionalPrice: 0, minimumFloorPrice: 0, directCost: 0, volumeM3: 0, priceBadge: "Incluso" };
+  // Cálculos de Preço Adicional (Camada de espuma disponível para reformas e conjuntos novos)
+  const activeFoamPricing = getExtraFoamPricing(selectedFoam.id, mattressDim.sizeKey);
 
   const vibroPrice = isReforma && hasVibroConversion ? VIBRO_CONVERSION_PRICE : 0;
   const vibroCost = isReforma && hasVibroConversion ? VIBRO_CONVERSION_COST : 0;
@@ -305,7 +303,7 @@ export function SetCustomizationForm({
     ? supplyItems.find((s: any) => s.code === selectedFeet.code)
     : null;
 
-  const handleSelectFoam = (f: typeof REFORM_EXTRA_FOAM_OPTIONS[0]) => {
+  const handleSelectFoam = (f: typeof EXTRA_FOAM_OPTIONS[0]) => {
     const oldPricing = getExtraFoamPricing(selectedFoam.id, mattressDim.sizeKey);
     const newPricing = getExtraFoamPricing(f.id, mattressDim.sizeKey);
     const diff = newPricing.additionalPrice - oldPricing.additionalPrice;
@@ -338,7 +336,7 @@ export function SetCustomizationForm({
       isReforma ? `Fundo: ${finalBottomName}` : null,
       `Faixa: ${finalSideName}`,
       isReforma ? `Fitilho: ${finalFitilhoName}` : null,
-      isReforma && selectedFoam.id !== "sem_extra" ? `Espuma: ${finalFoamName} (${activeFoamPricing.priceBadge})` : null,
+      selectedFoam.id !== "sem_extra" ? `Espuma: ${finalFoamName} (${activeFoamPricing.priceBadge})` : null,
       isReforma && hasVibroConversion ? `Vibro: Ativo (+${formatBRL(VIBRO_CONVERSION_PRICE)})` : null,
       `[Box] TNT: ${finalTopTNTName}`,
       `Forragem: ${finalSideName}`,
@@ -358,12 +356,12 @@ export function SetCustomizationForm({
       sideColor: finalSideName,
       fabricColorHex: selectedSideColor.hex,
       fitilhoColor: isReforma ? finalFitilhoName : null,
-      extraFoamOption: isReforma ? finalFoamName : "Padrão de Fábrica",
-      hasExtraFoam: isReforma && selectedFoam.id !== "sem_extra",
-      addedFoamHeight: isReforma ? selectedFoam.height : 0,
-      extraFoamPrice: isReforma ? activeFoamPricing.additionalPrice : 0,
-      extraFoamCost: isReforma ? activeFoamPricing.directCost : 0,
-      foamVolumeM3: isReforma ? activeFoamPricing.volumeM3 : 0,
+      extraFoamOption: selectedFoam.id !== "sem_extra" ? finalFoamName : "Padrão de Fábrica",
+      hasExtraFoam: selectedFoam.id !== "sem_extra",
+      addedFoamHeight: selectedFoam.id !== "sem_extra" ? selectedFoam.height : 0,
+      extraFoamPrice: activeFoamPricing.additionalPrice,
+      extraFoamCost: activeFoamPricing.directCost,
+      foamVolumeM3: activeFoamPricing.volumeM3,
       hasVibroConversion: isReforma && hasVibroConversion,
       vibroPrice: isReforma && hasVibroConversion ? VIBRO_CONVERSION_PRICE : 0,
 
@@ -560,47 +558,45 @@ export function SetCustomizationForm({
             </div>
           )}
 
-          {/* Camada Adicional de Espuma (Apenas Reforma, Só 5cm) */}
-          {isReforma && (
-            <div className="space-y-2 pt-2 border-t border-blue-100">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-700">Camada Adicional de Espuma no Colchão (Apenas 5cm):</label>
-                <span className="text-[11px] font-bold text-emerald-700">{selectedFoam.badge}</span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {REFORM_EXTRA_FOAM_OPTIONS.map((f) => {
-                  const isSelected = selectedFoam.id === f.id;
-                  const fPricing = getExtraFoamPricing(f.id, mattressDim.sizeKey);
-                  return (
-                    <button
-                      key={f.id}
-                      type="button"
-                      onClick={() => handleSelectFoam(f)}
-                      className={`p-2.5 rounded-xl border text-left transition-all ${
-                        isSelected
-                          ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500/20"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-1">
-                        <div
-                          className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                            isSelected ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white"
-                          }`}
-                        >
-                          {isSelected && <Check className="h-2 w-2 stroke-[3]" />}
-                        </div>
-                        <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
-                          {fPricing.priceBadge}
-                        </span>
-                      </div>
-                      <p className="text-xs font-bold text-slate-900 leading-tight">{f.name}</p>
-                    </button>
-                  );
-                })}
-              </div>
+          {/* Camada Adicional de Espuma no Colchão (Disponível para Conjunto Novo e Reforma - Só 5cm) */}
+          <div className="space-y-2 pt-2 border-t border-blue-100">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700">Camada Adicional de Espuma no Colchão (Apenas 5cm):</label>
+              <span className="text-[11px] font-bold text-emerald-700">{selectedFoam.badge}</span>
             </div>
-          )}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {EXTRA_FOAM_OPTIONS.map((f) => {
+                const isSelected = selectedFoam.id === f.id;
+                const fPricing = getExtraFoamPricing(f.id, mattressDim.sizeKey);
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => handleSelectFoam(f)}
+                    className={`p-2.5 rounded-xl border text-left transition-all ${
+                      isSelected
+                        ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500/20"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 mb-1">
+                      <div
+                        className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                          isSelected ? "border-emerald-600 bg-emerald-600 text-white" : "border-slate-300 bg-white"
+                        }`}
+                      >
+                        {isSelected && <Check className="h-2 w-2 stroke-[3]" />}
+                      </div>
+                      <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-100 px-1.5 py-0.2 rounded">
+                        {fPricing.priceBadge}
+                      </span>
+                    </div>
+                    <p className="text-xs font-bold text-slate-900 leading-tight">{f.name}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
           {/* Conversão para Vibroterapia (Apenas Reforma) */}
           {isReforma && (

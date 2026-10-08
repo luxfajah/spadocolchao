@@ -111,8 +111,8 @@ public enum MattressSize: String, CaseIterable, Codable {
 
 public enum ExtraFoamType: String, CaseIterable, Codable {
     case none = "Sem Camada Extra (0 cm)"
-    case d33_5cm = "Camada Adicional +5cm Espuma D-33 Conforto"
-    case r26_5cm = "Camada Adicional +5cm Ortopédica Firme (R-26)"
+    case d33_5cm = "Camada Adicional +5cm Espuma Conforto"
+    case r26_5cm = "Camada Adicional +5cm Espuma Firme (Ortopédica)"
 
     public var badge: String {
         switch self {
