@@ -53,16 +53,16 @@ export function OrderPrintDocument({
   copies,
   companyInfo = {
     name: "SPA DO COLCHÃO",
-    tradeName: "Fábrica e Reforma de Colchões",
+    tradeName: "Indústria & Reforma de Colchões",
     cnpj: "00.000.000/0001-00",
     phone: "(11) 99999-9999",
-    address: "Atendimento e Fábrica Especializada",
+    address: "Fábrica e Loja Especializada",
   },
 }: OrderPrintDocumentProps) {
   if (!order || !order.sale) {
     return (
       <div className="p-8 text-center text-sm font-bold text-slate-500">
-        Nenhum pedido selecionado para impressão.
+        Nenhum pedido selecionado para visualização.
       </div>
     );
   }
@@ -72,160 +72,165 @@ export function OrderPrintDocument({
   const addresses = customer?.addresses || [];
   const mainAddress = addresses.find((a: any) => a.isMain) || addresses[0];
 
-  const renderSingleSlip = (viaLabel: string, copyIndex: number) => {
-    const isThermal = format === "thermal";
-
+  // ==========================================
+  // RENDERIZAÇÃO: FICHA CORPORATIVA A4
+  // ==========================================
+  const renderA4CorporateSheet = (viaLabel: string, copyIndex: number) => {
     return (
       <div
-        key={copyIndex}
-        className={`bg-white text-slate-900 font-sans ${
-          isThermal
-            ? "w-[80mm] max-w-[80mm] p-2 text-[10px] leading-tight mx-auto"
-            : "w-full max-w-[210mm] p-8 text-xs leading-normal mx-auto border border-slate-200 rounded-xl mb-8 print:border-none print:p-0 print:mb-0"
-        } ${copyIndex > 1 ? "print:break-before-page mt-6 pt-6 border-t-2 border-dashed border-slate-300" : ""}`}
+        key={`a4-${copyIndex}`}
+        className={`w-full max-w-[210mm] bg-white text-slate-900 font-sans mx-auto p-8 shadow-sm border border-slate-300 rounded-none print:shadow-none print:border-none print:p-0 print:m-0 text-[11px] leading-tight ${
+          copyIndex > 1 ? "print:break-before-page mt-8 pt-8 border-t-2 border-dashed border-slate-400" : ""
+        }`}
       >
-        {/* CABEÇALHO */}
-        <div className="text-center border-b-2 border-slate-900 pb-3 mb-3">
-          <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">
-            <span>{viaLabel}</span>
-            <span>EMISSÃO: {formatDateTime(sale.saleDate || order.createdAt)}</span>
-          </div>
-
-          <h1 className={`font-black tracking-tight text-slate-950 uppercase ${isThermal ? "text-lg" : "text-2xl"}`}>
-            {companyInfo.name}
-          </h1>
-          <p className="text-[9px] font-bold text-slate-600 uppercase tracking-wider">{companyInfo.tradeName}</p>
-          <div className="text-[8px] text-slate-500 mt-0.5 space-x-2">
-            <span>CNPJ: {companyInfo.cnpj}</span>
-            <span>•</span>
-            <span>TEL: {companyInfo.phone}</span>
-          </div>
-          {companyInfo.address && (
-            <p className="text-[8px] text-slate-500 mt-0.5">{companyInfo.address}</p>
-          )}
-
-          {/* TARJA IDENTIFICADORA DO PEDIDO */}
-          <div className="mt-2.5 rounded-lg bg-slate-900 text-white p-2 flex items-center justify-between">
-            <div className="text-left">
-              <span className="text-[7px] uppercase tracking-widest text-slate-300 block">Identificação</span>
-              <span className="font-black text-sm tracking-tight">VENDA Nº {sale.number || "---"}</span>
-            </div>
-            <div className="text-right">
-              <span className="text-[7px] uppercase tracking-widest text-slate-300 block">Vendedor</span>
-              <span className="font-bold text-xs">{seller?.name || "Balcão / Loja"}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* BLOCO SUPER DESTAQUE: RETIRADA E ENTREGA AGENDADA */}
-        <div className="mb-3 rounded-lg border-2 border-slate-900 bg-slate-50 p-2.5">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-1 mb-2">
-            <span className="font-black text-[9px] uppercase tracking-widest text-slate-900 flex items-center gap-1">
-              LOGÍSTICA & AGENDAMENTOS
-            </span>
-            <span className="text-[8px] font-bold bg-slate-200 px-1.5 py-0.5 rounded text-slate-800 uppercase">
-              {order.currentStatus === "SOLD" ? "Venda Confirmada" : order.currentStatus}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {/* RETIRADA */}
-            <div className={`p-2 rounded bg-amber-50 border border-amber-300 ${!order.pickupDate ? "opacity-60" : ""}`}>
-              <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[8px] font-black uppercase text-amber-900">📦 RETIRADA AGENDADA</span>
+        {/* CABEÇALHO CORPORATIVO */}
+        <header className="border-b-2 border-slate-900 pb-3 mb-3">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white px-2 py-0.5 rounded">
+                  {viaLabel}
+                </span>
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  Emissão: {formatDateTime(sale.saleDate || order.createdAt)}
+                </span>
               </div>
-              <p className="font-black text-[11px] text-amber-950">
-                {order.pickupDate ? formatDate(order.pickupDate) : "Não agendada"}
+              <h1 className="text-2xl font-black tracking-tight text-slate-950 uppercase mt-1">
+                {companyInfo.name}
+              </h1>
+              <p className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+                FICHA TÉCNICA DE PRODUÇÃO & ORDEM DE EXPEDIÇÃO
+              </p>
+              <p className="text-[9px] text-slate-500 mt-0.5">
+                CNPJ: {companyInfo.cnpj} • Contato: {companyInfo.phone}
+              </p>
+            </div>
+
+            {/* BOX DESTAQUE NÚMERO DO PEDIDO */}
+            <div className="text-right border-2 border-slate-900 bg-slate-50 rounded-xl p-2.5 min-w-[200px]">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block">
+                Nº DA VENDA / PEDIDO
+              </span>
+              <span className="text-xl font-black text-slate-950 tracking-tight block">
+                #{sale.number || order.id.slice(-6).toUpperCase()}
+              </span>
+              <div className="mt-1 pt-1 border-t border-slate-200 flex justify-between text-[9px]">
+                <span className="text-slate-500 font-bold">Vendedor:</span>
+                <span className="font-black text-slate-900">{seller?.name || "Balcão / Loja"}</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* BLOCO 1: CRONOGRAMA DE LOGÍSTICA & AGENDAMENTOS (PRIORIDADE DA PRODUÇÃO) */}
+        <section className="mb-3 border-2 border-slate-900 rounded-xl overflow-hidden">
+          <div className="bg-slate-900 text-white px-3 py-1 flex items-center justify-between text-[9px] font-black uppercase tracking-wider">
+            <span>1. CRONOGRAMA DE PRODUÇÃO & LOGÍSTICA AGENDADA</span>
+            <span className="bg-white/20 px-2 py-0.5 rounded text-[8px]">
+              Status: {order.currentStatus === "SOLD" ? "Vendido / Em Fila" : order.currentStatus}
+            </span>
+          </div>
+
+          <div className="p-2.5 grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50/60">
+            {/* RETIRADA */}
+            <div className={`p-2 rounded-lg border ${order.pickupDate ? "bg-amber-50/80 border-amber-300" : "bg-white border-slate-200 opacity-60"}`}>
+              <div className="flex items-center justify-between mb-0.5">
+                <span className="text-[9px] font-black uppercase text-amber-950">📦 RETIRADA AGENDADA (COLETA)</span>
+                <span className="text-[8px] font-bold text-amber-800">
+                  {order.pickupDate ? "Coleta no Cliente" : "Não aplicável"}
+                </span>
+              </div>
+              <p className="text-sm font-black text-amber-950">
+                {order.pickupDate ? formatDate(order.pickupDate) : "Sem data agendada"}
               </p>
               {order.pickupDate && (
-                <p className="text-[8px] font-bold text-amber-800">
-                  Horário: {new Date(order.pickupDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                <p className="text-[9px] font-bold text-amber-800 mt-0.5">
+                  Horário / Turno: {new Date(order.pickupDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               )}
             </div>
 
             {/* ENTREGA */}
-            <div className={`p-2 rounded bg-emerald-50 border border-emerald-300 ${!order.deliveryDate ? "opacity-60" : ""}`}>
+            <div className={`p-2 rounded-lg border ${order.deliveryDate ? "bg-emerald-50/80 border-emerald-300" : "bg-white border-slate-200 opacity-60"}`}>
               <div className="flex items-center justify-between mb-0.5">
-                <span className="text-[8px] font-black uppercase text-emerald-900">🚚 ENTREGA AGENDADA</span>
+                <span className="text-[9px] font-black uppercase text-emerald-950">🚚 ENTREGA AGENDADA (EXPEDIÇÃO)</span>
+                <span className="text-[8px] font-bold text-emerald-800">
+                  {order.deliveryDate ? "Data Limite Fábrica" : "Não agendada"}
+                </span>
               </div>
-              <p className="font-black text-[11px] text-emerald-950">
-                {order.deliveryDate ? formatDate(order.deliveryDate) : "Não agendada"}
+              <p className="text-sm font-black text-emerald-950">
+                {order.deliveryDate ? formatDate(order.deliveryDate) : "Sem data agendada"}
               </p>
               {order.deliveryDate && (
-                <p className="text-[8px] font-bold text-emerald-800">
-                  Horário: {new Date(order.deliveryDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                <p className="text-[9px] font-bold text-emerald-800 mt-0.5">
+                  Horário / Turno: {new Date(order.deliveryDate).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                 </p>
               )}
             </div>
-          </div>
 
-          {/* Destinatário ou Recebedor alternativo */}
-          {(order.recipientName || order.recipientPhone) && (
-            <div className="mt-2 pt-1.5 border-t border-slate-200 text-[9px] flex flex-wrap justify-between gap-1">
-              <div>
-                <span className="font-bold text-slate-500">Recebedor no local: </span>
-                <span className="font-black text-slate-800">{order.recipientName || customer?.fullName}</span>
-              </div>
-              {order.recipientPhone && (
+            {/* INFORMAÇÕES DE RECEBIMENTO E ROTA */}
+            <div className="md:col-span-2 pt-1 border-t border-slate-200 text-[10px] space-y-1">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="font-bold text-slate-500">Contato: </span>
-                  <span className="font-black text-slate-800">{order.recipientPhone}</span>
+                  <span className="font-bold text-slate-600">Recebedor no Local: </span>
+                  <span className="font-black text-slate-900">{order.recipientName || customer?.fullName || "Cliente"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-600">Telefone de Contato: </span>
+                  <span className="font-black text-slate-900">{order.recipientPhone || customer?.phone || customer?.whatsapp || "---"}</span>
+                </div>
+              </div>
+              {order.notes && (
+                <div className="bg-white p-1.5 rounded border border-slate-200 text-slate-800 font-medium">
+                  <span className="font-black text-slate-900 uppercase text-[9px] block">Instruções de Logística / Rota:</span>
+                  <span>{order.notes}</span>
                 </div>
               )}
             </div>
-          )}
-
-          {/* Instruções de logística / entrega */}
-          {order.notes && (
-            <div className="mt-1.5 pt-1 border-t border-slate-200 text-[8px] text-slate-700">
-              <span className="font-bold text-slate-900">Instruções / Rota: </span>
-              <span>{order.notes}</span>
-            </div>
-          )}
-        </div>
-
-        {/* INFORMAÇÕES DO CLIENTE */}
-        <div className="mb-3 border border-slate-300 rounded-lg p-2.5">
-          <div className="text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1 border-b border-slate-100 pb-0.5">
-            DADOS DO CLIENTE
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-2 gap-y-1 text-[9px]">
+        </section>
+
+        {/* BLOCO 2: DADOS DO CLIENTE */}
+        <section className="mb-3 border border-slate-300 rounded-xl p-2.5 bg-white">
+          <div className="text-[9px] font-black uppercase tracking-wider text-slate-500 border-b border-slate-200 pb-1 mb-1.5">
+            2. IDENTIFICAÇÃO DO CLIENTE
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[10px]">
             <div>
-              <span className="font-bold text-slate-500">Nome: </span>
-              <span className="font-black text-slate-900 uppercase">{customer?.fullName || "Cliente não informado"}</span>
+              <span className="font-bold text-slate-500 block text-[8px] uppercase">Nome Completo</span>
+              <span className="font-black text-slate-900 text-xs uppercase">{customer?.fullName || "Não informado"}</span>
             </div>
             <div>
-              <span className="font-bold text-slate-500">CPF/CNPJ: </span>
-              <span className="font-bold text-slate-800">{customer?.document || "Não informado"}</span>
+              <span className="font-bold text-slate-500 block text-[8px] uppercase">Documento (CPF / CNPJ)</span>
+              <span className="font-bold text-slate-800">{customer?.document || "Não cadastrado"}</span>
             </div>
             <div>
-              <span className="font-bold text-slate-500">Telefone/WhatsApp: </span>
-              <span className="font-bold text-slate-800">{customer?.phone || customer?.whatsapp || "Não informado"}</span>
+              <span className="font-bold text-slate-500 block text-[8px] uppercase">Telefone / WhatsApp</span>
+              <span className="font-bold text-slate-800">{customer?.phone || customer?.whatsapp || "Não cadastrado"}</span>
             </div>
             {mainAddress && (
-              <div className="sm:col-span-2 mt-0.5 pt-0.5 border-t border-slate-100">
-                <span className="font-bold text-slate-500">Endereço de Entrega: </span>
-                <span className="font-semibold text-slate-800">
+              <div className="md:col-span-3 pt-1 border-t border-slate-100">
+                <span className="font-bold text-slate-500 text-[8px] uppercase block">Endereço de Entrega</span>
+                <span className="font-semibold text-slate-900">
                   {mainAddress.street}, {mainAddress.number}
-                  {mainAddress.complement ? ` - ${mainAddress.complement}` : ""}
-                  {mainAddress.neighborhood ? `, ${mainAddress.neighborhood}` : ""}
-                  {mainAddress.city ? ` - ${mainAddress.city}/${mainAddress.state}` : ""}
-                  {mainAddress.zipCode ? ` (CEP: ${mainAddress.zipCode})` : ""}
+                  {mainAddress.complement ? ` (${mainAddress.complement})` : ""}
+                  {mainAddress.neighborhood ? ` • Bairro: ${mainAddress.neighborhood}` : ""}
+                  {mainAddress.city ? ` • Cidade: ${mainAddress.city}/${mainAddress.state}` : ""}
+                  {mainAddress.zipCode ? ` • CEP: ${mainAddress.zipCode}` : ""}
                 </span>
               </div>
             )}
           </div>
-        </div>
+        </section>
 
-        {/* ITENS DO PEDIDO E DETALHES DE PERSONALIZAÇÃO */}
-        <div className="mb-3">
-          <div className="text-[8px] font-black uppercase tracking-widest text-slate-900 mb-1 border-b-2 border-slate-900 pb-0.5 flex items-center justify-between">
-            <span>ITENS E PERSONALIZAÇÃO (FORMULÁRIO PDV)</span>
-            <span>QTD / VALOR</span>
+        {/* BLOCO 3: FICHA TÉCNICA DE PRODUÇÃO (OS PRODUTOS E ESCOLHAS DO PDV) */}
+        <section className="mb-3 border-2 border-slate-900 rounded-xl overflow-hidden">
+          <div className="bg-slate-900 text-white px-3 py-1 flex items-center justify-between text-[9px] font-black uppercase tracking-wider">
+            <span>3. ESPECIFICAÇÕES TÉCNICAS DE FABRICAÇÃO / REFORMA (CHÃO DE FÁBRICA)</span>
+            <span>TOTAL DE ITENS: {items.length}</span>
           </div>
 
-          <div className="divide-y divide-slate-200">
+          <div className="divide-y-2 divide-slate-300">
             {items.map((item: any, idx: number) => {
               const reformMattress = item.detailMattressReform;
               const newMattress = item.detailNewMattress;
@@ -233,126 +238,137 @@ export function OrderPrintDocument({
               const newBox = item.detailNewBox;
               const cleaning = item.detailUpholsteryCleaning;
 
+              const actualW = reformMattress?.actualWidth || newMattress?.actualWidth || reformBox?.actualWidth || newBox?.actualWidth || 0;
+              const actualL = reformMattress?.actualLength || newMattress?.actualLength || reformBox?.actualLength || newBox?.actualLength || 0;
+              const actualH = reformMattress?.actualHeight || newMattress?.actualHeight || reformBox?.actualHeight || newBox?.actualHeight || 0;
+              const commercialSize = reformMattress?.commercialSize || newMattress?.commercialSize || reformBox?.commercialSize || newBox?.commercialSize;
+
               return (
-                <div key={item.id || idx} className="py-2 space-y-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="font-black text-[11px] text-slate-900">{item.quantity}x</span>
-                        <span className="font-black text-[10px] text-slate-900 uppercase">{item.description}</span>
-                      </div>
-                      {item.productService?.type && (
-                        <span className="text-[8px] font-bold text-slate-500 uppercase">
-                          Categoria: {item.productService.type}
+                <div key={item.id || idx} className="p-3 bg-white space-y-2">
+                  {/* Título do Item e Quantidade */}
+                  <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-1.5">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="bg-slate-900 text-white text-[11px] font-black px-2 py-0.5 rounded">
+                          ITEM #{idx + 1}
                         </span>
-                      )}
+                        <h3 className="text-sm font-black text-slate-950 uppercase tracking-tight">
+                          {item.description}
+                        </h3>
+                      </div>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mt-0.5">
+                        Categoria / Operação: {item.productService?.type || item.type || "Fabricação Própria"}
+                      </p>
                     </div>
-                    <div className="text-right shrink-0">
-                      <span className="font-black text-[11px] text-slate-900">{formatBRL(item.totalAmount)}</span>
-                      {item.quantity > 1 && (
-                        <p className="text-[7px] text-slate-400 font-bold">({formatBRL(item.unitPrice)} un)</p>
-                      )}
+
+                    <div className="text-right">
+                      <span className="bg-slate-100 text-slate-900 font-black text-sm px-3 py-1 rounded-lg border border-slate-300 inline-block">
+                        QTD: {item.quantity} UN
+                      </span>
+                      <p className="text-[9px] font-bold text-slate-500 mt-0.5">
+                        Unitário: {formatBRL(item.unitPrice)} • Total: {formatBRL(item.totalAmount)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* RESUMO DE PERSONALIZAÇÃO SALVO NO PDV */}
-                  {item.notes && (
-                    <div className="rounded bg-slate-100/90 border border-slate-200 p-1.5 text-[8px] text-slate-800 leading-snug">
-                      <span className="font-black text-slate-900 uppercase block mb-0.5">
-                        ✦ Especificações Selecionadas no PDV:
+                  {/* GRID TÉCNICA PRINCIPAL (MEDIDAS E MATERIAIS) */}
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-2 text-[10px]">
+                    {/* MEDIDAS DE CORTE (4 COLUNAS EM DESTAQUE) */}
+                    <div className="md:col-span-4 bg-slate-100 p-2.5 rounded-lg border border-slate-300">
+                      <span className="font-black text-[9px] uppercase tracking-wider text-slate-600 block mb-1">
+                        📏 MEDIDAS DE CORTE / PRODUÇÃO
                       </span>
-                      <p className="whitespace-pre-wrap">{item.notes}</p>
-                    </div>
-                  )}
-
-                  {/* DETALHES ESTRUTURADOS: REFORMA DE COLCHÃO */}
-                  {reformMattress && (
-                    <div className="rounded bg-blue-50/70 border border-blue-200 p-1.5 text-[8px] space-y-0.5 text-blue-950">
-                      <p className="font-black uppercase text-[8px] text-blue-900">
-                        Engenharia de Reforma (Colchão):
-                      </p>
-                      <div className="grid grid-cols-2 gap-x-2">
-                        {reformMattress.actualWidth > 0 && (
-                          <p>
-                            <span className="font-bold">Medidas:</span> {reformMattress.actualWidth} x {reformMattress.actualLength} x {reformMattress.actualHeight} cm
+                      {actualW > 0 || actualL > 0 ? (
+                        <div className="space-y-0.5">
+                          <p className="text-base font-black text-slate-950 font-mono tracking-tight">
+                            {actualW} x {actualL} {actualH > 0 ? `x ${actualH}` : ""} cm
                           </p>
-                        )}
-                        {reformMattress.commercialSize && (
-                          <p><span className="font-bold">Padrão:</span> {reformMattress.commercialSize.toUpperCase()}</p>
-                        )}
-                        {reformMattress.topFabricColor && (
-                          <p><span className="font-bold">Tecido Tampo:</span> {reformMattress.topFabricColor}</p>
-                        )}
-                        {reformMattress.sideFabricColor && (
-                          <p><span className="font-bold">Tecido Lateral:</span> {reformMattress.sideFabricColor}</p>
-                        )}
-                        {reformMattress.density && (
-                          <p><span className="font-bold">Densidade:</span> {reformMattress.density}</p>
-                        )}
-                        {reformMattress.foamServiceType && reformMattress.foamServiceType !== "NENHUM" && (
-                          <p><span className="font-bold">Espuma/Pillow:</span> {reformMattress.foamServiceType} (+{reformMattress.addedFoamHeight || 0}cm)</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* DETALHES ESTRUTURADOS: COLCHÃO NOVO */}
-                  {newMattress && (
-                    <div className="rounded bg-sky-50/70 border border-sky-200 p-1.5 text-[8px] space-y-0.5 text-sky-950">
-                      <p className="font-black uppercase text-[8px] text-sky-900">
-                        Fabricação de Colchão Novo:
-                      </p>
-                      <div className="grid grid-cols-2 gap-x-2">
-                        {newMattress.actualWidth > 0 && (
-                          <p>
-                            <span className="font-bold">Dimensões:</span> {newMattress.actualWidth} x {newMattress.actualLength} x {newMattress.actualHeight} cm
+                          <p className="text-[9px] font-bold text-slate-600">
+                            Largura: {actualW}cm • Comprimento: {actualL}cm {actualH > 0 ? `• Altura: ${actualH}cm` : ""}
                           </p>
+                          {commercialSize && (
+                            <p className="text-[9px] font-black text-blue-900 uppercase mt-1">
+                              Padrão: {commercialSize}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="font-bold text-slate-700">Dimensões padrão de catálogo</p>
+                      )}
+                    </div>
+
+                    {/* MATERIAIS & REVESTIMENTOS (8 COLUNAS) */}
+                    <div className="md:col-span-8 bg-blue-50/60 p-2.5 rounded-lg border border-blue-200">
+                      <span className="font-black text-[9px] uppercase tracking-wider text-blue-900 block mb-1">
+                        🧵 REVESTIMENTOS & ACABAMENTOS ESCOLHIDOS NO PDV
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {/* Tampo */}
+                        <div>
+                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Tecido Tampo</span>
+                          <span className="font-black text-slate-900">
+                            {reformMattress?.topFabricColor || newMattress?.topFabricColor || reformBox?.topFabricColor || newBox?.topFabricColor || "Padrão"}
+                          </span>
+                        </div>
+                        {/* Lateral */}
+                        <div>
+                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Faixa Lateral</span>
+                          <span className="font-black text-slate-900">
+                            {reformMattress?.sideFabricColor || newMattress?.sideFabricColor || reformBox?.sideFabricColor || newBox?.sideFabricColor || "Padrão"}
+                          </span>
+                        </div>
+                        {/* Densidade / Conforto */}
+                        <div>
+                          <span className="text-[8px] font-bold text-slate-500 uppercase block">Densidade / Espuma</span>
+                          <span className="font-black text-slate-900">
+                            {reformMattress?.density || newMattress?.density || "Conforme ficha"}
+                          </span>
+                        </div>
+                        {/* Camada Extra / Pillow */}
+                        {reformMattress?.foamServiceType && reformMattress.foamServiceType !== "NENHUM" && (
+                          <div className="sm:col-span-2">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Camada de Conforto / Pillow</span>
+                            <span className="font-black text-emerald-900">
+                              ✦ {reformMattress.foamServiceType} (+{reformMattress.addedFoamHeight || 0} cm)
+                            </span>
+                          </div>
                         )}
-                        {newMattress.mattressType && (
-                          <p><span className="font-bold">Modelo:</span> {newMattress.mattressType}</p>
-                        )}
-                        {newMattress.topFabricColor && (
-                          <p><span className="font-bold">Tampo:</span> {newMattress.topFabricColor}</p>
-                        )}
-                        {newMattress.sideFabricColor && (
-                          <p><span className="font-bold">Faixa:</span> {newMattress.sideFabricColor}</p>
+                        {/* Box / Pés */}
+                        {(newBox || reformBox) && (
+                          <div className="sm:col-span-2">
+                            <span className="text-[8px] font-bold text-slate-500 uppercase block">Estrutura Box / Baú</span>
+                            <span className="font-black text-amber-900">
+                              Tipo: {(newBox?.boxType || reformBox?.boxType || "Comum").toUpperCase()}
+                              {(newBox?.optStructureReinforce || reformBox?.optStructureReinforce) ? " • Reforço Estrutural" : ""}
+                              {(newBox?.optHardwareReplacement || reformBox?.optHardwareReplacement) ? " • Troca de Ferragens" : ""}
+                            </span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* DETALHES ESTRUTURADOS: BOX NOVO OU REFORMA BOX */}
-                  {(newBox || reformBox) && (
-                    <div className="rounded bg-amber-50/70 border border-amber-200 p-1.5 text-[8px] space-y-0.5 text-amber-950">
-                      <p className="font-black uppercase text-[8px] text-amber-900">
-                        Box / Baú ({newBox ? "Novo" : "Reforma"}):
-                      </p>
-                      <div className="grid grid-cols-2 gap-x-2">
-                        <p><span className="font-bold">Tipo:</span> {(newBox?.boxType || reformBox?.boxType || "comum").toUpperCase()}</p>
-                        {(newBox?.topFabricColor || reformBox?.topFabricColor) && (
-                          <p><span className="font-bold">Revestimento:</span> {newBox?.topFabricColor || reformBox?.topFabricColor}</p>
-                        )}
-                        {(newBox?.optStructureReinforce || reformBox?.optStructureReinforce) && (
-                          <p className="font-bold text-amber-900">✦ Com reforço estrutural</p>
-                        )}
-                        {(newBox?.optHardwareReplacement || reformBox?.optHardwareReplacement) && (
-                          <p className="font-bold text-amber-900">✦ Com troca de ferragens/pistões</p>
-                        )}
-                      </div>
+                  {/* RESUMO DE ESCOLHAS DIGITADAS / NOTAS TÉCNICAS DO PDV */}
+                  {item.notes && (
+                    <div className="bg-amber-50/70 border border-amber-300 rounded-lg p-2 text-[10px] text-amber-950">
+                      <span className="font-black uppercase tracking-wider text-[8px] text-amber-900 block mb-0.5">
+                        📝 RESUMO DAS ESCOLHAS DO CLIENTE & NOTAS DE PRODUÇÃO:
+                      </span>
+                      <p className="font-medium whitespace-pre-wrap">{item.notes}</p>
                     </div>
                   )}
 
-                  {/* DETALHES ESTRUTURADOS: LIMPEZA DE ESTOFADOS */}
+                  {/* ITENS DE HIGIENIZAÇÃO SE HOUVER */}
                   {cleaning?.rows && cleaning.rows.length > 0 && (
-                    <div className="rounded bg-teal-50/70 border border-teal-200 p-1.5 text-[8px] space-y-1 text-teal-950">
-                      <p className="font-black uppercase text-[8px] text-teal-900">
-                        Itens para Higienização / Impermeabilização:
-                      </p>
-                      <div className="space-y-0.5">
+                    <div className="bg-teal-50/70 border border-teal-300 rounded-lg p-2 text-[9px] text-teal-950">
+                      <span className="font-black uppercase tracking-wider text-[8px] text-teal-900 block mb-1">
+                        🧼 ESPECIFICAÇÃO DE HIGIENIZAÇÃO / IMPERMEABILIZAÇÃO:
+                      </span>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
                         {cleaning.rows.map((row: any, rIdx: number) => (
-                          <div key={row.id || rIdx} className="flex justify-between border-b border-teal-100 last:border-0 pb-0.5">
-                            <span>{row.quantity}x {row.objectType} {row.observation ? `(${row.observation})` : ""}</span>
-                            <span className="font-bold">{formatBRL(row.subtotal)}</span>
+                          <div key={row.id || rIdx} className="bg-white p-1 rounded border border-teal-200">
+                            <span className="font-black text-teal-900">{row.quantity}x {row.objectType}</span>
+                            {row.observation && <p className="text-[8px] text-slate-500">{row.observation}</p>}
                           </div>
                         ))}
                       </div>
@@ -362,92 +378,168 @@ export function OrderPrintDocument({
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* VALORES E FORMAS DE PAGAMENTO */}
-        <div className="mb-3 border-t-2 border-slate-900 pt-2 space-y-1.5">
-          <div className="flex justify-between text-[9px] text-slate-600 font-bold uppercase">
-            <span>Subtotal dos Produtos:</span>
-            <span>{formatBRL(sale.subtotalAmount)}</span>
-          </div>
-
-          {sale.discountAmount > 0 && (
-            <div className="flex justify-between text-[9px] text-emerald-700 font-bold uppercase">
-              <span>Desconto Comercial:</span>
-              <span>-{formatBRL(sale.discountAmount)}</span>
-            </div>
-          )}
-
-          {sale.surchargeAmount > 0 && (
-            <div className="flex justify-between text-[9px] text-slate-700 font-bold uppercase">
-              <span>Acréscimos / Frete:</span>
-              <span>+{formatBRL(sale.surchargeAmount)}</span>
-            </div>
-          )}
-
-          <div className="flex justify-between text-base font-black text-slate-950 border-t border-slate-300 pt-1.5">
-            <span className="uppercase tracking-tight">TOTAL DA VENDA:</span>
-            <span>{formatBRL(sale.totalAmount)}</span>
-          </div>
-
-          {/* PARCELAMENTO E CONDIÇÕES DE PAGAMENTO */}
-          <div className="mt-2.5 rounded-lg bg-slate-50 border border-slate-200 p-2">
-            <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1 border-b border-slate-200 pb-0.5">
-              <span>CONDIÇÕES DE PAGAMENTO</span>
-              <span>STATUS: {sale.financialStatus === "PAID" ? "PAGO" : "A RECEBER NA ENTREGA"}</span>
+        {/* BLOCO 4: RESUMO COMERCIAL & CONDIÇÕES DE PAGAMENTO */}
+        <section className="mb-3 border border-slate-300 rounded-xl p-2.5 bg-slate-50/50">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-0.5 text-[10px]">
+              <span className="font-bold text-slate-500 uppercase text-[8px] block">Condição Financeira</span>
+              <p className="font-black text-slate-900">
+                Status: {sale.financialStatus === "PAID" ? "PAGO ANTECIPADO" : "A RECEBER NA ENTREGA"}
+              </p>
+              {installments.length > 0 && (
+                <div className="flex flex-wrap gap-2 text-[9px] text-slate-700 mt-1">
+                  {installments.map((inst: any) => (
+                    <span key={inst.id} className="bg-white px-2 py-0.5 rounded border border-slate-200 font-bold">
+                      {inst.installmentNumber}x {inst.paymentMethod?.name || "Pagamento"} ({formatBRL(inst.amount)}) • Venc: {formatDate(inst.dueDate)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {installments.length > 0 ? (
-              <div className="space-y-1 divide-y divide-slate-100">
-                {installments.map((inst: any) => (
-                  <div key={inst.id} className="pt-1 first:pt-0 flex items-center justify-between text-[9px]">
-                    <div>
-                      <span className="font-black text-slate-800">
-                        {inst.installmentNumber}x {inst.paymentMethod?.name || "Pagamento"}
-                      </span>
-                      <span className="text-[8px] text-slate-500 ml-1.5">
-                        (Vencimento: {formatDate(inst.dueDate)})
-                      </span>
-                    </div>
-                    <span className="font-black text-slate-900">{formatBRL(inst.amount)}</span>
-                  </div>
-                ))}
+            <div className="text-right border-l border-slate-300 pl-4 space-y-0.5">
+              <div className="text-[10px] text-slate-600 font-semibold space-x-2">
+                <span>Subtotal: {formatBRL(sale.subtotalAmount)}</span>
+                {sale.discountAmount > 0 && <span className="text-emerald-700">Desc: -{formatBRL(sale.discountAmount)}</span>}
+                {sale.surchargeAmount > 0 && <span>Acrésc: +{formatBRL(sale.surchargeAmount)}</span>}
               </div>
-            ) : (
-              <p className="text-[9px] font-bold text-slate-700">Pagamento integral à vista / na entrega.</p>
-            )}
+              <p className="text-xl font-black text-slate-950 font-outfit">
+                TOTAL: {formatBRL(sale.totalAmount)}
+              </p>
+            </div>
           </div>
-        </div>
+        </section>
 
-        {/* CANHOTO / TERMO DE RECEBIMENTO DO CLIENTE */}
-        <div className="mt-4 pt-3 border-t-2 border-dashed border-slate-400">
-          <div className="flex items-center justify-between text-[7px] font-black uppercase tracking-widest text-slate-400 mb-1">
-            <span>✂ DESTACAR NO ATO DA ENTREGA</span>
-            <span>PROTOCOLO DE RECEBIMENTO</span>
+        {/* BLOCO 5: ROTEIRO DE CONTROLE DE QUALIDADE DA FÁBRICA */}
+        <section className="mb-4 border border-slate-400 rounded-xl p-2.5 bg-white">
+          <div className="text-[9px] font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1 mb-2 flex justify-between">
+            <span>4. ROTEIRO DE FABRICAÇÃO & CONTROLE DE QUALIDADE (CHÃO DE FÁBRICA)</span>
+            <span>PREENCHIMENTO OBRIGATÓRIO</span>
           </div>
 
-          <p className="text-[8px] text-slate-600 leading-tight mb-4">
-            Declaro que recebi os produtos constantes neste pedido em perfeito estado de conservação,
-            conforme as especificações e personalizações acordadas.
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[9px]">
+            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+              <span className="font-bold text-slate-700 block">[ ] 1. Marcenaria / Estrutura</span>
+              <p className="text-[8px] text-slate-400 mt-1">Resp: _____________________</p>
+              <p className="text-[8px] text-slate-400 mt-0.5">Data: ___/___/2026</p>
+            </div>
+            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+              <span className="font-bold text-slate-700 block">[ ] 2. Corte de Espuma</span>
+              <p className="text-[8px] text-slate-400 mt-1">Resp: _____________________</p>
+              <p className="text-[8px] text-slate-400 mt-0.5">Data: ___/___/2026</p>
+            </div>
+            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+              <span className="font-bold text-slate-700 block">[ ] 3. Costura & Fechamento</span>
+              <p className="text-[8px] text-slate-400 mt-1">Resp: _____________________</p>
+              <p className="text-[8px] text-slate-400 mt-0.5">Data: ___/___/2026</p>
+            </div>
+            <div className="border border-slate-200 rounded p-1.5 bg-slate-50">
+              <span className="font-bold text-slate-700 block">[ ] 4. Qualidade & Embalagem</span>
+              <p className="text-[8px] text-slate-400 mt-1">Resp: _____________________</p>
+              <p className="text-[8px] text-slate-400 mt-0.5">Data: ___/___/2026</p>
+            </div>
+          </div>
+        </section>
+
+        {/* BLOCO 6: CANHOTO DE ENTREGA DESTACÁVEL */}
+        <footer className="border-t-2 border-dashed border-slate-400 pt-2.5">
+          <div className="flex items-center justify-between text-[8px] font-black uppercase tracking-widest text-slate-400 mb-1">
+            <span>✂ DESTACAR NO ATO DA ENTREGA / EXPEDIÇÃO</span>
+            <span>PROTOCOLO DE ENTREGA DO CLIENTE</span>
+          </div>
+
+          <p className="text-[9px] text-slate-600 mb-3">
+            Declaro ter recebido os produtos descritos nesta Ordem de Produção (#{sale.number}) em perfeitas condições e de acordo com as especificações contratadas.
           </p>
 
-          <div className="grid grid-cols-2 gap-4 items-end pt-2">
+          <div className="grid grid-cols-2 gap-6 items-end">
             <div className="border-t border-slate-900 pt-1 text-center">
-              <span className="text-[8px] font-bold uppercase text-slate-800 block">
+              <span className="text-[9px] font-bold uppercase text-slate-900 block">
                 {order.recipientName || customer?.fullName || "Assinatura do Recebedor"}
               </span>
-              <span className="text-[7px] text-slate-400">Assinatura do Cliente / Recebedor</span>
+              <span className="text-[8px] text-slate-400">Assinatura do Cliente / Recebedor</span>
             </div>
             <div className="border-t border-slate-900 pt-1 text-center">
-              <span className="text-[8px] font-bold text-slate-800 block">
-                ____ / ____ / 2026
-              </span>
-              <span className="text-[7px] text-slate-400">Data de Recebimento</span>
+              <span className="text-[9px] font-bold text-slate-900 block">____ / ____ / 2026</span>
+              <span className="text-[8px] text-slate-400">Data e Horário de Recebimento</span>
             </div>
           </div>
+        </footer>
+      </div>
+    );
+  };
 
-          <div className="text-center mt-3 text-[7px] font-bold text-slate-400 uppercase tracking-widest">
-            {companyInfo.name} • DOCUMENTO NÃO FISCAL DE CONTROLE E PRODUÇÃO
+  // ==========================================
+  // RENDERIZAÇÃO: CUPOM TÉRMICO 80MM (OPCIONAL)
+  // ==========================================
+  const renderThermalSlip = (viaLabel: string, copyIndex: number) => {
+    return (
+      <div
+        key={`thermal-${copyIndex}`}
+        className={`w-[80mm] max-w-[80mm] bg-white text-slate-900 font-sans mx-auto p-2 text-[10px] leading-tight ${
+          copyIndex > 1 ? "print:break-before-page mt-4 pt-4 border-t-2 border-dashed border-slate-400" : ""
+        }`}
+      >
+        <div className="text-center border-b-2 border-slate-900 pb-2 mb-2">
+          <span className="text-[8px] font-black uppercase text-slate-500 block">{viaLabel}</span>
+          <h1 className="text-lg font-black uppercase text-slate-950">{companyInfo.name}</h1>
+          <p className="text-[8px] font-bold text-slate-600 uppercase">Ficha Técnica & Expedição</p>
+          <p className="text-[8px] text-slate-400">Venda: #{sale.number} • {formatDateTime(sale.saleDate)}</p>
+        </div>
+
+        {/* LOGÍSTICA AGENDADA */}
+        <div className="mb-2 p-1.5 rounded bg-slate-100 border border-slate-300 space-y-1">
+          {order.pickupDate && (
+            <p className="font-bold text-amber-950">📦 Retirada: <span className="font-black">{formatDate(order.pickupDate)}</span></p>
+          )}
+          {order.deliveryDate && (
+            <p className="font-bold text-emerald-950">🚚 Entrega: <span className="font-black">{formatDate(order.deliveryDate)}</span></p>
+          )}
+          {order.notes && <p className="text-[8px] text-slate-600">Obs: {order.notes}</p>}
+        </div>
+
+        {/* CLIENTE */}
+        <div className="mb-2 text-[9px] border-b border-slate-200 pb-1">
+          <p className="font-black uppercase">{customer?.fullName}</p>
+          {customer?.phone && <p className="text-slate-600">Tel: {customer.phone}</p>}
+          {mainAddress && (
+            <p className="text-slate-600 text-[8px] leading-none mt-0.5">
+              {mainAddress.street}, {mainAddress.number} - {mainAddress.neighborhood}
+            </p>
+          )}
+        </div>
+
+        {/* ITENS */}
+        <div className="mb-2 border-b border-slate-200 pb-2 space-y-1.5">
+          <p className="text-[8px] font-black uppercase text-slate-500">Itens e Especificações:</p>
+          {items.map((item: any, idx: number) => (
+            <div key={idx} className="text-[9px]">
+              <div className="flex justify-between font-black">
+                <span>{item.quantity}x {item.description}</span>
+                <span>{formatBRL(item.totalAmount)}</span>
+              </div>
+              {item.notes && (
+                <p className="text-[8px] text-slate-600 bg-slate-50 p-1 rounded mt-0.5 leading-tight">
+                  {item.notes}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* TOTAL */}
+        <div className="mb-3 flex justify-between font-black text-sm border-b-2 border-slate-900 pb-1">
+          <span>TOTAL:</span>
+          <span>{formatBRL(sale.totalAmount)}</span>
+        </div>
+
+        {/* CANHOTO */}
+        <div className="pt-2 text-center text-[8px] text-slate-500">
+          <p className="mb-4">Recebi os produtos em perfeitas condições.</p>
+          <div className="border-t border-slate-900 pt-1">
+            <p className="font-bold text-slate-800 uppercase">{customer?.fullName || "Assinatura do Cliente"}</p>
           </div>
         </div>
       </div>
@@ -455,9 +547,18 @@ export function OrderPrintDocument({
   };
 
   return (
-    <div className="order-print-container">
-      {renderSingleSlip(copies === 2 ? "1ª VIA: CLIENTE / EXPEDIÇÃO" : "VIA ÚNICA", 1)}
-      {copies === 2 && renderSingleSlip("2ª VIA: FÁBRICA / PRODUÇÃO", 2)}
+    <div className="order-print-container w-full">
+      {format === "a4" ? (
+        <>
+          {renderA4CorporateSheet(copies === 2 ? "1ª VIA: EXPEDIÇÃO & CLIENTE" : "VIA ÚNICA DE PRODUÇÃO", 1)}
+          {copies === 2 && renderA4CorporateSheet("2ª VIA: FÁBRICA & PRODUÇÃO", 2)}
+        </>
+      ) : (
+        <>
+          {renderThermalSlip(copies === 2 ? "1ª VIA: CLIENTE" : "VIA ÚNICA", 1)}
+          {copies === 2 && renderThermalSlip("2ª VIA: PRODUÇÃO", 2)}
+        </>
+      )}
     </div>
   );
 }
