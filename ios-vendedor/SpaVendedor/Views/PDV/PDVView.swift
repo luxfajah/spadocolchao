@@ -7,6 +7,7 @@ public struct PDVView: View {
     @State private var selectedCategory: String = "Todos"
     @State private var productToCustomize: Product? = nil
     @State private var showCartSheet = false
+    @State private var showCustomerPicker = false
 
     private let categories = ["Todos", "Colchões Novos", "Reformas Colchão", "Reformas Box", "Acessórios"]
 
@@ -28,6 +29,60 @@ public struct PDVView: View {
                         )
                         .padding(.horizontal)
                         .padding(.top, 8)
+
+                        // Banner / Seletor de Cliente
+                        Button(action: { showCustomerPicker = true }) {
+                            HStack(spacing: 12) {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.title2)
+                                    .foregroundStyle(appState.selectedCustomer == nil ? .secondary : .blue)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    if let cust = appState.selectedCustomer {
+                                        HStack(spacing: 6) {
+                                            Text(cust.fullName)
+                                                .font(.subheadline.bold())
+                                                .foregroundStyle(.primary)
+                                                .lineLimit(1)
+                                            if cust.isCompany {
+                                                Text("PJ")
+                                                    .font(.system(size: 8, weight: .black))
+                                                    .padding(.horizontal, 4)
+                                                    .padding(.vertical, 1)
+                                                    .background(Color.purple.opacity(0.12))
+                                                    .foregroundStyle(.purple)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                        Text(cust.phone ?? cust.formattedAddress)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                            .lineLimit(1)
+                                    } else {
+                                        Text("Selecionar Cliente da Venda")
+                                            .font(.subheadline.bold())
+                                            .foregroundStyle(.primary)
+                                        Text("\(appState.customers.count) clientes cadastrados • Toque para pesquisar")
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+
+                                Spacer()
+
+                                Text(appState.selectedCustomer == nil ? "Pesquisar" : "Alterar")
+                                    .font(.caption.bold())
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color.blue.opacity(0.12))
+                                    .foregroundStyle(.blue)
+                                    .clipShape(Capsule())
+                            }
+                            .padding(12)
+                            .background(.ultraThinMaterial)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .padding(.horizontal)
+                        }
 
                         // Barra de Pesquisa
                         HStack {
@@ -122,6 +177,11 @@ public struct PDVView: View {
             }
             .sheet(isPresented: $showCartSheet) {
                 CartView()
+            }
+            .sheet(isPresented: $showCustomerPicker) {
+                CustomerPickerSheet { selectedCustomer in
+                    appState.selectedCustomer = selectedCustomer
+                }
             }
         }
     }

@@ -82,7 +82,9 @@ public struct CartView: View {
                 }
             }
             .sheet(isPresented: $showCustomerPicker) {
-                customerPickerSheet
+                CustomerPickerSheet { selected in
+                    appState.selectedCustomer = selected
+                }
             }
             .sheet(isPresented: $showNewCustomerSheet) {
                 RegisterCustomerSheet { newCustomer in
@@ -346,45 +348,7 @@ public struct CartView: View {
         .padding(.bottom, 20)
     }
 
-    // MARK: - Picker e Modais de Cliente
-    private var customerPickerSheet: some View {
-        NavigationStack {
-            List(appState.customers) { customer in
-                Button(action: {
-                    appState.selectedCustomer = customer
-                    showCustomerPicker = false
-                }) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(customer.fullName)
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                        if let phone = customer.phone ?? customer.whatsapp {
-                            Text(phone)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Text(customer.formattedAddress)
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-            .navigationTitle("Selecionar Cliente")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Fechar") { showCustomerPicker = false }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("+ Novo") {
-                        showCustomerPicker = false
-                        showNewCustomerSheet = true
-                    }
-                }
-            }
-        }
-    }
+
 
     // MARK: - Ação Finalizar
     private func handleFinalizeSale() {
