@@ -35,7 +35,7 @@ public struct PDVView: View {
                             HStack(spacing: 12) {
                                 Image(systemName: "person.crop.circle.fill")
                                     .font(.title2)
-                                    .foregroundStyle(appState.selectedCustomer == nil ? .secondary : .blue)
+                                    .foregroundStyle(appState.selectedCustomer == nil ? Color.secondary : Color.blue)
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     if let cust = appState.selectedCustomer {

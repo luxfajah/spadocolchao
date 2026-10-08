@@ -161,7 +161,7 @@ public struct CustomerPickerSheet: View {
 
                 Text(customerInitials(customer.fullName))
                     .font(.subheadline.bold())
-                    .foregroundStyle(isSelected ? .white : Color.blue)
+                    .foregroundStyle(isSelected ? Color.white : Color.blue)
             }
 
             // Dados Principais
